@@ -1,0 +1,20 @@
+- name: Build & test on VPS
+  run: |
+    ssh -p 16544 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
+      # 清理上次残留
+      pkill headscale || true
+      rm -rf /tmp/headscale-test
+      mkdir /tmp/headscale-test
+      
+      # 启动服务
+      cd /tmp/headscale-test
+      ./headscale serve &
+      sleep 3
+      
+      # 负载测试
+      hey -n 1000 -c 50 http://localhost:8080/health
+      
+      # 清理
+      pkill headscale
+      rm -rf /tmp/headscale-test
+    '
