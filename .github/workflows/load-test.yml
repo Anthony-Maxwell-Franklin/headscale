@@ -54,9 +54,11 @@ jobs:
             set -e
 
             docker rm -f hs-test 2>/dev/null || true
+            mkdir -p /opt/headscale-test/artifacts
 
             docker run -d --name hs-test \
               -p 127.0.0.1:8080:8080 \
+              -p 127.0.0.1:9090:9090 \
               -v /opt/headscale-test/test.yaml:/etc/headscale/config.yaml:ro \
               headscale-test:ci \
               /usr/local/bin/headscale serve --config /etc/headscale/config.yaml
@@ -76,14 +78,50 @@ jobs:
               sleep 1
             done
 
+            # 验证 metrics/debug 端口就绪
+            curl -sf http://localhost:9090/metrics | head -5
+            echo "metrics endpoint OK"
+
             # 安装 hey（若未安装）
             if ! command -v hey &>/dev/null; then
               curl -sSL https://hey-release.s3.us-east-2.amazonaws.com/hey_linux_amd64 \
                 -o /usr/local/bin/hey && chmod +x /usr/local/bin/hey
             fi
 
-            echo "=== Load Test Results ==="
-            hey -n 2000 -c 50 -t 30 http://localhost:8080/health
+            # 采集基线指标快照
+            curl -sf http://localhost:9090/metrics \
+              > /opt/headscale-test/artifacts/metrics-before.txt
 
+            # 并发启动 30s CPU profile，与 hey 同步运行
+            curl -sf "http://localhost:9090/debug/pprof/profile?seconds=30" \
+              -o /opt/headscale-test/artifacts/cpu.pprof &
+            PPROF_PID=$!
+
+            echo "=== Load Test Results ==="
+            hey -n 2000 -c 50 -t 30 http://localhost:8080/health \
+              | tee /opt/headscale-test/artifacts/hey-report.txt
+
+            wait $PPROF_PID || echo "pprof capture finished or timed out"
+
+            # 采集负载后指标快照及 heap profile
+            curl -sf http://localhost:9090/metrics \
+              > /opt/headscale-test/artifacts/metrics-after.txt
+            curl -sf "http://localhost:9090/debug/pprof/heap" \
+              -o /opt/headscale-test/artifacts/heap.pprof
+
+            docker logs hs-test > /opt/headscale-test/artifacts/container.log 2>&1
             docker rm -f hs-test
           '
+
+      - name: Fetch artifacts from VPS
+        run: |
+          rsync -avz -e "ssh -p 16544" \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/headscale-test/artifacts/ \
+            ./artifacts/
+
+      - name: Upload load test artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-${{ github.sha }}
+          path: artifacts/
+          retention-days: 14
