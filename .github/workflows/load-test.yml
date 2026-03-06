@@ -1,0 +1,89 @@
+name: Load Test Headscale
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  load-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build headscale binary
+        run: |
+          CGO_ENABLED=0 GOOS=linux \
+          go build \
+            -ldflags "-X main.version=$(git describe --always --tags --dirty)" \
+            -o headscale \
+            ./cmd/headscale
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p 16544 -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Copy files to VPS
+        run: |
+          rsync -avz -e "ssh -p 16544" \
+            ./headscale \
+            ./Dockerfile.integration-ci \
+            ./config/test.yaml \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/headscale-test/
+
+      - name: Build Docker image on VPS
+        run: |
+          ssh -p 16544 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
+            cd /opt/headscale-test
+            docker build -f Dockerfile.integration-ci -t headscale-test:ci .
+          '
+
+      - name: Run load test
+        run: |
+          ssh -p 16544 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
+            set -e
+
+            docker rm -f hs-test 2>/dev/null || true
+
+            docker run -d --name hs-test \
+              -p 127.0.0.1:8080:8080 \
+              -v /opt/headscale-test/test.yaml:/etc/headscale/config.yaml:ro \
+              headscale-test:ci \
+              /usr/local/bin/headscale serve --config /etc/headscale/config.yaml
+
+            echo "Waiting for headscale to start..."
+            for i in $(seq 1 15); do
+              if curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+                echo "Headscale is up after ${i}s"
+                break
+              fi
+              if [ $i -eq 15 ]; then
+                echo "Headscale failed to start. Logs:"
+                docker logs hs-test
+                docker rm -f hs-test
+                exit 1
+              fi
+              sleep 1
+            done
+
+            # 安装 hey（若未安装）
+            if ! command -v hey &>/dev/null; then
+              curl -sSL https://hey-release.s3.us-east-2.amazonaws.com/hey_linux_amd64 \
+                -o /usr/local/bin/hey && chmod +x /usr/local/bin/hey
+            fi
+
+            echo "=== Load Test Results ==="
+            hey -n 2000 -c 50 -t 30 http://localhost:8080/health
+
+            docker rm -f hs-test
+          '
