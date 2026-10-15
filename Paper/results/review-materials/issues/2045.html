@@ -1,0 +1,276 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #2045: [Bug] Feature request form </title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #2045: [Bug] Feature request form </h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/2045">Original issue #2045</a></p><p>Created: 2024-08-05T09:14:26Z; updated: 2024-08-30T06:26:44Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [X] This is not a support request
+
+### Is there an existing issue for this?
+
+- [X] I have searched the existing issues
+
+### Current Behavior
+
+The feature request form will only let you proceed if you are wiling to state you can write a design doc/contribute to a feature.
+
+This feels like a bug as whilst anyone requesting a feature should participate in the discussion and help where they can, not everyone has the technical expertise to work on producing a design doc/implement the feature themselves. 
+
+![image](https://github.com/user-attachments/assets/cd46fbc2-e67f-4631-87e3-c6bdbe9e0e84)
+
+
+### Expected Behavior
+
+I think these tickboxes probably weren&#x27;t meant to be mandatory?
+
+### Steps To Reproduce
+
+raise a feature request on github
+
+### Environment
+
+```markdown
+N/A - Github issue
+```
+
+
+### Runtime environment
+
+- [ ] Headscale is behind a (reverse) proxy
+- [ ] Headscale runs in a container
+
+### Anything else?
+
+_No response_</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/2045#issuecomment-2282698370">kradalby</a></h3><p>Created: 2024-08-11T09:44:05Z; updated: 2024-08-11T09:44:05Z</p><pre>Yes it does sound like an oversight, would be great to get a PR to rectify it.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2045#issuecomment-2304593519">dragon2611</a></h3><p>Created: 2024-08-22T12:50:43Z; updated: 2024-08-22T12:50:43Z</p><pre>PR raised, https://github.com/juanfont/headscale/pull/2071</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2024-08-05T09:14:26Z · labeled · dragon2611</summary><pre>{
+  &quot;id&quot;: 13760988082,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz886R6g3wzwAAAAM0OAOy&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/13760988082&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;dragon2611&quot;,
+    &quot;id&quot;: 6185399,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjYxODUzOTk=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6185399?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/dragon2611&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/dragon2611&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/dragon2611/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/dragon2611/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/dragon2611/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/dragon2611/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/dragon2611/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/dragon2611/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/dragon2611/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/dragon2611/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/dragon2611/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-08-05T09:14:26Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-08-11T09:44:05Z · commented · kradalby</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2282698370&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2045#issuecomment-2282698370&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2045&quot;,
+  &quot;id&quot;: 2282698370,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886IDzaC&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-08-11T09:44:05Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-08-11T09:44:05Z&quot;,
+  &quot;body&quot;: &quot;Yes it does sound like an oversight, would be great to get a PR to rectify it.&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2282698370/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-08-22T12:50:43Z · commented · dragon2611</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2304593519&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2045#issuecomment-2304593519&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2045&quot;,
+  &quot;id&quot;: 2304593519,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886JXU5v&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;dragon2611&quot;,
+    &quot;id&quot;: 6185399,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjYxODUzOTk=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6185399?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/dragon2611&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/dragon2611&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/dragon2611/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/dragon2611/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/dragon2611/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/dragon2611/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/dragon2611/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/dragon2611/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/dragon2611/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/dragon2611/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/dragon2611/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-08-22T12:50:43Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-08-22T12:50:43Z&quot;,
+  &quot;body&quot;: &quot;PR raised, https://github.com/juanfont/headscale/pull/2071&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2304593519/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;dragon2611&quot;,
+    &quot;id&quot;: 6185399,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjYxODUzOTk=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6185399?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/dragon2611&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/dragon2611&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/dragon2611/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/dragon2611/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/dragon2611/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/dragon2611/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/dragon2611/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/dragon2611/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/dragon2611/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/dragon2611/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/dragon2611/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-08-22T14:32:18Z · milestoned · kradalby</summary><pre>{
+  &quot;id&quot;: 13978212153,
+  &quot;node_id&quot;: &quot;MIE_lADOEFLz886R6g3wzwAAAANBKpc5&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/13978212153&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;milestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-08-22T14:32:18Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.23.0&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-08-30T06:26:44Z · closed · kradalby</summary><pre>{
+  &quot;id&quot;: 14075939726,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz886R6g3wzwAAAANG_cuO&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/14075939726&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-08-30T06:26:44Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

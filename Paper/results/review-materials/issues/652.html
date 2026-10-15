@@ -1,0 +1,273 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #652: Segfault when running ```headscale nodes list --output json``` when backend is not running.</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #652: Segfault when running ```headscale nodes list --output json``` when backend is not running.</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/652">Original issue #652</a></p><p>Created: 2022-06-17T17:04:32Z; updated: 2022-06-26T08:21:29Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>&lt;!-- Headscale is a multinational community across the globe. Our common language is English. Please consider raising the bug report in this language. --&gt;
+
+When running `headscale nodes list --output json` against a server that is offline, a segfault is encountered. `headscale nodes list` fails gracefully with `Could not connect....`. This segfault is problematic for frontends that consume json output exclusively.
+
+```
+$ headscale nodes list --output json
+panic: runtime error: invalid memory address or nil pointer dereference
+        panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x10 pc=0xb1feab]
+
+goroutine 1 [running]:
+google.golang.org/grpc.(*ClientConn).Close(0x0)
+        google.golang.org/grpc@v1.46.0/clientconn.go:998 +0x4b
+panic({0x1124f80, 0x1c52bc0})
+        runtime/panic.go:838 +0x207
+google.golang.org/grpc.(*ClientConn).Invoke(0x80203cf18?, {0x1464490?, 0xc00054ec60?}, {0x1292a76?, 0x0?}, {0x118afc0?, 0xc00054c040?}, {0x118b080?, 0xc00054c180?}, {0x0, ...})
+        google.golang.org/grpc@v1.46.0/call.go:32 +0x5e
+github.com/juanfont/headscale/gen/go/headscale/v1.(*headscaleServiceClient).ListMachines(0xc00007a780, {0x1464490, 0xc00054ec60}, 0xc0002f4420?, {0x0, 0x0, 0x0})
+        github.com/juanfont/headscale/gen/go/headscale/v1/headscale_grpc.pb.go:195 +0xce
+github.com/juanfont/headscale/cmd/headscale/cli.glob..func16(0x1c666e0?, {0x125c23c?, 0x2?, 0x2?})
+        github.com/juanfont/headscale/cmd/headscale/cli/nodes.go:168 +0x2d0
+github.com/spf13/cobra.(*Command).execute(0x1c666e0, {0xc000550980, 0x2, 0x2})
+        github.com/spf13/cobra@v1.4.0/command.go:860 +0x663
+github.com/spf13/cobra.(*Command).ExecuteC(0x1c68260)
+        github.com/spf13/cobra@v1.4.0/command.go:974 +0x3b4
+github.com/spf13/cobra.(*Command).Execute(...)
+        github.com/spf13/cobra@v1.4.0/command.go:902
+github.com/juanfont/headscale/cmd/headscale/cli.Execute()
+        github.com/juanfont/headscale/cmd/headscale/cli/root.go:85 +0x25
+main.main()
+        github.com/juanfont/headscale/cmd/headscale/headscale.go:42 +0x235
+```
+
+&lt;!-- A clear and concise description of what the bug is. Describe the expected bahavior
+  and how it is currently different. If you are unsure if it is a bug, consider discussing
+  it on our Discord server first. --&gt;
+
+**To Reproduce**
+
+1. Invoke `headscale` with `--output json` against a backend that is not running.
+
+**Context info**
+
+- Version of headscale used: v0.16.0-beta4 (and v0.15.0)
+- Version of tailscale client: N/A
+- OS (e.g. Linux, Mac, Cygwin, WSL, etc.) and version: FreeBSD 13.1-RELEASE
+
+</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/652#issuecomment-1162645796">luckman212</a></h3><p>Created: 2022-06-22T05:05:50Z; updated: 2022-06-22T05:05:50Z</p><pre>@theonemcdonald Does this mean headscale is coming someday to pfSense? 👀 </pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2022-06-17T17:04:32Z · labeled · rcmcdonald91</summary><pre>{
+  &quot;id&quot;: 6830426388,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz885MAywpzwAAAAGXIAkU&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/6830426388&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;rcmcdonald91&quot;,
+    &quot;id&quot;: 3102039,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjMxMDIwMzk=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/3102039?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/rcmcdonald91&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/rcmcdonald91&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2022-06-17T17:04:32Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2022-06-22T05:05:50Z · commented · luckman212</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1162645796&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/652#issuecomment-1162645796&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/652&quot;,
+  &quot;id&quot;: 1162645796,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885FTJEk&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;luckman212&quot;,
+    &quot;id&quot;: 1992842,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE5OTI4NDI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/1992842?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/luckman212&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/luckman212&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/luckman212/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/luckman212/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/luckman212/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/luckman212/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/luckman212/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/luckman212/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/luckman212/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/luckman212/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/luckman212/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2022-06-22T05:05:50Z&quot;,
+  &quot;updated_at&quot;: &quot;2022-06-22T05:05:50Z&quot;,
+  &quot;body&quot;: &quot;@theonemcdonald Does this mean headscale is coming someday to pfSense? 👀 &quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1162645796/reactions&quot;,
+    &quot;total_count&quot;: 1,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 1
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;luckman212&quot;,
+    &quot;id&quot;: 1992842,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE5OTI4NDI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/1992842?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/luckman212&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/luckman212&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/luckman212/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/luckman212/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/luckman212/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/luckman212/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/luckman212/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/luckman212/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/luckman212/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/luckman212/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/luckman212/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2022-06-22T05:05:50Z · mentioned · rcmcdonald91</summary><pre>{
+  &quot;id&quot;: 6852956993,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz885MAywpzwAAAAGYd9NB&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/6852956993&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;rcmcdonald91&quot;,
+    &quot;id&quot;: 3102039,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjMxMDIwMzk=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/3102039?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/rcmcdonald91&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/rcmcdonald91&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2022-06-22T05:05:50Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2022-06-22T05:05:50Z · subscribed · rcmcdonald91</summary><pre>{
+  &quot;id&quot;: 6852956998,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz885MAywpzwAAAAGYd9NG&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/6852956998&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;rcmcdonald91&quot;,
+    &quot;id&quot;: 3102039,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjMxMDIwMzk=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/3102039?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/rcmcdonald91&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/rcmcdonald91&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/rcmcdonald91/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2022-06-22T05:05:50Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2022-06-22T12:40:52Z · referenced · juanfont</summary><pre>{
+  &quot;id&quot;: 6855992408,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz885MAywpzwAAAAGYpiRY&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/6855992408&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;c8378e8b7dd66009ef3e36729875190c35fdc0df&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/commits/c8378e8b7dd66009ef3e36729875190c35fdc0df&quot;,
+  &quot;created_at&quot;: &quot;2022-06-22T12:40:52Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2022-06-26T08:21:29Z · closed · kradalby</summary><pre>{
+  &quot;id&quot;: 6879992143,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz885MAywpzwAAAAGaFFlP&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/6879992143&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: &quot;c8378e8b7dd66009ef3e36729875190c35fdc0df&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/commits/c8378e8b7dd66009ef3e36729875190c35fdc0df&quot;,
+  &quot;created_at&quot;: &quot;2022-06-26T08:21:29Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><article><h3><a href="https://api.github.com/repos/juanfont/headscale/commits/c8378e8b7dd66009ef3e36729875190c35fdc0df">c8378e8b7dd66009ef3e36729875190c35fdc0df</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/6855992408">referenced</a> · 2022-06-22T12:40:52Z</p><p><a href="../commits/c8378e8b7dd66009ef3e36729875190c35fdc0df.patch">Full local Git patch</a>; Quick fix to segfault on CLI when Headscale is not running (fix #652); in release ancestry: True.</p></article><article><h3><a href="https://api.github.com/repos/juanfont/headscale/commits/c8378e8b7dd66009ef3e36729875190c35fdc0df">c8378e8b7dd66009ef3e36729875190c35fdc0df</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/6879992143">closed</a> · 2022-06-26T08:21:29Z</p><p><a href="../commits/c8378e8b7dd66009ef3e36729875190c35fdc0df.patch">Full local Git patch</a>; Quick fix to segfault on CLI when Headscale is not running (fix #652); in release ancestry: True.</p></article></body></html>

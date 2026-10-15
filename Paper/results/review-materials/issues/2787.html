@@ -1,0 +1,470 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #2787: [Bug] Node vanishes from the nodelist and is unreachable</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #2787: [Bug] Node vanishes from the nodelist and is unreachable</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/2787">Original issue #2787</a></p><p>Created: 2025-09-25T17:21:30Z; updated: 2025-11-07T14:48:16Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+I have experienced this multiple times: a node suddenly disappears from the list and is unreachable. It&#x27;s nowhere to be found anymore. This is not a support request but a (vague) bug which is hard to reproduce but happens more than once.
+
+In this case, the node was connected before:
+```
+2025-09-25T13:36:58Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:602 &gt; node has connected, mapSession: 0xc0000f3c80, chan: 0xc00030dea0 node=c2k01 node.id=176 omitPeers=false readOnly=false stream=true
+2025-09-25T13:36:58Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:602 &gt; node has disconnected, mapSession: 0xc000e46a80, chan: 0xc0002c0af0 node=c2k01 node.id=176 omitPeers=false readOnly=false stream=true
+```
+
+The node was connected using an pre-auth key, 9999 days valid, non-reusable, non-ephemeral. Authenticating the first time was no problem, all went fine and the node showed up and had connectivity.
+
+When trying to connect to the node a while later, it was not found (no dns) anymore. I checked headplane, but the node was gone. I also checked the cli (headscale nodes list) but it disappeared there as well.
+
+The (docker) log shows this:
+
+```
+2025-09-25T14:07:00Z ERR home/runner/work/headscale/headscale/hscontrol/poll.go:622 &gt; Could not get machine from db error=&quot;record not found&quot; node=c2k01 node.id=176 omitPeers=false readOnly=false stream=true
+2025/09/25 14:07:00 http2: panic serving 172.18.0.2:39996: runtime error: invalid memory address or nil pointer dereference
+goroutine 116383254 [running]:
+golang.org/x/net/http2.(*serverConn).runHandler.func1()
+	/home/runner/go/pkg/mod/golang.org/x/net@v0.39.0/http2/server.go:2426 +0x13e
+panic({0x1f530a0?, 0x3ce1af0?})
+	/nix/store/rv9g1p18w52vip6652svdgy138wgx7dj-go-1.24.2/share/go/src/runtime/panic.go:792 +0x132
+github.com/juanfont/headscale/hscontrol.(*mapSession).serveLongPoll.func1()
+	/home/runner/work/headscale/headscale/hscontrol/poll.go:203 +0xaa
+github.com/juanfont/headscale/hscontrol.(*mapSession).serveLongPoll(0xc0000f3c80)
+	/home/runner/work/headscale/headscale/hscontrol/poll.go:289 +0x16a5
+github.com/juanfont/headscale/hscontrol.(*noiseServer).NoisePollNetMapHandler(0xc00089a240, {0x2af5a70, 0xc001353398}, 0xc0000ae8c0)
+	/home/runner/work/headscale/headscale/hscontrol/noise.go:229 +0x258
+net/http.HandlerFunc.ServeHTTP(0xc001460600?, {0x2af5a70?, 0xc001353398?}, 0x7fdf086a05c0?)
+	/nix/store/rv9g1p18w52vip6652svdgy138wgx7dj-go-1.24.2/share/go/src/net/http/server.go:2294 +0x29
+github.com/juanfont/headscale/hscontrol.prometheusMiddleware.func1({0x2af5a70, 0xc001353398}, 0xc0000ae8c0)
+	/home/runner/work/headscale/headscale/hscontrol/metrics.go:82 +0x18e
+net/http.HandlerFunc.ServeHTTP(0xc0000ae780?, {0x2af5a70?, 0xc001353398?}, 0x10?)
+	/nix/store/rv9g1p18w52vip6652svdgy138wgx7dj-go-1.24.2/share/go/src/net/http/server.go:2294 +0x29
+github.com/gorilla/mux.(*Router).ServeHTTP(0xc0011af740, {0x2af5a70, 0xc001353398}, 0xc0000ae640)
+	/home/runner/go/pkg/mod/github.com/gorilla/mux@v1.8.1/mux.go:212 +0x1e2
+golang.org/x/net/http2.(*serverConn).runHandler(0x44d2f2?, 0xc0009d3fd0?, 0xacb685?, 0xc001011f00?)
+	/home/runner/go/pkg/mod/golang.org/x/net@v0.39.0/http2/server.go:2433 +0xf5
+created by golang.org/x/net/http2.(*serverConn).scheduleHandler in goroutine 116383225
+	/home/runner/go/pkg/mod/golang.org/x/net@v0.39.0/http2/server.go:2367 +0x21d
+```
+
+Also the log is full of these lines:
+
+```
+2025-09-25T14:07:00Z ERR user msg: node not found code=404
+2025-09-25T14:07:01Z ERR user msg: node not found code=404
+2025-09-25T14:07:01Z ERR user msg: node not found code=404
+2025-09-25T14:07:01Z ERR user msg: node not found code=404
+```
+
+In the log we now still find these lines (176 is the disappeared node):
+```
+2025-09-25T17:10:29Z ERR update not sent, context cancelled error=&quot;context deadline exceeded&quot; node.id=176
+2025-09-25T17:10:42Z ERR user msg: node not found code=404
+2025-09-25T17:10:56Z ERR user msg: node not found code=404
+2025-09-25T17:10:58Z ERR user msg: node not found code=404
+2025-09-25T17:11:01Z ERR update not sent, context cancelled error=&quot;context deadline exceeded&quot; node.id=176
+```
+
+The device itself is still up&amp;running, but not reachable through tailscale anymore. &#x27;tailscale status&#x27; on the node shows:
+
+```
+$ sudo tailscale status
+100.64.0.92     c2k01                c2k-sds      linux   offline
+100.64.0.26     xxxxx xxx@ macOS   offline
+100.64.0.93     xxxx   xxxx@   macOS   idle, tx 929472 rx 316764
+100.64.0.105    tailscale-subnet-router-xxxx  xxxx     linux   -
+
+# Health check:
+#     - Linux DNS config not ideal. /etc/resolv.conf overwritten. See https://tailscale.com/s/dns-fight
+#     - Unable to connect to the Tailscale coordination server to synchronize the state of your tailnet. Peer reachability might degrade over time.
+```
+
+After rebooting the node tailscale shows &#x27;Logged out&#x27; and &#x27;Log in at &lt;headscale URL&gt;&#x27;.
+
+
+### Expected Behavior
+
+I would not expect a node to ever just disappear. Only when using an ephemeral key, but this was not the case. Also I would expect more logging to be able to investigate better.
+
+### Steps To Reproduce
+
+I cannot reproduce it myself, but it has happened a couple of times already with different nodes that suddenly show &quot;Logged out&quot;. First I though it was my own fault, but I am very sure this was not an ephemeral key and I am very sure I did not delete the node myself.
+
+### Environment
+
+```markdown
+- OS: Debian 13.1 (linux/amd64)
+- Docker version: 28.4.0
+- Headscale version: 0.26.1
+- Tailscale version: 1.88.1 (1.88.1-t032962f4b-gc5ad3b22f)
+- Number of nodes: ~ 90
+```
+
+### Runtime environment
+
+- [x] Headscale is behind a (reverse) proxy
+- [x] Headscale runs in a container
+
+### Debug information
+
+These logs are generated -after- rebooting and tailscale showing the node was logged out. Therefore the logs are, in my view, to be expected:
+
+tailscale debug netmap = &quot;null&quot;
+
+tailscale status --json:
+```
+{
+  &quot;Version&quot;: &quot;1.88.1-t032962f4b-gc5ad3b22f&quot;,
+  &quot;TUN&quot;: true,
+  &quot;BackendState&quot;: &quot;NeedsLogin&quot;,
+  &quot;HaveNodeKey&quot;: true,
+  &quot;AuthURL&quot;: &quot;https://xxxx/register/5s65jGlWzVxiAcf6tCC-xxxx&quot;,
+  &quot;TailscaleIPs&quot;: null,
+  &quot;Self&quot;: {
+    &quot;ID&quot;: &quot;&quot;,
+    &quot;PublicKey&quot;: &quot;nodekey:0000000000000000000000000000000000000000000000000000000000000000&quot;,
+    &quot;HostName&quot;: &quot;c2k01&quot;,
+    &quot;DNSName&quot;: &quot;&quot;,
+    &quot;OS&quot;: &quot;linux&quot;,
+    &quot;UserID&quot;: 0,
+    &quot;TailscaleIPs&quot;: null,
+    &quot;Addrs&quot;: [],
+    &quot;CurAddr&quot;: &quot;&quot;,
+    &quot;Relay&quot;: &quot;&quot;,
+    &quot;PeerRelay&quot;: &quot;&quot;,
+    &quot;RxBytes&quot;: 0,
+    &quot;TxBytes&quot;: 0,
+    &quot;Created&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;LastWrite&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;LastSeen&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;LastHandshake&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;Online&quot;: false,
+    &quot;ExitNode&quot;: false,
+    &quot;ExitNodeOption&quot;: false,
+    &quot;Active&quot;: false,
+    &quot;PeerAPIURL&quot;: null,
+    &quot;TaildropTarget&quot;: 0,
+    &quot;NoFileSharingReason&quot;: &quot;&quot;,
+    &quot;InNetworkMap&quot;: false,
+    &quot;InMagicSock&quot;: false,
+    &quot;InEngine&quot;: false
+  },
+  &quot;Health&quot;: [
+    &quot;You are logged out. The last login error was: fetch control key: Get \&quot;https://xxxxx/key?v=125\&quot;: dial tcp xxxxx:443: connect: network is unreachable&quot;
+  ],
+  &quot;MagicDNSSuffix&quot;: &quot;&quot;,
+  &quot;CurrentTailnet&quot;: null,
+  &quot;CertDomains&quot;: null,
+  &quot;Peer&quot;: null,
+  &quot;User&quot;: null,
+  &quot;ClientVersion&quot;: null
+}
+```
+
+I did not catch the log on the node before rebooting unfortunately.
+
+After the reboot, I re-ran the tailscale shell command again:
+
+```
+tailscale up --accept-routes --login-server https://xxxx --auth-key f51c7c973c2cf06714306c14ba9fd062e05d9b78c20xxxx --reset
+```
+
+</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/2787#issuecomment-3502489471">ademariag</a></h3><p>Created: 2025-11-07T13:14:09Z; updated: 2025-11-07T13:14:09Z</p><pre>@peterforeman why was this issue closed? did you find a solution? or was it a configuration error on your side?</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2787#issuecomment-3502991891">peterforeman</a></h3><p>Created: 2025-11-07T14:48:16Z; updated: 2025-11-07T14:48:16Z</p><pre>&gt; [@peterforeman](https://github.com/peterforeman) why was this issue closed? did you find a solution? or was it a configuration error on your side?
+
+It was indeed a configuration error on my side. While I was pretty sure it wasn&#x27;t an ephemeral key, it actually was after checking for the Nth time.</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2025-09-25T17:21:31Z · labeled · peterforeman</summary><pre>{
+  &quot;id&quot;: 19925334131,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz887N50x1zwAAAASjpHhz&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/19925334131&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;peterforeman&quot;,
+    &quot;id&quot;: 8426694,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjg0MjY2OTQ=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/8426694?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/peterforeman&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/peterforeman&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/peterforeman/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/peterforeman/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/peterforeman/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/peterforeman/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/peterforeman/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/peterforeman/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/peterforeman/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/peterforeman/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/peterforeman/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-09-25T17:21:31Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-09-25T17:36:26Z · closed · peterforeman</summary><pre>{
+  &quot;id&quot;: 19925587560,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz887N50x1zwAAAASjqFZo&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/19925587560&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;peterforeman&quot;,
+    &quot;id&quot;: 8426694,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjg0MjY2OTQ=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/8426694?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/peterforeman&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/peterforeman&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/peterforeman/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/peterforeman/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/peterforeman/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/peterforeman/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/peterforeman/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/peterforeman/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/peterforeman/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/peterforeman/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/peterforeman/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-09-25T17:36:26Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-09-25T17:42:08Z · unsubscribed · mrabino1</summary><pre>{
+  &quot;id&quot;: 19925687079,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz887N50x1zwAAAASjqdsn&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/19925687079&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mrabino1&quot;,
+    &quot;id&quot;: 4902221,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ5MDIyMjE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4902221?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mrabino1&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mrabino1&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mrabino1/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mrabino1/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mrabino1/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mrabino1/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mrabino1/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mrabino1/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mrabino1/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mrabino1/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mrabino1/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-09-25T17:42:08Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-11-07T13:14:09Z · commented · ademariag</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3502489471&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2787#issuecomment-3502489471&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2787&quot;,
+  &quot;id&quot;: 3502489471,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz887Qw79_&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;ademariag&quot;,
+    &quot;id&quot;: 32644550,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjMyNjQ0NTUw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/32644550?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ademariag&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ademariag&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ademariag/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ademariag/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ademariag/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ademariag/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ademariag/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ademariag/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ademariag/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ademariag/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ademariag/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-11-07T13:14:09Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-11-07T13:14:09Z&quot;,
+  &quot;body&quot;: &quot;@peterforeman why was this issue closed? did you find a solution? or was it a configuration error on your side?&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3502489471/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;ademariag&quot;,
+    &quot;id&quot;: 32644550,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjMyNjQ0NTUw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/32644550?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ademariag&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ademariag&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ademariag/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ademariag/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ademariag/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ademariag/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ademariag/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ademariag/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ademariag/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ademariag/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ademariag/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-11-07T13:14:10Z · mentioned · peterforeman</summary><pre>{
+  &quot;id&quot;: 20787412843,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz887N50x1zwAAAATXBr9r&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/20787412843&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;peterforeman&quot;,
+    &quot;id&quot;: 8426694,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjg0MjY2OTQ=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/8426694?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/peterforeman&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/peterforeman&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/peterforeman/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/peterforeman/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/peterforeman/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/peterforeman/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/peterforeman/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/peterforeman/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/peterforeman/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/peterforeman/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/peterforeman/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-11-07T13:14:10Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-11-07T13:14:10Z · subscribed · peterforeman</summary><pre>{
+  &quot;id&quot;: 20787412912,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz887N50x1zwAAAATXBr-w&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/20787412912&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;peterforeman&quot;,
+    &quot;id&quot;: 8426694,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjg0MjY2OTQ=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/8426694?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/peterforeman&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/peterforeman&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/peterforeman/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/peterforeman/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/peterforeman/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/peterforeman/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/peterforeman/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/peterforeman/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/peterforeman/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/peterforeman/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/peterforeman/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-11-07T13:14:10Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-11-07T14:48:16Z · commented · peterforeman</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3502991891&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2787#issuecomment-3502991891&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2787&quot;,
+  &quot;id&quot;: 3502991891,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz887Qy2oT&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;peterforeman&quot;,
+    &quot;id&quot;: 8426694,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjg0MjY2OTQ=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/8426694?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/peterforeman&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/peterforeman&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/peterforeman/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/peterforeman/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/peterforeman/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/peterforeman/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/peterforeman/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/peterforeman/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/peterforeman/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/peterforeman/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/peterforeman/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-11-07T14:48:16Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-11-07T14:48:16Z&quot;,
+  &quot;body&quot;: &quot;&gt; [@peterforeman](https://github.com/peterforeman) why was this issue closed? did you find a solution? or was it a configuration error on your side?\n\nIt was indeed a configuration error on my side. While I was pretty sure it wasn&#x27;t an ephemeral key, it actually was after checking for the Nth time.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3502991891/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;peterforeman&quot;,
+    &quot;id&quot;: 8426694,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjg0MjY2OTQ=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/8426694?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/peterforeman&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/peterforeman&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/peterforeman/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/peterforeman/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/peterforeman/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/peterforeman/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/peterforeman/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/peterforeman/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/peterforeman/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/peterforeman/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/peterforeman/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

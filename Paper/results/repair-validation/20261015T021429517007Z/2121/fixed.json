@@ -1,0 +1,32 @@
+{
+  "variant": "fixed",
+  "command": [
+    "go",
+    "test",
+    "-mod=readonly",
+    "-p=2",
+    "-count=1",
+    "-timeout=120s",
+    "-json",
+    "-run",
+    "^TestResearchRename2121$",
+    "./hscontrol/db"
+  ],
+  "exit_code": 0,
+  "test_outcomes": {
+    "TestResearchRename2121/duplicate_name": "pass",
+    "TestResearchRename2121/unique_name": "pass"
+  },
+  "expected_behavior_demonstrated": true,
+  "source_provenance": {
+    "commit": "064c46f2a5889a328627673f153a01c26812c945",
+    "source_archive_sha256": "047a90dfb3ec9188e639521b5aae3c7a15b871bbccfb70b4c0b50244de79728f",
+    "fixture_sha256": "b186943e9044a5bf6a4401221b2ccbe1920972254402cf9e163514255f95d951",
+    "dependency_sha256": {
+      "go.mod": "0e0bbbf1abdde4221c3303d4d5e8b607fc38bf1ab4cea51a32a53a1c05775cc2",
+      "go.sum": "aff3a77c360f6a4e32cbafb6c71419506d81997c065b270f37a017036d85f4e0"
+    }
+  },
+  "stdout_sha256": "fb7a94fc40b15899dd342d5322bbda77372fb59b56a5f79c1178bc3f3fe24246",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

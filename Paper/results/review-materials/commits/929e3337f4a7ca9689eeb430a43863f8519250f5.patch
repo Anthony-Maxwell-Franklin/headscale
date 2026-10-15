@@ -1,0 +1,451 @@
+commit 929e3337f4a7ca9689eeb430a43863f8519250f5
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Fri Oct 9 12:50:18 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Tue Oct 13 14:35:52 2026 +0200
+
+    mapper: refresh self when approved routes change
+    
+    Updates #3502, #3518
+    
+    (cherry picked from commit 48046dc9c5cc79897d283c7fc2fad8934dc106c6)
+---
+ hscontrol/mapper/batcher.go             |   9 +-
+ hscontrol/mapper/batcher_test.go        |  57 +++++++++++
+ hscontrol/mapper/node_conn.go           |  25 ++++-
+ hscontrol/servertest/issues_test.go     | 175 ++++++++++++++++++++++++++++----
+ hscontrol/servertest/via_compat_test.go |   3 +
+ hscontrol/state/node_store.go           |   4 +-
+ hscontrol/state/node_store_test.go      |  22 ++++
+ integration/route_test.go               |   5 +
+ 8 files changed, 277 insertions(+), 23 deletions(-)
+
+diff --git a/hscontrol/mapper/batcher.go b/hscontrol/mapper/batcher.go
+index af4ef67d..6b76465f 100644
+--- a/hscontrol/mapper/batcher.go
++++ b/hscontrol/mapper/batcher.go
+@@ -123,9 +123,9 @@ func generateMapResponse(nc nodeConnection, mapper *mapper, r change.Change) (*t
+ 		}
+ 
+ 		removedPeers := nc.computePeerDiff(currentPeerIDs)
+-		// Include self node when this is a self-update (e.g., node's own tags changed)
+-		// so the node sees its updated self info along with new packet filters.
+-		mapResp, err = mapper.policyChangeResponse(nodeID, version, removedPeers, currentPeers, isSelfUpdate)
++		// Routes and policy changes also affect self. Each connection drops
++		// the self node when it already holds the same value.
++		mapResp, err = mapper.policyChangeResponse(nodeID, version, removedPeers, currentPeers, true)
+ 	} else if isSelfUpdate {
+ 		// Non-policy self-update: just send the self node info
+ 		mapResp, err = mapper.selfMapResponse(nodeID, version)
+@@ -344,6 +344,9 @@ func (b *Batcher) AddNode(
+ 		nodeConn.updateSentPeers(initialMap)
+ 		nodeConn.workMu.Unlock()
+ 
++		// Still pendingInitial, so no broadcast can race this.
++		newEntry.lastSelf.Store(initialMap.Node)
++
+ 		// Open the connection for broadcast sends now that the initial
+ 		// map is the stream's first frame; send() requeued any changes
+ 		// that arrived in the meantime.
+diff --git a/hscontrol/mapper/batcher_test.go b/hscontrol/mapper/batcher_test.go
+index b822f688..226c906c 100644
+--- a/hscontrol/mapper/batcher_test.go
++++ b/hscontrol/mapper/batcher_test.go
+@@ -2358,3 +2358,60 @@ func TestAddWorkPeersRemovedNotTreatedAsEmpty(t *testing.T) {
+ 	require.Equal(t, 3, countNodesPending(lb.b),
+ 		"surviving 3 nodes must have the removal pending")
+ }
++// TestSelfSentOnlyWhenChanged pins that a policy recompute carries the
++// node's own self to each connection that does not hold it yet: self renders
++// from the same state as peers (issue #3502), and a Node forces a full client
++// netmap rebuild.
++func TestSelfSentOnlyWhenChanged(t *testing.T) {
++	testData, cleanup := setupBatcherWithTestData(t, NewBatcherAndMapper, 1, 2, normalBufferSize)
++	defer cleanup()
++
++	b := testData.Batcher.Batcher
++	self := &testData.Nodes[0]
++
++	rename := func(name string) {
++		_, _, err := testData.State.RenameNode(self.n.ID, name)
++		require.NoError(t, err)
++	}
++
++	require.NoError(t, b.AddNode(self.n.ID, self.ch, tailcfg.CapabilityVersion(100), nil))
++	require.NotNil(t, expectReceive(t, self.ch, "initial map").Node)
++
++	nc, ok := b.nodes.Load(self.n.ID)
++	require.True(t, ok)
++
++	policyFrame := func(chs ...chan *tailcfg.MapResponse) []*tailcfg.MapResponse {
++		nc.workMu.Lock()
++		defer nc.workMu.Unlock()
++
++		require.NoError(t, handleNodeChange(nc, b.mapper, change.PolicyChange()))
++
++		frames := make([]*tailcfg.MapResponse, 0, len(chs))
++		for _, ch := range chs {
++			frames = append(frames, expectReceive(t, ch, "policy frame"))
++		}
++
++		return frames
++	}
++
++	assert.Nil(t, policyFrame(self.ch)[0].Node, "unchanged self must be dropped")
++
++	rename("renamed")
++
++	frame := policyFrame(self.ch)[0]
++	require.NotNil(t, frame.Node, "moved self must be sent")
++	assert.Contains(t, frame.Node.Name, "renamed")
++
++	// A connection joining after self moved gets the new self in its
++	// initial map; the next recompute must still reach the older one.
++	rename("renamed-again")
++
++	ch2 := make(chan *tailcfg.MapResponse, normalBufferSize)
++	require.NoError(t, b.AddNode(self.n.ID, ch2, tailcfg.CapabilityVersion(100), nil))
++	require.NotNil(t, expectReceive(t, ch2, "second connection's initial map").Node)
++
++	frames := policyFrame(self.ch, ch2)
++	require.NotNil(t, frames[0].Node, "first connection still holds the old self")
++	assert.Contains(t, frames[0].Node.Name, "renamed-again")
++	assert.Nil(t, frames[1].Node, "second connection already holds the new self")
++}
+diff --git a/hscontrol/mapper/node_conn.go b/hscontrol/mapper/node_conn.go
+index b91d2c7c..e63ba439 100644
+--- a/hscontrol/mapper/node_conn.go
++++ b/hscontrol/mapper/node_conn.go
+@@ -49,6 +49,25 @@ type connectionEntry struct {
+ 	// can never become the stream's first frame ahead of the initial
+ 	// map. The zero value means the connection is ready.
+ 	pendingInitial atomic.Bool
++
++	// lastSelf is the self node last delivered to this connection's
++	// client, which keeps it until sent another. Every send to an
++	// established connection must go through [multiChannelNodeConn.send]
++	// to keep it current.
++	lastSelf atomic.Pointer[tailcfg.Node]
++}
++
++// withSelfDelta returns data without its Node when this client already
++// holds an equal one: a Node forces a full client netmap rebuild.
++func (entry *connectionEntry) withSelfDelta(data *tailcfg.MapResponse) *tailcfg.MapResponse {
++	if data.Node == nil || !data.Node.Equal(entry.lastSelf.Load()) {
++		return data
++	}
++
++	stripped := *data
++	stripped.Node = nil
++
++	return &stripped
+ }
+ 
+ // multiChannelNodeConn manages multiple concurrent connections for a single node.
+@@ -323,7 +342,7 @@ func (mc *multiChannelNodeConn) send(data *tailcfg.MapResponse) error {
+ 	)
+ 
+ 	for _, conn := range snapshot {
+-		err := conn.send(data)
++		err := conn.send(conn.withSelfDelta(data))
+ 		if err != nil {
+ 			lastErr = err
+ 
+@@ -334,6 +353,10 @@ func (mc *multiChannelNodeConn) send(data *tailcfg.MapResponse) error {
+ 				Msg("send: connection failed")
+ 		} else {
+ 			successCount++
++
++			if data.Node != nil {
++				conn.lastSelf.Store(data.Node)
++			}
+ 		}
+ 	}
+ 
+diff --git a/hscontrol/servertest/issues_test.go b/hscontrol/servertest/issues_test.go
+index 329466f5..343c12ae 100644
+--- a/hscontrol/servertest/issues_test.go
++++ b/hscontrol/servertest/issues_test.go
+@@ -222,36 +222,128 @@ func TestIssuesRoutes(t *testing.T) {
+ 		}
+ 	})
+ 
+-	// When the server approves routes for a node, that node
+-	// should receive a self-update reflecting the change.
+-	t.Run("self_update_after_route_approval", func(t *testing.T) {
++	// The client derives ExitNodeOption from its own SelfNode.AllowedIPs,
++	// and SelfNode only changes when a MapResponse carries Node. SaaS
++	// captures show approved exit routes on the exit node's own SelfNode
++	// (routes-ea*, routes-b17/b18). Peers are the control: they must see
++	// the routes, proving the change was dispatched.
++	// https://github.com/juanfont/headscale/issues/3502
++	t.Run("exit_route_approval_reaches_self", func(t *testing.T) {
+ 		t.Parallel()
+ 
+ 		srv := servertest.NewServer(t)
+-		user := srv.CreateUser(t, "selfup-user")
++		user := srv.CreateUser(t, "selfexit-user")
+ 
+-		c1 := servertest.NewClient(t, srv, "selfup-node1",
++		exit := servertest.NewClient(t, srv, "selfexit-node",
+ 			servertest.WithUser(user))
+-		servertest.NewClient(t, srv, "selfup-node2",
++		obs := servertest.NewClient(t, srv, "selfexit-obs",
+ 			servertest.WithUser(user))
+ 
+-		c1.WaitForPeers(t, 1, 10*time.Second)
++		exit.WaitForPeers(t, 1, 10*time.Second)
++		advertiseRoutes(t, exit, obs, tsaddr.ExitRoutes())
+ 
+-		nodeID := findNodeID(t, srv, "selfup-node1")
+-		route := netip.MustParsePrefix("10.77.0.0/24")
++		_, c, err := srv.State().SetApprovedRoutes(
++			findNodeID(t, srv, "selfexit-node"), tsaddr.ExitRoutes())
++		require.NoError(t, err)
++		srv.App.Change(c)
+ 
+-		countBefore := c1.UpdateCount()
++		obs.WaitForCondition(t, "peer offers exit node", 10*time.Second,
++			peerOffersExit("selfexit-node"))
++		exit.WaitForCondition(t, "self offers exit node", 10*time.Second,
++			selfOffersExit)
++	})
+ 
+-		_, routeChange, err := srv.State().SetApprovedRoutes(
+-			nodeID, []netip.Prefix{route})
++	// Advertising an already-approved exit route goes through
++	// UpdateNodeFromMapRequest instead of SetApprovedRoutes. This is the
++	// re-advertise workaround from the issue that 0.29.4 broke.
++	t.Run("exit_route_advertised_after_approval_reaches_self", func(t *testing.T) {
++		t.Parallel()
++
++		srv := servertest.NewServer(t)
++		user := srv.CreateUser(t, "preexit-user")
++
++		exit := servertest.NewClient(t, srv, "preexit-node",
++			servertest.WithUser(user))
++		obs := servertest.NewClient(t, srv, "preexit-obs",
++			servertest.WithUser(user))
++
++		exit.WaitForPeers(t, 1, 10*time.Second)
++
++		_, c, err := srv.State().SetApprovedRoutes(
++			findNodeID(t, srv, "preexit-node"), tsaddr.ExitRoutes())
+ 		require.NoError(t, err)
+-		srv.App.Change(routeChange)
++		srv.App.Change(c)
+ 
+-		c1.WaitForCondition(t, "self-update after route approval",
+-			10*time.Second,
+-			func(nm *netmap.NetworkMap) bool {
+-				return c1.UpdateCount() > countBefore
+-			})
++		advertiseRoutes(t, exit, obs, tsaddr.ExitRoutes())
++
++		obs.WaitForCondition(t, "peer offers exit node", 10*time.Second,
++			peerOffersExit("preexit-node"))
++		exit.WaitForCondition(t, "self offers exit node", 10*time.Second,
++			selfOffersExit)
++	})
++
++	// A policy reload that auto-approves an advertised exit route goes
++	// through autoApproveNodes, a third producer of the same change.
++	t.Run("exit_route_auto_approved_on_reload_reaches_self", func(t *testing.T) {
++		t.Parallel()
++
++		srv := servertest.NewServer(t)
++		user := srv.CreateUser(t, "reloadexit-user")
++
++		exit := servertest.NewClient(t, srv, "reloadexit-node",
++			servertest.WithUser(user))
++		obs := servertest.NewClient(t, srv, "reloadexit-obs",
++			servertest.WithUser(user))
++
++		exit.WaitForPeers(t, 1, 10*time.Second)
++		advertiseRoutes(t, exit, obs, tsaddr.ExitRoutes())
++
++		_, err := srv.State().SetPolicyInDB(`{
++			"acls": [{"action": "accept", "src": ["*"], "dst": ["*:*"]}],
++			"autoApprovers": {"exitNode": ["reloadexit-user@"]}
++		}`)
++		require.NoError(t, err)
++
++		changes, err := srv.State().ReloadPolicy()
++		require.NoError(t, err)
++		srv.App.Change(changes...)
++
++		obs.WaitForCondition(t, "peer offers exit node", 10*time.Second,
++			peerOffersExit("reloadexit-node"))
++		exit.WaitForCondition(t, "self offers exit node", 10*time.Second,
++			selfOffersExit)
++	})
++
++	// An auto-approver approves the route inside the advertising map
++	// request, a fourth producer of the same change.
++	t.Run("exit_route_auto_approved_on_advertise_reaches_self", func(t *testing.T) {
++		t.Parallel()
++
++		srv := servertest.NewServer(t)
++		user := srv.CreateUser(t, "advexit-user")
++
++		_, err := srv.State().SetPolicyInDB(`{
++			"acls": [{"action": "accept", "src": ["*"], "dst": ["*:*"]}],
++			"autoApprovers": {"exitNode": ["advexit-user@"]}
++		}`)
++		require.NoError(t, err)
++
++		changes, err := srv.State().ReloadPolicy()
++		require.NoError(t, err)
++		srv.App.Change(changes...)
++
++		exit := servertest.NewClient(t, srv, "advexit-node",
++			servertest.WithUser(user))
++		obs := servertest.NewClient(t, srv, "advexit-obs",
++			servertest.WithUser(user))
++
++		exit.WaitForPeers(t, 1, 10*time.Second)
++		advertiseRoutes(t, exit, obs, tsaddr.ExitRoutes())
++
++		obs.WaitForCondition(t, "peer offers exit node", 10*time.Second,
++			peerOffersExit("advexit-node"))
++		exit.WaitForCondition(t, "self offers exit node", 10*time.Second,
++			selfOffersExit)
+ 	})
+ 
+ 	// [tailcfg.Hostinfo] route advertisement should be stored on server.
+@@ -1010,3 +1102,50 @@ func findNodeID(tb testing.TB, srv *servertest.TestServer, hostname string) type
+ 
+ 	return 0
+ }
++
++// advertiseRoutes pushes routes in c's Hostinfo and waits until obs sees
++// them, so the server has stored the announcement.
++func advertiseRoutes(tb testing.TB, c, obs *servertest.TestClient, routes []netip.Prefix) {
++	tb.Helper()
++
++	c.Direct().SetHostinfo(&tailcfg.Hostinfo{
++		BackendLogID: "servertest-" + c.Name,
++		Hostname:     c.Name,
++		RoutableIPs:  routes,
++	})
++
++	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
++	defer cancel()
++
++	_ = c.Direct().SendUpdate(ctx)
++
++	obs.WaitForCondition(tb, "routes in peer hostinfo", 10*time.Second,
++		func(nm *netmap.NetworkMap) bool {
++			p, ok := peerByHostname(nm, c.Name)
++
++			return ok && p.Hostinfo().RoutableIPs().Len() == len(routes)
++		})
++}
++
++// selfOffersExit mirrors how tailscaled computes Self.ExitNodeOption.
++func selfOffersExit(nm *netmap.NetworkMap) bool {
++	return nm.SelfNode.Valid() && tsaddr.ContainsExitRoutes(nm.SelfNode.AllowedIPs())
++}
++
++func peerOffersExit(hostname string) func(*netmap.NetworkMap) bool {
++	return func(nm *netmap.NetworkMap) bool {
++		p, ok := peerByHostname(nm, hostname)
++
++		return ok && tsaddr.ContainsExitRoutes(p.AllowedIPs())
++	}
++}
++
++func peerByHostname(nm *netmap.NetworkMap, hostname string) (tailcfg.NodeView, bool) {
++	for _, p := range nm.Peers {
++		if hi := p.Hostinfo(); hi.Valid() && hi.Hostname() == hostname {
++			return p, true
++		}
++	}
++
++	return tailcfg.NodeView{}, false
++}
+diff --git a/hscontrol/servertest/via_compat_test.go b/hscontrol/servertest/via_compat_test.go
+index dff22d9d..df698e8c 100644
+--- a/hscontrol/servertest/via_compat_test.go
++++ b/hscontrol/servertest/via_compat_test.go
+@@ -250,6 +250,9 @@ func runViaMapCompat(t *testing.T, c *testcapture.Capture) {
+ 			nm := cl.Netmap()
+ 			require.NotNil(t, nm, "netmap is nil")
+ 
++			require.Equal(t, selfOffersExit(capture.Netmap), selfOffersExit(nm),
++				"SelfNode exit routes should match SaaS")
++
+ 			compareNetmap(t, nm, capture, clients, saasAddrs)
+ 		})
+ 	}
+diff --git a/hscontrol/state/node_store.go b/hscontrol/state/node_store.go
+index a90fed23..a216c969 100644
+--- a/hscontrol/state/node_store.go
++++ b/hscontrol/state/node_store.go
+@@ -987,7 +987,7 @@ func (s *NodeStore) PrimaryRouteFor(prefix netip.Prefix) (types.NodeID, bool) {
+ }
+ 
+ // PrimaryRoutesForNode returns the prefixes for which id is the current
+-// primary advertiser.
++// primary advertiser, sorted so an unchanged node renders identically.
+ func (s *NodeStore) PrimaryRoutesForNode(id types.NodeID) []netip.Prefix {
+ 	snap := s.data.Load()
+ 	if !snap.isPrimaryRoute[id] {
+@@ -1002,6 +1002,8 @@ func (s *NodeStore) PrimaryRoutesForNode(id types.NodeID) []netip.Prefix {
+ 		}
+ 	}
+ 
++	slices.SortFunc(out, netip.Prefix.Compare)
++
+ 	return out
+ }
+ 
+diff --git a/hscontrol/state/node_store_test.go b/hscontrol/state/node_store_test.go
+index ae5caf26..12945eb7 100644
+--- a/hscontrol/state/node_store_test.go
++++ b/hscontrol/state/node_store_test.go
+@@ -1510,6 +1510,28 @@ func TestHealthOnlyWriteReusesPeerMap(t *testing.T) {
+ 		peersCalls.Load())
+ }
+ 
++// TestPrimaryRoutesForNodeSorted checks a router's primaries come back in
++// a stable order: they render into its self node, which the mapper resends
++// whenever it differs from what the node holds (issue #3502).
++func TestPrimaryRoutesForNodeSorted(t *testing.T) {
++	node := createTestNode(1, 1, "user1", "router")
++
++	prefixes := make([]netip.Prefix, 0, 8)
++	for i := range 8 {
++		prefixes = append(prefixes, netip.PrefixFrom(netip.AddrFrom4([4]byte{10, byte(i), 0, 0}), 16))
++	}
++
++	node.Hostinfo = &tailcfg.Hostinfo{Hostname: "router", RoutableIPs: prefixes}
++	node.ApprovedRoutes = prefixes
++	node.IsOnline = new(true)
++
++	store := NewNodeStore(types.Nodes{&node}, allowAllPeersFunc, TestBatchSize, TestBatchTimeout)
++
++	for range 20 {
++		require.Equal(t, prefixes, store.PrimaryRoutesForNode(1))
++	}
++}
++
+ func BenchmarkSnapshotPayloadDense(b *testing.B) {
+ 	const nodeCount = 500
+ 
+diff --git a/integration/route_test.go b/integration/route_test.go
+index beff6ff0..dd5a001c 100644
+--- a/integration/route_test.go
++++ b/integration/route_test.go
+@@ -1692,6 +1692,11 @@ func TestEnablingExitRoutes(t *testing.T) {
+ 					assert.Contains(c, peerStatus.AllowedIPs.AsSlice(), tsaddr.AllIPv6())
+ 				}
+ 			}
++
++			// The approved node must learn its own routes on its live
++			// session, not only after reconnecting (issue #3502).
++			assert.True(c, status.Self.ExitNodeOption,
++				"%s should offer itself as exit node", client.Hostname())
+ 		}
+ 	}, integrationutil.ScaledTimeout(10*time.Second), integrationutil.SlowPoll, "clients should see new routes")
+ }

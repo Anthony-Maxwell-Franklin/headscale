@@ -1,0 +1,265 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #3471: [Bug] In-memory node &quot;user&quot; not updated after headscale user rename and OIDC change</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #3471: [Bug] In-memory node &quot;user&quot; not updated after headscale user rename and OIDC change</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/3471">Original issue #3471</a></p><p>Created: 2026-09-10T23:35:01Z; updated: 2026-09-11T16:58:28Z; observed state: open; reason: None</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+If I:
+
+1) Change an OIDC user&#x27;s email &quot;username&quot; from say user@domain.com to user@new-domain.com
+2) Rename the user in Headscale via `headscale user rename -i &lt;id&gt; --new-name user@new-domain.com`
+3) Log the user back into Headscale
+
+Then `headscale user list` shows their updated Username and Email (from the OIDC login).
+Also `headscale node list --user user@new-domain.com` pulls back their owned nodes.
+
+However `headscale node list` shows their old email (user@domain.com) for the node&#x27;s &quot;User&quot;.   I&#x27;m assuming the in-memory map just isn&#x27;t updated, as restarting Headscale results in the new/correct user (user@new-domain.com).
+
+### Expected Behavior
+
+I&#x27;d expect `headscale node list` have updated User information after changes without requiring a restart.
+
+### Steps To Reproduce
+
+See initial section for steps.
+
+### Environment
+
+```markdown
+- OS: Ubuntu 24
+- Headscale version: v0.29.3
+- Tailscale version: N/A
+```
+
+### Runtime environment
+
+- [x] Headscale is behind a (reverse) proxy
+- [x] Headscale runs in a container
+
+### Debug information
+
+If this is needed please just let me know, as I&#x27;d rather not post it publicly.</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/3471#issuecomment-5633123622">kradalby</a></h3><p>Created: 2026-09-11T10:31:12Z; updated: 2026-09-11T10:31:12Z</p><pre>I am pretty sure that the issue is that the email coming from OIDC is not stored in the username field, but in the email field, and we do not expose a way to update this, as OIDC is considered source of truth and not editable. I think it would be accurate to say that we do not have a supported path for migrating users from one OIDC domain to another. 
+
+Per now, I think editing the database (at own risk) would be the approach, but it would be crucial to also get the OIDC unique token right too and this is more complicated than just the email. 
+
+This is potentially something we could look at in the next release, but I suspect it would realistically be something to tackle when we revisit OIDC down the line, and still not guaranteed that we will make it editable. </pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/3471#issuecomment-5637845691">Codelica</a></h3><p>Created: 2026-09-11T16:58:28Z; updated: 2026-09-11T16:58:28Z</p><pre>&gt; I am pretty sure that the issue is that the email coming from OIDC is not stored in the username field, but in the email field, and we do not expose a way to update this, as OIDC is considered source of truth and not editable. I think it would be accurate to say that we do not have a supported path for migrating users from one OIDC domain to another.
+&gt; 
+&gt; Per now, I think editing the database (at own risk) would be the approach, but it would be crucial to also get the OIDC unique token right too and this is more complicated than just the email.
+&gt; 
+&gt; This is potentially something we could look at in the next release, but I suspect it would realistically be something to tackle when we revisit OIDC down the line, and still not guaranteed that we will make it editable.
+
+Sorry, I probably wasn&#x27;t clear enough, as I think this may be more simple then you&#x27;re thinking. (or I could be wrong. :) )
+
+Basically yes, the `headscale rename` command does just change the username field -- which is fine.  The email field is actually adjusted automatically the next time the OIDC user logs into Headscale with a new email.  So OIDC _is_ the source of truth for the email field.
+
+So by doing a `headscale rename` and forcing the user to re-login (expire their nodes), we have both the username and email updated properly as `headscale user list` confirms.   However the node info (`node list`) doesn&#x27;t seem to get its &quot;user&quot; field updated -- at least not until a Headscale restart.   The nodes know they are owned by the new user (ie. `node list --user user@new-domain.com` works) but listing node information still has the old user field info.  
+
+Since a restart of Headscale gets everything into sync, I was assuming it&#x27;s currently just missing updating that node user field in the in-memory map when the user info is updated.  If that makes sense?</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2026-09-10T23:35:02Z · labeled · Codelica</summary><pre>{
+  &quot;id&quot;: 30937785519,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABQvYyEc8AAAAHNAkkrw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/30937785519&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;Codelica&quot;,
+    &quot;id&quot;: 386101,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjM4NjEwMQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/386101?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/Codelica&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/Codelica&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/Codelica/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/Codelica/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/Codelica/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/Codelica/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/Codelica/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/Codelica/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/Codelica/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/Codelica/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/Codelica/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-10T23:35:02Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-11T10:31:12Z · commented · kradalby</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/5633123622&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3471#issuecomment-5633123622&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3471&quot;,
+  &quot;id&quot;: 5633123622,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABT8KlJg&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-09-11T10:31:12Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-09-11T10:31:12Z&quot;,
+  &quot;body&quot;: &quot;I am pretty sure that the issue is that the email coming from OIDC is not stored in the username field, but in the email field, and we do not expose a way to update this, as OIDC is considered source of truth and not editable. I think it would be accurate to say that we do not have a supported path for migrating users from one OIDC domain to another. \n\nPer now, I think editing the database (at own risk) would be the approach, but it would be crucial to also get the OIDC unique token right too and this is more complicated than just the email. \n\nThis is potentially something we could look at in the next release, but I suspect it would realistically be something to tackle when we revisit OIDC down the line, and still not guaranteed that we will make it editable. &quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/5633123622/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-09-11T10:31:33Z · milestoned · kradalby</summary><pre>{
+  &quot;id&quot;: 30965530232,
+  &quot;node_id&quot;: &quot;MIE_lADOEFLz888AAAABQvYyEc8AAAAHNbB-eA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/30965530232&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;milestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-11T10:31:33Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.33&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-11T16:58:28Z · commented · Codelica</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/5637845691&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3471#issuecomment-5637845691&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3471&quot;,
+  &quot;id&quot;: 5637845691,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABUAqyuw&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;Codelica&quot;,
+    &quot;id&quot;: 386101,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjM4NjEwMQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/386101?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/Codelica&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/Codelica&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/Codelica/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/Codelica/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/Codelica/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/Codelica/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/Codelica/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/Codelica/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/Codelica/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/Codelica/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/Codelica/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-09-11T16:58:28Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-09-11T16:58:28Z&quot;,
+  &quot;body&quot;: &quot;&gt; I am pretty sure that the issue is that the email coming from OIDC is not stored in the username field, but in the email field, and we do not expose a way to update this, as OIDC is considered source of truth and not editable. I think it would be accurate to say that we do not have a supported path for migrating users from one OIDC domain to another.\n&gt; \n&gt; Per now, I think editing the database (at own risk) would be the approach, but it would be crucial to also get the OIDC unique token right too and this is more complicated than just the email.\n&gt; \n&gt; This is potentially something we could look at in the next release, but I suspect it would realistically be something to tackle when we revisit OIDC down the line, and still not guaranteed that we will make it editable.\n\nSorry, I probably wasn&#x27;t clear enough, as I think this may be more simple then you&#x27;re thinking. (or I could be wrong. :) )\n\nBasically yes, the `headscale rename` command does just change the username field -- which is fine.  The email field is actually adjusted automatically the next time the OIDC user logs into Headscale with a new email.  So OIDC _is_ the source of truth for the email field.\n\nSo by doing a `headscale rename` and forcing the user to re-login (expire their nodes), we have both the username and email updated properly as `headscale user list` confirms.   However the node info (`node list`) doesn&#x27;t seem to get its \&quot;user\&quot; field updated -- at least not until a Headscale restart.   The nodes know they are owned by the new user (ie. `node list --user user@new-domain.com` works) but listing node information still has the old user field info.  \n\nSince a restart of Headscale gets everything into sync, I was assuming it&#x27;s currently just missing updating that node user field in the in-memory map when the user info is updated.  If that makes sense?&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/5637845691/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;Codelica&quot;,
+    &quot;id&quot;: 386101,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjM4NjEwMQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/386101?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/Codelica&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/Codelica&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/Codelica/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/Codelica/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/Codelica/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/Codelica/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/Codelica/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/Codelica/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/Codelica/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/Codelica/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/Codelica/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

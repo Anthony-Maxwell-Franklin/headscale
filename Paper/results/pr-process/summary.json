@@ -1,0 +1,38 @@
+{
+  "list_prs": 2166,
+  "observed_dispositions": {
+    "nonmerge_close": 686,
+    "merge": 1418,
+    "censor": 62
+  },
+  "human_authored_prs": 1667,
+  "human_dispositions": {
+    "merge": 1318,
+    "nonmerge_close": 287,
+    "censor": 62
+  },
+  "list_observation_cutoff_utc": "2026-10-13T13:51:09.921007+00:00",
+  "detailed_scope": "year-stratified pilot",
+  "planned_sample": 76,
+  "complete_pilot_prs": 76,
+  "incomplete_pilot_prs": [],
+  "pilot_human_prs": 59,
+  "pilot_human_response_outcomes": {
+    "merge_without_response": 3,
+    "response": 51,
+    "nonmerge_close_without_response": 4,
+    "censor": 1
+  },
+  "pilot_timeline_coverage": 76,
+  "pilot_reopened_prs": 7,
+  "pilot_with_draft_history": 12,
+  "limitations": [
+    "PR list snapshot and issue list snapshot differ in collection time.",
+    "Closed without merge does not necessarily mean rejection.",
+    "Timeline availability is reported; draft history is observed but the primary clock begins at creation.",
+    "Incomplete pilot observations are excluded, not coded as zero response.",
+    "Year-stratified pilot requires inclusion weights before population estimates.",
+    "Response KM is cause-specific with disposition censoring; the response CIF handles competing closure.",
+    "Observed user association does not establish historical maintainer role."
+  ]
+}

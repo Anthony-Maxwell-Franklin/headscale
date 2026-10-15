@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-10-13T14:24:26.872191+00:00",
+  "upstream": "https://github.com/juanfont/headscale",
+  "anchors": [
+    {
+      "tag": "v0.1.0",
+      "sha": "6df90a922cc6533fc2b282dd67b2ec8921d93749",
+      "tag_target_author_time_utc": "2021-06-14T14:20:57+00:00"
+    },
+    {
+      "tag": "v0.12.1",
+      "sha": "5192841016ab480fee0fb8e4c013187e88b9ed66",
+      "tag_target_author_time_utc": "2021-12-24T22:40:33+00:00"
+    },
+    {
+      "tag": "v0.17.1",
+      "sha": "422d124c7eec2d90a867cf4ed4a154bd6ad9d9ba",
+      "tag_target_author_time_utc": "2022-12-05T19:12:33+00:00"
+    },
+    {
+      "tag": "v0.22.3",
+      "sha": "b01f1f1867136d9b2d7b1392776eb363b482c525",
+      "tag_target_author_time_utc": "2023-05-12T08:05:06+00:00"
+    },
+    {
+      "tag": "v0.28.0",
+      "sha": "97fa117c48a58bee3941e5e8b4393873501afe14",
+      "tag_target_author_time_utc": "2026-02-04T20:19:23+00:00"
+    },
+    {
+      "tag": "v0.29.5",
+      "sha": "0f7d1e536bed9f01dd7161f7637af19bb0908335",
+      "tag_target_author_time_utc": "2026-10-13T12:11:29+00:00"
+    }
+  ],
+  "analyzer_sha256": "0c2e3588e331ee7104bf642509d78b27803e78469a7392a1d2f887b3aa6b65d5",
+  "cached_issues_sha256": "c6c8dc6706ea545f20b8e6e44e8de9e8235f4d016e952e6dfd8717cc626fea8c",
+  "issue_dataset_status": "Legacy closed-bug-only cache; no new issue observations collected",
+  "limitations": [
+    "Legacy uses author time and raw author names.",
+    "Quarterly uses committer time and lowercased email identities; aliases need validation.",
+    "File concentration is activity concentration, not technical debt.",
+    "Paths are not linked across renames; quarterly path results are descriptive only.",
+    "Cross-author edit intervals and previous-touch lag are retained only for legacy comparison.",
+    "Cached issue closure durations are not verified repairs and omit open issues.",
+    "Boundary quarters may be partial; do not compare raw counts without exposure adjustment."
+  ]
+}

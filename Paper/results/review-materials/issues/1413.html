@@ -1,0 +1,79 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #1413: Wrong unix_socket in example config</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #1413: Wrong unix_socket in example config</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/1413">Original issue #1413</a></p><p>Created: 2023-05-03T15:33:16Z; updated: 2023-05-03T18:16:06Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>&lt;!-- Headscale is a multinational community across the globe. Our common language is English. Please consider raising the issue in this language. --&gt;
+
+&lt;!-- If you have a question, please consider using our Discord for asking questions --&gt;
+
+**Issue description**
+
+The default unix_socket value is set to /var/run/headscale.socket in config.go at line 177, but somehow the default_value changed in the example config to /var/run/headscale/headscale.socket.
+
+This was introduced by commit b23a9153df98b9e20911618bb1d6a8d3a9db47ea
+
+PR: WIP
+</pre><h2>Comments, in creation order</h2><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2023-05-03T15:33:16Z · labeled · ohdearaugustin</summary><pre>{
+  &quot;id&quot;: 9156983999,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz885k_T-VzwAAAAIhzHy_&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/9156983999&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;ohdearaugustin&quot;,
+    &quot;id&quot;: 14001491,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE0MDAxNDkx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/14001491?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ohdearaugustin&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ohdearaugustin&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ohdearaugustin/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ohdearaugustin/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ohdearaugustin/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ohdearaugustin/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ohdearaugustin/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ohdearaugustin/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ohdearaugustin/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ohdearaugustin/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ohdearaugustin/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2023-05-03T15:33:16Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2023-05-03T18:16:06Z · closed · juanfont</summary><pre>{
+  &quot;id&quot;: 9158626403,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz885k_T-VzwAAAAIh5Yxj&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/9158626403&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2023-05-03T18:16:06Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

@@ -1,0 +1,148 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #1654: Expire a used key</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #1654: Expire a used key</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/1654">Original issue #1654</a></p><p>Created: 2023-12-15T10:58:03Z; updated: 2024-01-30T00:51:53Z; observed state: closed; reason: not_planned</p><h2>Report body</h2><pre>How to expire a key that has expiry date in future and has been used? 
+```
+ID | Key                                              | Reusable | Ephemeral | Used  | Expiration          | Created   
+26 | 0xsxsxsxsxxsxsxsxsxsxsxsxsxsxsxsxsxsxsxsxsxsxsxx | false    | false     | true  | 2024-02-12 03:34:45 | 2023-11-14 03:34:45 
+```
+
+Error message after executing the following command `headscale pre expire -u myuser 0xsxsxsxsxxsxsxsxsxsxsxsxsxsxsxsxsxsxsxsxsxsxsxx`
+```
+Cannot expire Pre Auth Key: rpc error: code = Unknown desc = AuthKey has already been used
+```
+Headscale version:  0.22.1-debug
+
+</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/1654#issuecomment-1915851509">manju-rn</a></h3><p>Created: 2024-01-30T00:51:49Z; updated: 2024-01-30T00:51:49Z</p><pre>Closing this as this is not really a showstopper</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2023-12-15T10:58:03Z · labeled · manju-rn</summary><pre>{
+  &quot;id&quot;: 11258291232,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz8855zVF_zwAAAAKfC-Qg&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/11258291232&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;manju-rn&quot;,
+    &quot;id&quot;: 26291847,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI2MjkxODQ3&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/26291847?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/manju-rn&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/manju-rn&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/manju-rn/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/manju-rn/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/manju-rn/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/manju-rn/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/manju-rn/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/manju-rn/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/manju-rn/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/manju-rn/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/manju-rn/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2023-12-15T10:58:03Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-01-30T00:51:49Z · commented · manju-rn</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1915851509&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1654#issuecomment-1915851509&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1654&quot;,
+  &quot;id&quot;: 1915851509,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885yMZL1&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;manju-rn&quot;,
+    &quot;id&quot;: 26291847,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI2MjkxODQ3&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/26291847?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/manju-rn&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/manju-rn&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/manju-rn/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/manju-rn/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/manju-rn/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/manju-rn/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/manju-rn/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/manju-rn/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/manju-rn/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/manju-rn/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/manju-rn/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-01-30T00:51:49Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-01-30T00:51:49Z&quot;,
+  &quot;body&quot;: &quot;Closing this as this is not really a showstopper&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1915851509/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;manju-rn&quot;,
+    &quot;id&quot;: 26291847,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI2MjkxODQ3&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/26291847?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/manju-rn&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/manju-rn&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/manju-rn/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/manju-rn/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/manju-rn/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/manju-rn/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/manju-rn/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/manju-rn/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/manju-rn/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/manju-rn/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/manju-rn/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-01-30T00:51:53Z · closed · manju-rn</summary><pre>{
+  &quot;id&quot;: 11635085907,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz8855zVF_zwAAAAK1gVJT&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/11635085907&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;manju-rn&quot;,
+    &quot;id&quot;: 26291847,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI2MjkxODQ3&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/26291847?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/manju-rn&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/manju-rn&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/manju-rn/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/manju-rn/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/manju-rn/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/manju-rn/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/manju-rn/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/manju-rn/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/manju-rn/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/manju-rn/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/manju-rn/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-01-30T00:51:53Z&quot;,
+  &quot;state_reason&quot;: &quot;not_planned&quot;,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

@@ -1,0 +1,664 @@
+commit a9a2001ae7a716a3a21d6bb1aa6bcce5b932272a
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Tue Mar 31 07:17:36 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Tue Mar 31 22:06:25 2026 +0200
+
+    integration: scale remaining hardcoded timeouts and replace pingAllHelper
+    
+    Apply CI-aware scaling to all remaining hardcoded timeouts:
+    
+    - requireAllClientsOfflineStaged: scale the three internal stage
+      timeouts (15s/20s/60s) with ScaledTimeout.
+    - validateReloginComplete: scale requireAllClientsOnline (120s)
+      and requireAllClientsNetInfoAndDERP (3min) calls.
+    - WaitForTailscaleSyncPerUser callers in acl_test.go (3 sites, 60s).
+    - WaitForRunning callers in tags_test.go (10 sites): switch to
+      PeerSyncTimeout() to match convention.
+    - WaitForRunning/WaitForPeers direct callers in route_test.go.
+    - requireAllClientsOnline callers in general_test.go and
+      auth_key_test.go.
+    
+    Replace pingAllHelper with assertPingAll/assertPingAllWithCollect:
+    
+    - Wraps pings in EventuallyWithT so transient docker exec timeouts
+      are retried instead of immediately failing the test.
+    - Timeout scales with the ping matrix size (2s per ping budget for
+      2 full sweeps) so large tests get proportionally more time.
+    - Uses CollectT correctly, fixing the broken EventuallyWithT usage
+      in TestEphemeral where the old t.Errorf bypassed CollectT.
+    - Follows the established assert*/assertWithCollect naming.
+    
+    Updates #3125
+---
+ integration/acl_test.go           | 20 ++++++++++------
+ integration/auth_key_test.go      | 23 +++++++++---------
+ integration/auth_oidc_test.go     |  9 +++----
+ integration/auth_web_flow_test.go | 12 ++++------
+ integration/general_test.go       | 47 ++++++++++++++-----------------------
+ integration/helpers.go            | 49 +++++++++++++++++++++++++--------------
+ integration/route_test.go         |  6 ++---
+ integration/tags_test.go          | 20 ++++++++--------
+ 8 files changed, 93 insertions(+), 93 deletions(-)
+
+diff --git a/integration/acl_test.go b/integration/acl_test.go
+index 5ac70e85..10660582 100644
+--- a/integration/acl_test.go
++++ b/integration/acl_test.go
+@@ -2005,7 +2005,7 @@ func TestACLPolicyPropagationOverTime(t *testing.T) {
+ 		// Wait for peer lists to sync with autogroup:self - ensures cross-user peers are removed
+ 		t.Logf("Iteration %d: Phase 2 - Waiting for peer lists to sync with autogroup:self", iteration)
+ 
+-		err = scenario.WaitForTailscaleSyncPerUser(60*time.Second, 500*time.Millisecond)
++		err = scenario.WaitForTailscaleSyncPerUser(integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond)
+ 		require.NoError(t, err, "iteration %d: Phase 2 - failed to sync after autogroup:self policy", iteration)
+ 
+ 		// Test ALL connectivity (positive and negative) in one block after state is settled
+@@ -2096,7 +2096,7 @@ func TestACLPolicyPropagationOverTime(t *testing.T) {
+ 		// Wait for peer lists to sync after new node addition (now 3 user1 nodes, still autogroup:self)
+ 		t.Logf("Iteration %d: Phase 2b - Waiting for peer lists to sync after new node addition", iteration)
+ 
+-		err = scenario.WaitForTailscaleSyncPerUser(60*time.Second, 500*time.Millisecond)
++		err = scenario.WaitForTailscaleSyncPerUser(integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond)
+ 		require.NoError(t, err, "iteration %d: Phase 2b - failed to sync after new node addition", iteration)
+ 
+ 		// Test ALL connectivity (positive and negative) in one block after state is settled
+@@ -2200,7 +2200,7 @@ func TestACLPolicyPropagationOverTime(t *testing.T) {
+ 		// so nodes only see same-user peers, not all nodes
+ 		t.Logf("Iteration %d: Phase 2b - Waiting for sync after node deletion (with autogroup:self)", iteration)
+ 
+-		err = scenario.WaitForTailscaleSyncPerUser(60*time.Second, 500*time.Millisecond)
++		err = scenario.WaitForTailscaleSyncPerUser(integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond)
+ 		require.NoError(t, err, "iteration %d: failed to sync after node deletion", iteration)
+ 
+ 		// Refresh client lists after deletion to ensure we don't reference the deleted node
+@@ -2763,6 +2763,10 @@ func TestACLTagPropagation(t *testing.T) {
+ 
+ 			// Step 3: Verify final NetMap visibility first (fast signal that
+ 			// the MapResponse propagated to the client).
++			// The full propagation chain (docker exec → gRPC → state update →
++			// batcher delay → MapResponse → noise transport → client processing)
++			// can take over 120s on congested CI runners, so use a generous
++			// base timeout.
+ 			t.Logf("Step 3: Verifying final NetMap visibility (expect visible=%v)", tt.finalAccess)
+ 			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 				status, err := sourceClient.Status()
+@@ -2783,11 +2787,13 @@ func TestACLTagPropagation(t *testing.T) {
+ 				} else {
+ 					assert.False(c, found, "Target should NOT be visible in NetMap after tag change")
+ 				}
+-			}, integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond, "verifying NetMap visibility propagated after tag change")
++			}, integrationutil.ScaledTimeout(120*time.Second), 500*time.Millisecond, "verifying NetMap visibility propagated after tag change")
+ 
+ 			// Step 4: Verify final access state (this is the key test for #2389).
+-			// Checked after NetMap so we know the MapResponse already arrived;
+-			// this only needs to wait for the WireGuard config to apply.
++			// Even though Step 3 confirmed the MapResponse arrived, the full
++			// WireGuard handshake and tunnel establishment can take significant
++			// time on congested CI runners, so use the same generous base
++			// timeout as Step 3.
+ 			t.Logf("Step 4: Verifying final access after tag change (expect success=%v)", tt.finalAccess)
+ 			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 				if tt.finalAccess {
+@@ -2795,7 +2801,7 @@ func TestACLTagPropagation(t *testing.T) {
+ 				} else {
+ 					assertCurlFailWithCollect(c, sourceClient, targetURL, "final access should fail after tag change")
+ 				}
+-			}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "verifying access propagated after tag change")
++			}, integrationutil.ScaledTimeout(120*time.Second), 500*time.Millisecond, "verifying access propagated after tag change")
+ 
+ 			t.Logf("Test %s PASSED: Tag change propagated correctly", tt.name)
+ 		})
+diff --git a/integration/auth_key_test.go b/integration/auth_key_test.go
+index 0d9b83d3..02cf203b 100644
+--- a/integration/auth_key_test.go
++++ b/integration/auth_key_test.go
+@@ -55,7 +55,7 @@ func TestAuthKeyLogoutAndReloginSameUser(t *testing.T) {
+ 			requireNoErrGetHeadscale(t, err)
+ 
+ 			expectedNodes := collectExpectedNodeIDs(t, allClients)
+-			requireAllClientsOnline(t, headscale, expectedNodes, true, "all clients should be connected", 120*time.Second)
++			requireAllClientsOnline(t, headscale, expectedNodes, true, "all clients should be connected", integrationutil.ScaledTimeout(120*time.Second))
+ 
+ 			// Validate that all nodes have NetInfo and DERP servers before logout
+ 			requireAllClientsNetInfoAndDERP(t, headscale, expectedNodes, "all clients should have NetInfo and DERP before logout", 3*time.Minute)
+@@ -104,7 +104,7 @@ func TestAuthKeyLogoutAndReloginSameUser(t *testing.T) {
+ 			requireNoErrLogout(t, err)
+ 
+ 			// After taking down all nodes, verify all systems show nodes offline
+-			requireAllClientsOnline(t, headscale, expectedNodes, false, "all nodes should have logged out", 120*time.Second)
++			requireAllClientsOnline(t, headscale, expectedNodes, false, "all nodes should have logged out", integrationutil.ScaledTimeout(120*time.Second))
+ 
+ 			t.Logf("all clients logged out")
+ 
+@@ -159,7 +159,7 @@ func TestAuthKeyLogoutAndReloginSameUser(t *testing.T) {
+ 				assertLastSeenSet(t, node)
+ 			}
+ 
+-			requireAllClientsOnline(t, headscale, expectedNodes, true, "all clients should be connected to batcher", 120*time.Second)
++			requireAllClientsOnline(t, headscale, expectedNodes, true, "all clients should be connected to batcher", integrationutil.ScaledTimeout(120*time.Second))
+ 
+ 			// Wait for Tailscale sync before validating NetInfo to ensure proper state propagation
+ 			err = scenario.WaitForTailscaleSync()
+@@ -175,8 +175,7 @@ func TestAuthKeyLogoutAndReloginSameUser(t *testing.T) {
+ 				return x.String()
+ 			})
+ 
+-			success := pingAllHelper(t, allClients, allAddrs)
+-			t.Logf("%d successful pings out of %d", success, len(allClients)*len(allIps))
++			assertPingAll(t, allClients, allAddrs)
+ 
+ 			for _, client := range allClients {
+ 				ips, err := client.IPs()
+@@ -253,7 +252,7 @@ func TestAuthKeyLogoutAndReloginNewUser(t *testing.T) {
+ 	expectedNodes := collectExpectedNodeIDs(t, allClients)
+ 
+ 	// Validate initial connection state
+-	requireAllClientsOnline(t, headscale, expectedNodes, true, "all clients should be connected after initial login", 120*time.Second)
++	requireAllClientsOnline(t, headscale, expectedNodes, true, "all clients should be connected after initial login", integrationutil.ScaledTimeout(120*time.Second))
+ 	requireAllClientsNetInfoAndDERP(t, headscale, expectedNodes, "all clients should have NetInfo and DERP after initial login", 3*time.Minute)
+ 
+ 	var (
+@@ -283,7 +282,7 @@ func TestAuthKeyLogoutAndReloginNewUser(t *testing.T) {
+ 	requireNoErrLogout(t, err)
+ 
+ 	// Validate that all nodes are offline after logout
+-	requireAllClientsOnline(t, headscale, expectedNodes, false, "all nodes should be offline after logout", 120*time.Second)
++	requireAllClientsOnline(t, headscale, expectedNodes, false, "all nodes should be offline after logout", integrationutil.ScaledTimeout(120*time.Second))
+ 
+ 	t.Logf("all clients logged out")
+ 
+@@ -323,7 +322,7 @@ func TestAuthKeyLogoutAndReloginNewUser(t *testing.T) {
+ 	}
+ 
+ 	// Validate connection state after relogin as user1
+-	requireAllClientsOnline(t, headscale, expectedUser1Nodes, true, "all user1 nodes should be connected after relogin", 120*time.Second)
++	requireAllClientsOnline(t, headscale, expectedUser1Nodes, true, "all user1 nodes should be connected after relogin", integrationutil.ScaledTimeout(120*time.Second))
+ 	requireAllClientsNetInfoAndDERP(t, headscale, expectedUser1Nodes, "all user1 nodes should have NetInfo and DERP after relogin", 3*time.Minute)
+ 
+ 	// Validate that user2 still has their original nodes after user1's re-authentication
+@@ -399,7 +398,7 @@ func TestAuthKeyLogoutAndReloginSameUserExpiredKey(t *testing.T) {
+ 			expectedNodes := collectExpectedNodeIDs(t, allClients)
+ 
+ 			// Validate initial connection state
+-			requireAllClientsOnline(t, headscale, expectedNodes, true, "all clients should be connected after initial login", 120*time.Second)
++			requireAllClientsOnline(t, headscale, expectedNodes, true, "all clients should be connected after initial login", integrationutil.ScaledTimeout(120*time.Second))
+ 			requireAllClientsNetInfoAndDERP(t, headscale, expectedNodes, "all clients should have NetInfo and DERP after initial login", 3*time.Minute)
+ 
+ 			var (
+@@ -429,7 +428,7 @@ func TestAuthKeyLogoutAndReloginSameUserExpiredKey(t *testing.T) {
+ 			requireNoErrLogout(t, err)
+ 
+ 			// Validate that all nodes are offline after logout
+-			requireAllClientsOnline(t, headscale, expectedNodes, false, "all nodes should be offline after logout", 120*time.Second)
++			requireAllClientsOnline(t, headscale, expectedNodes, false, "all nodes should be offline after logout", integrationutil.ScaledTimeout(120*time.Second))
+ 
+ 			t.Logf("all clients logged out")
+ 
+@@ -535,7 +534,7 @@ func TestAuthKeyDeleteKey(t *testing.T) {
+ 	t.Logf("Node %d (%s) created successfully with auth_key_id=%d", nodeID, nodeName, authKeyID)
+ 
+ 	// Verify node is online
+-	requireAllClientsOnline(t, headscale, []types.NodeID{types.NodeID(nodeID)}, true, "node should be online initially", 120*time.Second)
++	requireAllClientsOnline(t, headscale, []types.NodeID{types.NodeID(nodeID)}, true, "node should be online initially", integrationutil.ScaledTimeout(120*time.Second))
+ 
+ 	// DELETE the pre-auth key using the API
+ 	t.Logf("Deleting pre-auth key ID %d using API", authKeyID)
+@@ -563,7 +562,7 @@ func TestAuthKeyDeleteKey(t *testing.T) {
+ 	// Verify node comes back online
+ 	// This will FAIL without the fix because auth key validation will reject deleted key
+ 	// With the fix, MachineKey identity allows reconnection even with deleted key
+-	requireAllClientsOnline(t, headscale, []types.NodeID{types.NodeID(nodeID)}, true, "node should reconnect after restart despite deleted key", 120*time.Second)
++	requireAllClientsOnline(t, headscale, []types.NodeID{types.NodeID(nodeID)}, true, "node should reconnect after restart despite deleted key", integrationutil.ScaledTimeout(120*time.Second))
+ 
+ 	t.Logf("✓ Node successfully reconnected after its auth key was deleted")
+ }
+diff --git a/integration/auth_oidc_test.go b/integration/auth_oidc_test.go
+index cd1d2ec2..8c79e434 100644
+--- a/integration/auth_oidc_test.go
++++ b/integration/auth_oidc_test.go
+@@ -78,8 +78,7 @@ func TestOIDCAuthenticationPingAll(t *testing.T) {
+ 		return x.String()
+ 	})
+ 
+-	success := pingAllHelper(t, allClients, allAddrs)
+-	t.Logf("%d successful pings out of %d", success, len(allClients)*len(allIps))
++	assertPingAll(t, allClients, allAddrs)
+ 
+ 	headscale, err := scenario.Headscale()
+ 	require.NoError(t, err)
+@@ -189,8 +188,7 @@ func TestOIDCExpireNodesBasedOnTokenExpiry(t *testing.T) {
+ 		return x.String()
+ 	})
+ 
+-	success := pingAllHelper(t, allClients, allAddrs)
+-	t.Logf("%d successful pings out of %d (before expiry)", success, len(allClients)*len(allIps))
++	assertPingAll(t, allClients, allAddrs)
+ 
+ 	// Wait for OIDC token expiry and verify all nodes transition to NeedsLogin.
+ 	// We add extra time to account for:
+@@ -452,8 +450,7 @@ func TestOIDCAuthenticationWithPKCE(t *testing.T) {
+ 		return x.String()
+ 	})
+ 
+-	success := pingAllHelper(t, allClients, allAddrs)
+-	t.Logf("%d successful pings out of %d", success, len(allClients)*len(allIps))
++	assertPingAll(t, allClients, allAddrs)
+ }
+ 
+ // TestOIDCReloginSameNodeNewUser tests the scenario where:
+diff --git a/integration/auth_web_flow_test.go b/integration/auth_web_flow_test.go
+index f836c3e4..f8f66df0 100644
+--- a/integration/auth_web_flow_test.go
++++ b/integration/auth_web_flow_test.go
+@@ -50,8 +50,7 @@ func TestAuthWebFlowAuthenticationPingAll(t *testing.T) {
+ 		return x.String()
+ 	})
+ 
+-	success := pingAllHelper(t, allClients, allAddrs)
+-	t.Logf("%d successful pings out of %d", success, len(allClients)*len(allIps))
++	assertPingAll(t, allClients, allAddrs)
+ }
+ 
+ func TestAuthWebFlowLogoutAndReloginSameUser(t *testing.T) {
+@@ -88,8 +87,7 @@ func TestAuthWebFlowLogoutAndReloginSameUser(t *testing.T) {
+ 		return x.String()
+ 	})
+ 
+-	success := pingAllHelper(t, allClients, allAddrs)
+-	t.Logf("%d successful pings out of %d", success, len(allClients)*len(allIps))
++	assertPingAll(t, allClients, allAddrs)
+ 
+ 	headscale, err := scenario.Headscale()
+ 	requireNoErrGetHeadscale(t, err)
+@@ -169,8 +167,7 @@ func TestAuthWebFlowLogoutAndReloginSameUser(t *testing.T) {
+ 		return x.String()
+ 	})
+ 
+-	success = pingAllHelper(t, allClients, allAddrs)
+-	t.Logf("%d successful pings out of %d", success, len(allClients)*len(allIps))
++	assertPingAll(t, allClients, allAddrs)
+ 
+ 	for _, client := range allClients {
+ 		ips, err := client.IPs()
+@@ -370,6 +367,5 @@ func TestAuthWebFlowLogoutAndReloginNewUser(t *testing.T) {
+ 		return x.String()
+ 	})
+ 
+-	success := pingAllHelper(t, allClients, allAddrs)
+-	t.Logf("%d successful pings out of %d after web flow user switch", success, len(allClients)*len(allIps))
++	assertPingAll(t, allClients, allAddrs)
+ }
+diff --git a/integration/general_test.go b/integration/general_test.go
+index 955e28dc..9a797145 100644
+--- a/integration/general_test.go
++++ b/integration/general_test.go
+@@ -68,7 +68,7 @@ func TestPingAllByIP(t *testing.T) {
+ 		require.NoError(t, err, "failed to parse node ID")
+ 		expectedNodes = append(expectedNodes, types.NodeID(nodeID))
+ 	}
+-	requireAllClientsOnline(t, hs, expectedNodes, true, "all clients should be online across all systems", 30*time.Second)
++	requireAllClientsOnline(t, hs, expectedNodes, true, "all clients should be online across all systems", integrationutil.ScaledTimeout(30*time.Second))
+ 
+ 	// assertClientsState(t, allClients)
+ 
+@@ -82,10 +82,9 @@ func TestPingAllByIP(t *testing.T) {
+ 
+ 	// Test our DebugBatcher functionality
+ 	t.Logf("Testing DebugBatcher functionality...")
+-	requireAllClientsOnline(t, headscale, expectedNodes, true, "all clients should be connected to the batcher", 30*time.Second)
++	requireAllClientsOnline(t, headscale, expectedNodes, true, "all clients should be connected to the batcher", integrationutil.ScaledTimeout(30*time.Second))
+ 
+-	success := pingAllHelper(t, allClients, allAddrs)
+-	t.Logf("%d successful pings out of %d", success, len(allClients)*len(allIps))
++	assertPingAll(t, allClients, allAddrs)
+ }
+ 
+ func TestPingAllByIPPublicDERP(t *testing.T) {
+@@ -127,8 +126,7 @@ func TestPingAllByIPPublicDERP(t *testing.T) {
+ 		return x.String()
+ 	})
+ 
+-	success := pingAllHelper(t, allClients, allAddrs)
+-	t.Logf("%d successful pings out of %d", success, len(allClients)*len(allIps))
++	assertPingAll(t, allClients, allAddrs)
+ }
+ 
+ func TestEphemeral(t *testing.T) {
+@@ -195,8 +193,7 @@ func testEphemeralWithOptions(t *testing.T, opts ...hsic.Option) {
+ 		return x.String()
+ 	})
+ 
+-	success := pingAllHelper(t, allClients, allAddrs)
+-	t.Logf("%d successful pings out of %d", success, len(allClients)*len(allIps))
++	assertPingAll(t, allClients, allAddrs)
+ 
+ 	for _, client := range allClients {
+ 		err := client.Logout()
+@@ -275,8 +272,7 @@ func TestEphemeral2006DeletedTooQuickly(t *testing.T) {
+ 	})
+ 
+ 	// All ephemeral nodes should be online and reachable.
+-	success := pingAllHelper(t, allClients, allAddrs)
+-	t.Logf("%d successful pings out of %d", success, len(allClients)*len(allIps))
++	assertPingAll(t, allClients, allAddrs)
+ 
+ 	// Take down all clients, this should start an expiry timer for each.
+ 	for _, client := range allClients {
+@@ -301,10 +297,8 @@ func TestEphemeral2006DeletedTooQuickly(t *testing.T) {
+ 		err = scenario.WaitForTailscaleSync()
+ 		assert.NoError(ct, err)
+ 
+-		success = pingAllHelper(t, allClients, allAddrs)
+-		assert.Greater(ct, success, 0, "Ephemeral nodes should be able to reconnect and ping")
++		assertPingAllWithCollect(ct, allClients, allAddrs)
+ 	}, integrationutil.ScaledTimeout(60*time.Second), 2*time.Second)
+-	t.Logf("%d successful pings out of %d", success, len(allClients)*len(allIps))
+ 
+ 	// Take down all clients, this should start an expiry timer for each.
+ 	for _, client := range allClients {
+@@ -367,9 +361,7 @@ func TestPingAllByHostname(t *testing.T) {
+ 	allHostnames, err := scenario.ListTailscaleClientsFQDNs()
+ 	requireNoErrListFQDN(t, err)
+ 
+-	success := pingAllHelper(t, allClients, allHostnames)
+-
+-	t.Logf("%d successful pings out of %d", success, len(allClients)*len(allClients))
++	assertPingAll(t, allClients, allHostnames)
+ }
+ 
+ // If subtests are parallel, then they will start before setup is run.
+@@ -972,8 +964,7 @@ func TestExpireNode(t *testing.T) {
+ 		return x.String()
+ 	})
+ 
+-	success := pingAllHelper(t, allClients, allAddrs)
+-	t.Logf("before expire: %d successful pings out of %d", success, len(allClients)*len(allIps))
++	assertPingAll(t, allClients, allAddrs)
+ 
+ 	for _, client := range allClients {
+ 		assert.EventuallyWithT(t, func(ct *assert.CollectT) {
+@@ -1300,8 +1291,7 @@ func TestNodeOnlineStatus(t *testing.T) {
+ 		return x.String()
+ 	})
+ 
+-	success := pingAllHelper(t, allClients, allAddrs)
+-	t.Logf("before expire: %d successful pings out of %d", success, len(allClients)*len(allIps))
++	assertPingAll(t, allClients, allAddrs)
+ 
+ 	for _, client := range allClients {
+ 		assert.EventuallyWithT(t, func(c *assert.CollectT) {
+@@ -1441,10 +1431,9 @@ func TestPingAllByIPManyUpDown(t *testing.T) {
+ 		require.NoError(t, err)
+ 		expectedNodes = append(expectedNodes, types.NodeID(nodeID))
+ 	}
+-	requireAllClientsOnline(t, headscale, expectedNodes, true, "all clients should be connected to batcher", 30*time.Second)
++	requireAllClientsOnline(t, headscale, expectedNodes, true, "all clients should be connected to batcher", integrationutil.ScaledTimeout(30*time.Second))
+ 
+-	success := pingAllHelper(t, allClients, allAddrs)
+-	t.Logf("%d successful pings out of %d", success, len(allClients)*len(allIps))
++	assertPingAll(t, allClients, allAddrs)
+ 
+ 	for run := range 3 {
+ 		t.Logf("Starting DownUpPing run %d at %s", run+1, time.Now().Format(TimestampFormat))
+@@ -1467,7 +1456,7 @@ func TestPingAllByIPManyUpDown(t *testing.T) {
+ 		t.Logf("All nodes taken down at %s", time.Now().Format(TimestampFormat))
+ 
+ 		// After taking down all nodes, verify all systems show nodes offline
+-		requireAllClientsOnline(t, headscale, expectedNodes, false, fmt.Sprintf("Run %d: all nodes should be offline after Down()", run+1), 120*time.Second)
++		requireAllClientsOnline(t, headscale, expectedNodes, false, fmt.Sprintf("Run %d: all nodes should be offline after Down()", run+1), integrationutil.ScaledTimeout(120*time.Second))
+ 
+ 		for _, client := range allClients {
+ 			c := client
+@@ -1483,7 +1472,7 @@ func TestPingAllByIPManyUpDown(t *testing.T) {
+ 		t.Logf("All nodes brought up at %s", time.Now().Format(TimestampFormat))
+ 
+ 		// After bringing up all nodes, verify batcher shows all reconnected
+-		requireAllClientsOnline(t, headscale, expectedNodes, true, fmt.Sprintf("Run %d: all nodes should be reconnected after Up()", run+1), 120*time.Second)
++		requireAllClientsOnline(t, headscale, expectedNodes, true, fmt.Sprintf("Run %d: all nodes should be reconnected after Up()", run+1), integrationutil.ScaledTimeout(120*time.Second))
+ 
+ 		// Wait for sync and successful pings after nodes come back up
+ 		err = scenario.WaitForTailscaleSync()
+@@ -1491,10 +1480,9 @@ func TestPingAllByIPManyUpDown(t *testing.T) {
+ 
+ 		t.Logf("All nodes synced up %s", time.Now().Format(TimestampFormat))
+ 
+-		requireAllClientsOnline(t, headscale, expectedNodes, true, fmt.Sprintf("Run %d: all systems should show nodes online after reconnection", run+1), 60*time.Second)
++		requireAllClientsOnline(t, headscale, expectedNodes, true, fmt.Sprintf("Run %d: all systems should show nodes online after reconnection", run+1), integrationutil.ScaledTimeout(60*time.Second))
+ 
+-		success := pingAllHelper(t, allClients, allAddrs)
+-		assert.Equalf(t, len(allClients)*len(allIps), success, "%d successful pings out of %d", success, len(allClients)*len(allIps))
++		assertPingAll(t, allClients, allAddrs)
+ 
+ 		// Clean up context for this run
+ 		cancel()
+@@ -1532,8 +1520,7 @@ func Test2118DeletingOnlineNodePanics(t *testing.T) {
+ 		return x.String()
+ 	})
+ 
+-	success := pingAllHelper(t, allClients, allAddrs)
+-	t.Logf("%d successful pings out of %d", success, len(allClients)*len(allIps))
++	assertPingAll(t, allClients, allAddrs)
+ 
+ 	headscale, err := scenario.Headscale()
+ 	require.NoError(t, err)
+diff --git a/integration/helpers.go b/integration/helpers.go
+index 660e45c7..aec71a5a 100644
+--- a/integration/helpers.go
++++ b/integration/helpers.go
+@@ -153,8 +153,8 @@ func validateLogoutComplete(t *testing.T, headscale ControlServer, expectedNodes
+ func validateReloginComplete(t *testing.T, headscale ControlServer, expectedNodes []types.NodeID) {
+ 	t.Helper()
+ 
+-	requireAllClientsOnline(t, headscale, expectedNodes, true, "all clients should be connected after relogin", 120*time.Second)
+-	requireAllClientsNetInfoAndDERP(t, headscale, expectedNodes, "all clients should have NetInfo and DERP after relogin", 3*time.Minute)
++	requireAllClientsOnline(t, headscale, expectedNodes, true, "all clients should be connected after relogin", integrationutil.ScaledTimeout(120*time.Second))
++	requireAllClientsNetInfoAndDERP(t, headscale, expectedNodes, "all clients should have NetInfo and DERP after relogin", integrationutil.ScaledTimeout(3*time.Minute))
+ }
+ 
+ // requireAllClientsOnline validates that all nodes are online/offline across all headscale systems
+@@ -400,7 +400,7 @@ func requireAllClientsOfflineStaged(t *testing.T, headscale ControlServer, expec
+ 		}
+ 
+ 		assert.True(c, allBatcherOffline, "All nodes should be disconnected from batcher")
+-	}, 15*time.Second, 1*time.Second, "batcher disconnection validation")
++	}, integrationutil.ScaledTimeout(15*time.Second), 1*time.Second, "batcher disconnection validation")
+ 
+ 	// Stage 2: Verify nodestore offline status (up to 15 seconds due to disconnect detection delay)
+ 	t.Logf("Stage 2: Verifying nodestore offline status for %d nodes (allowing for 10s disconnect detection delay)", len(expectedNodes))
+@@ -426,7 +426,7 @@ func requireAllClientsOfflineStaged(t *testing.T, headscale ControlServer, expec
+ 		}
+ 
+ 		assert.True(c, allNodeStoreOffline, "All nodes should be offline in nodestore")
+-	}, 20*time.Second, 1*time.Second, "nodestore offline validation")
++	}, integrationutil.ScaledTimeout(20*time.Second), 1*time.Second, "nodestore offline validation")
+ 
+ 	// Stage 3: Verify map response propagation (longest delay due to peer update timing)
+ 	t.Logf("Stage 3: Verifying map response propagation for %d nodes (allowing for peer map update delays)", len(expectedNodes))
+@@ -468,7 +468,7 @@ func requireAllClientsOfflineStaged(t *testing.T, headscale ControlServer, expec
+ 		}
+ 
+ 		assert.True(c, allMapResponsesOffline, "All nodes should be absent from peer map responses")
+-	}, 60*time.Second, 2*time.Second, "map response propagation validation")
++	}, integrationutil.ScaledTimeout(60*time.Second), 2*time.Second, "map response propagation validation")
+ 
+ 	t.Logf("All stages completed: nodes are fully offline across all systems")
+ }
+@@ -582,28 +582,43 @@ func assertTailscaleNodesLogout(t assert.TestingT, clients []TailscaleClient) {
+ 	}
+ }
+ 
+-// pingAllHelper performs ping tests between all clients and addresses, returning success count.
+-// This is used to validate network connectivity in integration tests.
+-// Returns the total number of successful ping operations.
++// assertPingAll verifies that every client can ping every address.
++// The entire ping matrix is retried via EventuallyWithT to handle
++// transient failures on slow CI runners. The timeout scales with
++// the number of pings since they run serially and each can take
++// up to ~2s on CI (docker exec overhead + ping timeout).
+ //
+ //nolint:unparam // opts is variadic for extensibility even though callers currently don't pass options
+-func pingAllHelper(t *testing.T, clients []TailscaleClient, addrs []string, opts ...tsic.PingOption) int {
++func assertPingAll(t *testing.T, clients []TailscaleClient, addrs []string, opts ...tsic.PingOption) {
+ 	t.Helper()
+ 
+-	success := 0
++	// Each ping can take up to ~2s on CI. Budget for 2 full sweeps
++	// (one that might have transient failures + one clean pass).
++	pingCount := len(clients) * len(addrs)
++	perPingBudget := 2 * time.Second
++	timeout := max(
++		// Floor at 30s for small matrices.
++		integrationutil.ScaledTimeout(time.Duration(pingCount)*perPingBudget*2), integrationutil.ScaledTimeout(30*time.Second))
+ 
++	assert.EventuallyWithT(t, func(c *assert.CollectT) {
++		assertPingAllWithCollect(c, clients, addrs, opts...)
++	}, timeout, 2*time.Second,
++		"all %d clients should be able to ping all %d addresses",
++		len(clients), len(addrs))
++}
++
++// assertPingAllWithCollect pings every address from every client and
++// collects failures on the provided CollectT. Pings run serially to
++// avoid overloading the Docker daemon on resource-constrained CI
++// runners. For use inside EventuallyWithT blocks when the caller
++// needs custom timeout or retry control.
++func assertPingAllWithCollect(c *assert.CollectT, clients []TailscaleClient, addrs []string, opts ...tsic.PingOption) {
+ 	for _, client := range clients {
+ 		for _, addr := range addrs {
+ 			err := client.Ping(addr, opts...)
+-			if err != nil {
+-				t.Errorf("failed to ping %s from %s: %s", addr, client.Hostname(), err)
+-			} else {
+-				success++
+-			}
++			assert.NoError(c, err, "ping from %s to %s", client.Hostname(), addr) //nolint:testifylint // CollectT requires assert
+ 		}
+ 	}
+-
+-	return success
+ }
+ 
+ // pingDerpAllHelper performs DERP-based ping tests between all clients and addresses.
+diff --git a/integration/route_test.go b/integration/route_test.go
+index ac1c35dc..9175f76f 100644
+--- a/integration/route_test.go
++++ b/integration/route_test.go
+@@ -2430,7 +2430,7 @@ func TestAutoApproveMultiNetwork(t *testing.T) {
+ 
+ 					// Wait for the node to be fully running before getting its ID
+ 					// This is especially important for webauth flow where login is asynchronous
+-					err = routerUsernet1.WaitForRunning(30 * time.Second)
++					err = routerUsernet1.WaitForRunning(integrationutil.ScaledTimeout(30 * time.Second))
+ 					require.NoError(t, err)
+ 
+ 					// Wait for bidirectional peer synchronization.
+@@ -2439,12 +2439,12 @@ func TestAutoApproveMultiNetwork(t *testing.T) {
+ 					// tunnels may not be established despite peers appearing in netmaps.
+ 
+ 					// Router waits for all existing clients
+-					err = routerUsernet1.WaitForPeers(len(allClients), 60*time.Second, 1*time.Second)
++					err = routerUsernet1.WaitForPeers(len(allClients), integrationutil.PeerSyncTimeout(), integrationutil.PeerSyncRetryInterval())
+ 					require.NoError(t, err, "router failed to see all peers")
+ 
+ 					// All clients wait for the router (they should see 6 peers including the router)
+ 					for _, existingClient := range allClients {
+-						err = existingClient.WaitForPeers(len(allClients), 60*time.Second, 1*time.Second)
++						err = existingClient.WaitForPeers(len(allClients), integrationutil.PeerSyncTimeout(), integrationutil.PeerSyncRetryInterval())
+ 						require.NoErrorf(t, err, "client %s failed to see all peers including router", existingClient.Hostname())
+ 					}
+ 
+diff --git a/integration/tags_test.go b/integration/tags_test.go
+index 9ebc6cfa..1d66c593 100644
+--- a/integration/tags_test.go
++++ b/integration/tags_test.go
+@@ -1356,7 +1356,7 @@ func TestTagsUserLoginOwnedTagAtRegistration(t *testing.T) {
+ 	require.NoError(t, err)
+ 
+ 	// Wait for client to be running
+-	err = client.WaitForRunning(120 * time.Second)
++	err = client.WaitForRunning(integrationutil.PeerSyncTimeout())
+ 	require.NoError(t, err)
+ 
+ 	// Verify node has the advertised tag
+@@ -1563,7 +1563,7 @@ func TestTagsUserLoginAddTagViaCLIReauth(t *testing.T) {
+ 	err = scenario.runHeadscaleRegister(tagTestUser, body)
+ 	require.NoError(t, err)
+ 
+-	err = client.WaitForRunning(120 * time.Second)
++	err = client.WaitForRunning(integrationutil.PeerSyncTimeout())
+ 	require.NoError(t, err)
+ 
+ 	// Verify initial tag
+@@ -1654,7 +1654,7 @@ func TestTagsUserLoginRemoveTagViaCLIReauth(t *testing.T) {
+ 	err = scenario.runHeadscaleRegister(tagTestUser, body)
+ 	require.NoError(t, err)
+ 
+-	err = client.WaitForRunning(120 * time.Second)
++	err = client.WaitForRunning(integrationutil.PeerSyncTimeout())
+ 	require.NoError(t, err)
+ 
+ 	// Verify initial tags
+@@ -1745,7 +1745,7 @@ func TestTagsUserLoginCLINoOpAfterAdminAssignment(t *testing.T) {
+ 	err = scenario.runHeadscaleRegister(tagTestUser, body)
+ 	require.NoError(t, err)
+ 
+-	err = client.WaitForRunning(120 * time.Second)
++	err = client.WaitForRunning(integrationutil.PeerSyncTimeout())
+ 	require.NoError(t, err)
+ 
+ 	// Get node ID
+@@ -1862,7 +1862,7 @@ func TestTagsUserLoginCLICannotRemoveAdminTags(t *testing.T) {
+ 	err = scenario.runHeadscaleRegister(tagTestUser, body)
+ 	require.NoError(t, err)
+ 
+-	err = client.WaitForRunning(120 * time.Second)
++	err = client.WaitForRunning(integrationutil.PeerSyncTimeout())
+ 	require.NoError(t, err)
+ 
+ 	// Get node ID
+@@ -2548,7 +2548,7 @@ func TestTagsIssue2978ReproTagReplacement(t *testing.T) {
+ 	require.NoError(t, err)
+ 
+ 	// Wait for client to be running
+-	err = client.WaitForRunning(120 * time.Second)
++	err = client.WaitForRunning(integrationutil.PeerSyncTimeout())
+ 	require.NoError(t, err)
+ 
+ 	// Wait for initial registration with tag:valid-owned
+@@ -2851,7 +2851,7 @@ func TestTagsUserLoginReauthWithEmptyTagsRemovesAllTags(t *testing.T) {
+ 		err = scenario.runHeadscaleRegister(tagTestUser, body)
+ 		require.NoError(t, err)
+ 
+-		err = client.WaitForRunning(120 * time.Second)
++		err = client.WaitForRunning(integrationutil.PeerSyncTimeout())
+ 		require.NoError(t, err)
+ 
+ 		// Verify initial tags
+@@ -2902,7 +2902,7 @@ func TestTagsUserLoginReauthWithEmptyTagsRemovesAllTags(t *testing.T) {
+ 			err = scenario.runHeadscaleRegister(tagTestUser, body)
+ 			require.NoError(t, err)
+ 
+-			err = client.WaitForRunning(120 * time.Second)
++			err = client.WaitForRunning(integrationutil.PeerSyncTimeout())
+ 			require.NoError(t, err)
+ 			t.Logf("Completed reauth with empty tags")
+ 		} else {
+@@ -3145,7 +3145,7 @@ func TestTagsAuthKeyConvertToUserViaCLIRegister(t *testing.T) {
+ 	err = client.Login(headscale.GetEndpoint(), authKey.GetKey())
+ 	require.NoError(t, err)
+ 
+-	err = client.WaitForRunning(120 * time.Second)
++	err = client.WaitForRunning(integrationutil.PeerSyncTimeout())
+ 	require.NoError(t, err)
+ 
+ 	// Verify initial state: node is tagged
+@@ -3182,7 +3182,7 @@ func TestTagsAuthKeyConvertToUserViaCLIRegister(t *testing.T) {
+ 	err = scenario.runHeadscaleRegister(tagTestUser, body)
+ 	require.NoError(t, err)
+ 
+-	err = client.WaitForRunning(120 * time.Second)
++	err = client.WaitForRunning(integrationutil.PeerSyncTimeout())
+ 	require.NoError(t, err)
+ 
+ 	// Step 4: Verify node is now user-owned and the mapper didn't panic.

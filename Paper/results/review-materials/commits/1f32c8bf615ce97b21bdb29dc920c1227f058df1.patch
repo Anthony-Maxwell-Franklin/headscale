@@ -1,0 +1,172 @@
+commit 1f32c8bf615ce97b21bdb29dc920c1227f058df1
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Mon Feb 2 14:32:22 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Tue Feb 3 16:53:15 2026 +0100
+
+    policy/v2: add IsTagged() guards to prevent panics on tagged nodes
+    
+    Three related issues where User().ID() is called on potentially tagged
+    nodes without first checking IsTagged():
+    
+    1. compileACLWithAutogroupSelf: the autogroup:self block at line 166
+       lacks the !node.IsTagged() guard that compileSSHPolicy already has.
+       If a tagged node is the compilation target, node.User().ID() may
+       panic. Tagged nodes should never participate in autogroup:self.
+    
+    2. compileSSHPolicy: the IsTagged() check is on the right side of &&,
+       so n.User().ID() evaluates first and may panic before short-circuit
+       can prevent it. Swap to !n.IsTagged() && n.User().ID() == ... to
+       match the already-correct order in compileACLWithAutogroupSelf.
+    
+    3. invalidateAutogroupSelfCache: calls User().ID() at ~10 sites
+       without IsTagged() guards. Tagged nodes don't participate in
+       autogroup:self, so they should be skipped when collecting affected
+       users and during cache lookup. Tag status transitions are handled
+       by using the non-tagged version's user ID.
+    
+    Fixes #2990
+---
+ hscontrol/policy/v2/filter.go |  7 +++---
+ hscontrol/policy/v2/policy.go | 57 +++++++++++++++++++++++++++++++++----------
+ 2 files changed, 48 insertions(+), 16 deletions(-)
+
+diff --git a/hscontrol/policy/v2/filter.go b/hscontrol/policy/v2/filter.go
+index 65bf88ae..7ed675ad 100644
+--- a/hscontrol/policy/v2/filter.go
++++ b/hscontrol/policy/v2/filter.go
+@@ -163,7 +163,8 @@ func (pol *Policy) compileACLWithAutogroupSelf(
+ 	}
+ 
+ 	// Handle autogroup:self destinations (if any)
+-	if len(autogroupSelfDests) > 0 {
++	// Tagged nodes don't participate in autogroup:self (identity is tag-based, not user-based)
++	if len(autogroupSelfDests) > 0 && !node.IsTagged() {
+ 		// Pre-filter to same-user untagged devices once - reuse for both sources and destinations
+ 		sameUserNodes := make([]types.NodeView, 0)
+ 		for _, n := range nodes.All() {
+@@ -347,7 +348,7 @@ func (pol *Policy) compileSSHPolicy(
+ 			// Build destination set for autogroup:self (same-user untagged devices only)
+ 			var dest netipx.IPSetBuilder
+ 			for _, n := range nodes.All() {
+-				if n.User().ID() == node.User().ID() && !n.IsTagged() {
++				if !n.IsTagged() && n.User().ID() == node.User().ID() {
+ 					n.AppendToIPSet(&dest)
+ 				}
+ 			}
+@@ -363,7 +364,7 @@ func (pol *Policy) compileSSHPolicy(
+ 				// Pre-filter to same-user untagged devices for efficiency
+ 				sameUserNodes := make([]types.NodeView, 0)
+ 				for _, n := range nodes.All() {
+-					if n.User().ID() == node.User().ID() && !n.IsTagged() {
++					if !n.IsTagged() && n.User().ID() == node.User().ID() {
+ 						sameUserNodes = append(sameUserNodes, n)
+ 					}
+ 				}
+diff --git a/hscontrol/policy/v2/policy.go b/hscontrol/policy/v2/policy.go
+index 730ee9f4..6472658a 100644
+--- a/hscontrol/policy/v2/policy.go
++++ b/hscontrol/policy/v2/policy.go
+@@ -813,34 +813,55 @@ func (pm *PolicyManager) invalidateAutogroupSelfCache(oldNodes, newNodes views.S
+ 		newNodeMap[node.ID()] = node
+ 	}
+ 
+-	// Track which users are affected by changes
++	// Track which users are affected by changes.
++	// Tagged nodes don't participate in autogroup:self (identity is tag-based),
++	// so we skip them when collecting affected users, except when tag status changes
++	// (which affects the user's device set).
+ 	affectedUsers := make(map[uint]struct{})
+ 
+-	// Check for removed nodes
++	// Check for removed nodes (only non-tagged nodes affect autogroup:self)
+ 	for nodeID, oldNode := range oldNodeMap {
+ 		if _, exists := newNodeMap[nodeID]; !exists {
+-			affectedUsers[oldNode.User().ID()] = struct{}{}
++			if !oldNode.IsTagged() {
++				affectedUsers[oldNode.User().ID()] = struct{}{}
++			}
+ 		}
+ 	}
+ 
+-	// Check for added nodes
++	// Check for added nodes (only non-tagged nodes affect autogroup:self)
+ 	for nodeID, newNode := range newNodeMap {
+ 		if _, exists := oldNodeMap[nodeID]; !exists {
+-			affectedUsers[newNode.User().ID()] = struct{}{}
++			if !newNode.IsTagged() {
++				affectedUsers[newNode.User().ID()] = struct{}{}
++			}
+ 		}
+ 	}
+ 
+ 	// Check for modified nodes (user changes, tag changes, IP changes)
+ 	for nodeID, newNode := range newNodeMap {
+ 		if oldNode, exists := oldNodeMap[nodeID]; exists {
+-			// Check if user changed
+-			if oldNode.User().ID() != newNode.User().ID() {
+-				affectedUsers[oldNode.User().ID()] = struct{}{}
+-				affectedUsers[newNode.User().ID()] = struct{}{}
++			// Check if tag status changed — this affects the user's autogroup:self device set.
++			// Use the non-tagged version to get the user ID safely.
++			if oldNode.IsTagged() != newNode.IsTagged() {
++				if !oldNode.IsTagged() {
++					// Was untagged, now tagged: user lost a device
++					affectedUsers[oldNode.User().ID()] = struct{}{}
++				} else {
++					// Was tagged, now untagged: user gained a device
++					affectedUsers[newNode.User().ID()] = struct{}{}
++				}
++
++				continue
+ 			}
+ 
+-			// Check if tag status changed
+-			if oldNode.IsTagged() != newNode.IsTagged() {
++			// Skip tagged nodes for remaining checks — they don't participate in autogroup:self
++			if newNode.IsTagged() {
++				continue
++			}
++
++			// Check if user changed (both versions are non-tagged here)
++			if oldNode.User().ID() != newNode.User().ID() {
++				affectedUsers[oldNode.User().ID()] = struct{}{}
+ 				affectedUsers[newNode.User().ID()] = struct{}{}
+ 			}
+ 
+@@ -861,9 +882,9 @@ func (pm *PolicyManager) invalidateAutogroupSelfCache(oldNodes, newNodes views.S
+ 		}
+ 	}
+ 
+-	// Clear cache entries for affected users only
++	// Clear cache entries for affected users only.
+ 	// For autogroup:self, we need to clear all nodes belonging to affected users
+-	// because autogroup:self rules depend on the entire user's device set
++	// because autogroup:self rules depend on the entire user's device set.
+ 	for nodeID := range pm.filterRulesMap {
+ 		// Find the user for this cached node
+ 		var nodeUserID uint
+@@ -872,6 +893,12 @@ func (pm *PolicyManager) invalidateAutogroupSelfCache(oldNodes, newNodes views.S
+ 		// Check in new nodes first
+ 		for _, node := range newNodes.All() {
+ 			if node.ID() == nodeID {
++				// Tagged nodes don't participate in autogroup:self,
++				// so their cache doesn't need user-based invalidation.
++				if node.IsTagged() {
++					found = true
++					break
++				}
+ 				nodeUserID = node.User().ID()
+ 				found = true
+ 				break
+@@ -882,6 +909,10 @@ func (pm *PolicyManager) invalidateAutogroupSelfCache(oldNodes, newNodes views.S
+ 		if !found {
+ 			for _, node := range oldNodes.All() {
+ 				if node.ID() == nodeID {
++					if node.IsTagged() {
++						found = true
++						break
++					}
+ 					nodeUserID = node.User().ID()
+ 					found = true
+ 					break

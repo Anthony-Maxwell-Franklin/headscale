@@ -1,0 +1,448 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #254: client need certificate?</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #254: client need certificate?</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/254">Original issue #254</a></p><p>Created: 2021-12-12T14:59:46Z; updated: 2022-02-26T21:02:24Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>&lt;!-- If you have a question, please consider using our Discord for asking questions --&gt;
+
+**Issue description**
+When TLS key and cert is enabled in headscale server, tailscale client cannot connect, as server said client need to provide certificate.
+After check with code, seems like bellow code is responsible, is this behavior expected?
+Seems make no sense to require tailscale client provide any certificate.
+```
+app.go
+ClientAuth:   tls.RequireAnyClientCert,
+```
+
+&lt;!-- Please add your issue description. --&gt;
+
+
+
+&lt;!-- Steps to reproduce the behavior. --&gt;
+
+
+&lt;!-- Please add relevant information about your system. For example:
+- latest
+- 1.16
+- linux
+- Kernel version
+- The relevant config parameters you used
+- Log output
+--&gt;
+</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/254#issuecomment-993266201">negbie</a></h3><p>Created: 2021-12-14T08:16:30Z; updated: 2021-12-14T08:16:30Z</p><pre>https://www.cloudflare.com/de-de/learning/access-management/what-is-mutual-tls/</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/254#issuecomment-994269280">woday-dev</a></h3><p>Created: 2021-12-15T03:59:22Z; updated: 2021-12-15T04:00:03Z</p><pre>&gt; https://www.cloudflare.com/de-de/learning/access-management/what-is-mutual-tls/
+
+Thanks for explanation,  it&#x27;s mutual-tls and safe, that&#x27;s not the issue.
+Yet seems no option to let tailscale client provide certificate, thus handshake cannot be made.
+</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/254#issuecomment-1000598816">ficapy</a></h3><p>Created: 2021-12-24T01:27:05Z; updated: 2021-12-24T01:27:05Z</p><pre>I have the same problem, using HTTP can be deployed successfully, but using HTTPS, the client can&#x27;t connect</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/254#issuecomment-1024300882">ImpostorKeanu</a></h3><p>Created: 2022-01-28T14:57:05Z; updated: 2022-01-28T14:57:05Z</p><pre>I&#x27;m a bit perplexed by this as well.
+
+I understand it&#x27;s possible to issue client certificates once one has a CA, but I&#x27;m unsure how to supply that certificate to Tailscale client&#x27;s for authentication.
+
+I&#x27;m quite new to Tailscale and I&#x27;ve done some Google due diligence but I&#x27;ve come up empty handed.
+
+Tailscale itself has a `cert` subcommand but it looks to be concerned with procuring certs from the Tailscale network.
+
+I&#x27;d be grateful for a tip on this.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/254#issuecomment-1024380261">ImpostorKeanu</a></h3><p>Created: 2022-01-28T16:26:05Z; updated: 2022-01-28T16:26:05Z</p><pre>Quite certain I&#x27;m not doing it right, but I implemented an Nginx reverse HTTP proxy using [this guidance](https://app.smallstep.com/hello-mtls/doc/client/nginx-proxy) at the perimeter of my network.
+
+It gets the job done, though joining nodes is obviously limited to my home network.</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2021-12-12T14:59:46Z · labeled · woday-dev</summary><pre>{
+  &quot;id&quot;: 5752908982,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz885APlfIzwAAAAFW5my2&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/5752908982&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;woday-dev&quot;,
+    &quot;id&quot;: 6330730,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjYzMzA3MzA=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6330730?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/woday-dev&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/woday-dev&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/woday-dev/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/woday-dev/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/woday-dev/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/woday-dev/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/woday-dev/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/woday-dev/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/woday-dev/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/woday-dev/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/woday-dev/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2021-12-12T14:59:46Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2021-12-14T08:16:30Z · commented · negbie</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/993266201&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/254#issuecomment-993266201&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/254&quot;,
+  &quot;id&quot;: 993266201,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8847NAoZ&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;negbie&quot;,
+    &quot;id&quot;: 20154956,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIwMTU0OTU2&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/20154956?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/negbie&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/negbie&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/negbie/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/negbie/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/negbie/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/negbie/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/negbie/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/negbie/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/negbie/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/negbie/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/negbie/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2021-12-14T08:16:30Z&quot;,
+  &quot;updated_at&quot;: &quot;2021-12-14T08:16:30Z&quot;,
+  &quot;body&quot;: &quot;https://www.cloudflare.com/de-de/learning/access-management/what-is-mutual-tls/&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/993266201/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;negbie&quot;,
+    &quot;id&quot;: 20154956,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIwMTU0OTU2&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/20154956?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/negbie&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/negbie&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/negbie/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/negbie/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/negbie/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/negbie/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/negbie/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/negbie/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/negbie/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/negbie/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/negbie/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2021-12-15T03:59:22Z · commented · woday-dev</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/994269280&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/254#issuecomment-994269280&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/254&quot;,
+  &quot;id&quot;: 994269280,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8847Q1hg&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;woday-dev&quot;,
+    &quot;id&quot;: 6330730,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjYzMzA3MzA=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6330730?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/woday-dev&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/woday-dev&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/woday-dev/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/woday-dev/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/woday-dev/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/woday-dev/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/woday-dev/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/woday-dev/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/woday-dev/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/woday-dev/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/woday-dev/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2021-12-15T03:59:22Z&quot;,
+  &quot;updated_at&quot;: &quot;2021-12-15T04:00:03Z&quot;,
+  &quot;body&quot;: &quot;&gt; https://www.cloudflare.com/de-de/learning/access-management/what-is-mutual-tls/\r\n\r\nThanks for explanation,  it&#x27;s mutual-tls and safe, that&#x27;s not the issue.\r\nYet seems no option to let tailscale client provide certificate, thus handshake cannot be made.\r\n&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/994269280/reactions&quot;,
+    &quot;total_count&quot;: 1,
+    &quot;+1&quot;: 1,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;woday-dev&quot;,
+    &quot;id&quot;: 6330730,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjYzMzA3MzA=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6330730?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/woday-dev&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/woday-dev&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/woday-dev/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/woday-dev/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/woday-dev/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/woday-dev/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/woday-dev/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/woday-dev/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/woday-dev/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/woday-dev/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/woday-dev/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2021-12-24T01:27:05Z · commented · ficapy</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1000598816&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/254#issuecomment-1000598816&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/254&quot;,
+  &quot;id&quot;: 1000598816,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8847o-0g&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;ficapy&quot;,
+    &quot;id&quot;: 3191500,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjMxOTE1MDA=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/3191500?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ficapy&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ficapy&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ficapy/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ficapy/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ficapy/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ficapy/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ficapy/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ficapy/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ficapy/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ficapy/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ficapy/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2021-12-24T01:27:05Z&quot;,
+  &quot;updated_at&quot;: &quot;2021-12-24T01:27:05Z&quot;,
+  &quot;body&quot;: &quot;I have the same problem, using HTTP can be deployed successfully, but using HTTPS, the client can&#x27;t connect&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1000598816/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;ficapy&quot;,
+    &quot;id&quot;: 3191500,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjMxOTE1MDA=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/3191500?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ficapy&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ficapy&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ficapy/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ficapy/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ficapy/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ficapy/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ficapy/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ficapy/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ficapy/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ficapy/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ficapy/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2022-01-28T14:57:05Z · commented · ImpostorKeanu</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1024300882&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/254#issuecomment-1024300882&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/254&quot;,
+  &quot;id&quot;: 1024300882,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8849DZdS&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;ImpostorKeanu&quot;,
+    &quot;id&quot;: 11574161,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjExNTc0MTYx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/11574161?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ImpostorKeanu&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ImpostorKeanu&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2022-01-28T14:57:05Z&quot;,
+  &quot;updated_at&quot;: &quot;2022-01-28T14:57:05Z&quot;,
+  &quot;body&quot;: &quot;I&#x27;m a bit perplexed by this as well.\r\n\r\nI understand it&#x27;s possible to issue client certificates once one has a CA, but I&#x27;m unsure how to supply that certificate to Tailscale client&#x27;s for authentication.\r\n\r\nI&#x27;m quite new to Tailscale and I&#x27;ve done some Google due diligence but I&#x27;ve come up empty handed.\r\n\r\nTailscale itself has a `cert` subcommand but it looks to be concerned with procuring certs from the Tailscale network.\r\n\r\nI&#x27;d be grateful for a tip on this.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1024300882/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;ImpostorKeanu&quot;,
+    &quot;id&quot;: 11574161,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjExNTc0MTYx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/11574161?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ImpostorKeanu&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ImpostorKeanu&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2022-01-28T16:26:05Z · commented · ImpostorKeanu</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1024380261&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/254#issuecomment-1024380261&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/254&quot;,
+  &quot;id&quot;: 1024380261,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8849Ds1l&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;ImpostorKeanu&quot;,
+    &quot;id&quot;: 11574161,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjExNTc0MTYx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/11574161?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ImpostorKeanu&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ImpostorKeanu&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2022-01-28T16:26:05Z&quot;,
+  &quot;updated_at&quot;: &quot;2022-01-28T16:26:05Z&quot;,
+  &quot;body&quot;: &quot;Quite certain I&#x27;m not doing it right, but I implemented an Nginx reverse HTTP proxy using [this guidance](https://app.smallstep.com/hello-mtls/doc/client/nginx-proxy) at the perimeter of my network.\r\n\r\nIt gets the job done, though joining nodes is obviously limited to my home network.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1024380261/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;ImpostorKeanu&quot;,
+    &quot;id&quot;: 11574161,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjExNTc0MTYx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/11574161?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ImpostorKeanu&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ImpostorKeanu&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ImpostorKeanu/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2022-02-26T21:02:24Z · closed · kradalby</summary><pre>{
+  &quot;id&quot;: 6147052841,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz885APlfIzwAAAAFuZJUp&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/6147052841&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2022-02-26T21:02:24Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

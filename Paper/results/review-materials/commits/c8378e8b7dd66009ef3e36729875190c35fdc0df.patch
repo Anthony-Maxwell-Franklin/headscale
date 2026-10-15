@@ -1,0 +1,31 @@
+commit c8378e8b7dd66009ef3e36729875190c35fdc0df
+Author:     Juan Font Alonso <juanfontalonso@gmail.com>
+AuthorDate: Wed Jun 22 14:40:40 2022 +0200
+Commit:     Juan Font Alonso <juanfontalonso@gmail.com>
+CommitDate: Wed Jun 22 14:40:40 2022 +0200
+
+    Quick fix to segfault on CLI when Headscale is not running (fix #652)
+---
+ cmd/headscale/cli/utils.go | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/cmd/headscale/cli/utils.go b/cmd/headscale/cli/utils.go
+index 327c8c14..50bd15f4 100644
+--- a/cmd/headscale/cli/utils.go
++++ b/cmd/headscale/cli/utils.go
+@@ -55,6 +55,7 @@ func getHeadscaleCLIClient() (context.Context, v1.HeadscaleServiceClient, *grpc.
+ 			Err(err).
+ 			Caller().
+ 			Msgf("Failed to load configuration")
++		os.Exit(-1) // we get here if logging is supressed (i.e., json output)
+ 	}
+ 
+ 	log.Debug().
+@@ -116,6 +117,7 @@ func getHeadscaleCLIClient() (context.Context, v1.HeadscaleServiceClient, *grpc.
+ 	conn, err := grpc.DialContext(ctx, address, grpcOptions...)
+ 	if err != nil {
+ 		log.Fatal().Caller().Err(err).Msgf("Could not connect: %v", err)
++		os.Exit(-1) // we get here if logging is supressed (i.e., json output)
+ 	}
+ 
+ 	client := v1.NewHeadscaleServiceClient(conn)

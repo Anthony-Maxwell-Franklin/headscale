@@ -1,0 +1,938 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #3512: [Bug] 0.29: ViaRoutesForPeer re-resolves the whole policy for every viewer/peer pair; netmap never delivered to nodes with ~950 peers</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #3512: [Bug] 0.29: ViaRoutesForPeer re-resolves the whole policy for every viewer/peer pair; netmap never delivered to nodes with ~950 peers</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/3512">Original issue #3512</a></p><p>Created: 2026-09-29T20:45:05Z; updated: 2026-10-08T10:43:48Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+After upgrading 0.26.1 → 0.27.1 → 0.28.0 → 0.29.4 (one step at a time), our two HA subnet routers never received a netmap again. We had to roll back to 0.26.1 by restoring the database. The policy uses **no `via` grant, no `grants` at all, and no `autogroup:self`** — only `groups`, `hosts`, `tagOwners` and `acls`.
+
+**Tailnet size**
+
+- 1026 nodes (100–180 online), 685 users, PostgreSQL
+- 2 HA subnet routers advertising ~60 routes each. They have **946 peers each**; the average node has 5.9 peers (`/debug/nodestore`)
+- Policy: 50 `acls` rules, 341 destinations in total, 54 groups listing 2056 usernames
+
+**Symptoms on 0.29.4**
+
+- headscale CPU: 4–9 cores (0.2–0.6 on 0.26.1, ~1.3 on 0.27.1 and 0.28.0)
+- Almost every `/machine/map` request ends with `bytes=0`
+- Routers register fine (`machineAuthorized=true`), then never reach `Running`
+- Clients log `PollNetMap: ... unexpected EOF` every 60 s (reverse proxy read timeout). With the proxy timeout raised to 3600 s, they log `control: map response long-poll timed out!` every 120 s instead, and the request is queued again
+- CLI calls exceed the 5 s deadline (`DeadlineExceeded`); `headscale nodes rename` took ~15 s
+
+**Reproduced in isolation**: a local headscale 0.29.4 on a copy of the database, no reverse proxy, **a single client** registered as the router&#x27;s user. One core is busy at 100 %, one map was eventually delivered after **96 s** (`bytes=366760 elapsed=96213`), the next request ended with `bytes=0` after 157 s because the client gave up at 120 s.
+
+**On 0.26.1, same data, same router**: the netmap arrives within 1 second of registration, and a 30 s CPU profile shows 1.5 s of CPU in total.
+
+**CPU profile on 0.29.4 (production, 6 s, 26 s of samples)** — 89 % of the time is in:
+
+```
+mapper.(*Batcher).worker
+ mapper.generateMapResponse
+  mapper.(*MapResponseBuilder).buildTailPeers
+   types.NodeView.TailNode
+    state.(*State).RoutesForPeer
+     policy/v2.(*PolicyManager).ViaRoutesForPeer     23.27s  89.36%
+      policy/v2.(*Group).Resolve                     23.11s  88.75%
+       policy/v2.(*Username).resolve                 21.75s  83.53%
+        policy/v2.(*Username).resolveUser            14.40s  55.30%
+```
+
+**Goroutine dump at the same time**: 106 goroutines waiting in `mapper.(*Batcher).MapResponseFromChange` (called from `AddNode`), 4 workers computing inside `ViaRoutesForPeer`, 2–3 workers waiting on a mutex in `Batcher.worker`.
+
+**What we think happens (reading v0.29.4)**
+
+Three factors multiply:
+
+1. `buildTailPeers` (`hscontrol/mapper/builder.go`) calls `State.RoutesForPeer` → `ViaRoutesForPeer` for **every peer**, including peers that advertise no route at all (only 3 of our 1026 nodes have routes).
+2. `ViaRoutesForPeer` (`hscontrol/policy/v2/policy.go`) converts every ACL to grants and resolves the sources and destinations of **all** of them before checking `len(grant.Via) == 0`. With no `via` grant in the policy, the result is always empty, so all that work is discarded. The function comment already says: &quot;Hot callers should memoise by (policy-hash, viewer-id) rather than invoking this per-pair.&quot;
+3. `aclToGrants` (`hscontrol/policy/v2/types.go`) emits **one grant per destination**, each carrying the full source list. Our 50 ACL rules become 341 grants, so a rule with 67 destinations has its sources resolved 67 times.
+
+Each `Username.resolve` walks all users and then all nodes, with no cache, and a username matching no user also builds a formatted error.
+
+For our policy this gives 17 691 username resolutions per (viewer, peer) pair, i.e. about 30 million comparisons per pair and about 28.6 billion for one map with 946 peers, which matches the ~96 s we measured.
+
+Related: #3346 (same symptoms after 0.28 → 0.29.1, on a ~200 device tailnet).
+
+
+### Expected Behavior
+
+Netmap generation time on 0.29 should stay in the same order of magnitude as on 0.26 for a policy that does not use `via`.
+
+Possible fixes, from cheapest to most complete:
+
+1. In `ViaRoutesForPeer`, return early when no grant in the policy has a `via` tag (ACL-derived grants never have one). This alone removes the cost for every policy without `via`.
+2. In `RoutesForPeer` / `buildTailPeers`, skip the via computation for peers that advertise no subnet or exit route.
+3. Resolve grant sources and destinations once per policy change (or memoise per policy hash and viewer), instead of once per (viewer, peer) pair.
+4. When converting ACLs with `aclToGrants` for this purpose, keep one grant per rule instead of one per destination.
+
+We are happy to test a patch on a copy of our database.
+
+
+### Steps To Reproduce
+
+1. Use a tailnet with about 1000 nodes and several hundred users, and a policy made of `acls` rules only, with large groups as sources and many destinations per rule (ours: 50 rules, 341 destinations, 54 groups, 2056 usernames). No `grants`, no `via`.
+2. Make sure at least one node can see most of the tailnet as peers (in our case a subnet router reachable by everyone: 946 peers).
+3. Run headscale 0.29.4 and connect that node.
+4. Watch `/machine/map` for that node: the first map takes about 96 s on an otherwise idle server with a single client, and is never delivered when other clients are connected. CPU stays at one full core per busy worker.
+
+Workaround we are evaluating (computed, not yet fully measured): rewriting the `acls` rules as native `grants` with all destinations in one grant (`&quot;ip&quot;: [&quot;*&quot;]`) brings the number of source resolutions per pair from 341 down to 52, and removing usernames that match no user brings username resolutions from 17 691 down to 1 025. The compiled filter (`/debug/filter`) is byte-for-byte identical to the one produced by the original `acls` policy.
+
+
+### Environment
+
+```markdown
+- OS: Kubernetes (GKE), official container image
+- Headscale version: 0.29.4 (also went through 0.27.1 and 0.28.0; rolled back to 0.26.1)
+- Tailscale version: 1.84.2 and 1.102.5 on the subnet routers (containerboot), 1.80 to 1.102 on clients
+- Database: PostgreSQL 17
+- Policy mode: database
+```
+
+### Runtime environment
+
+- [x] Headscale is behind a (reverse) proxy
+- [x] Headscale runs in a container
+
+### Debug information
+
+We cannot share the database, the policy or client netmaps as they are: they contain real user and customer names. We can produce an anonymised policy with the same shape and the same counts if that helps, and we can test a patch on a copy of the database.
+
+**Policy shape** (mode `database`)
+
+| Section | Count |
+|---|---|
+| `acls` rules | 50, all `accept`, none with `proto` |
+| destinations | 341 in total (335 with port `*`), mostly `hosts` aliases, 34 tags |
+| sources | 55 groups, 16 tags, 7 usernames |
+| `groups` | 54, listing 2056 usernames (1585 distinct), 1189 of which match no user |
+| `hosts` | 65 |
+| `tagOwners` | 22 |
+| `grants`, `ssh`, `autoApprovers`, `autogroup:*`, `via` | none |
+
+`headscale policy check` accepts this policy on 0.27.1, 0.28.0 and 0.29.4.
+
+**Headscale configuration** (environment variables, secrets and URLs removed)
+
+```
+HEADSCALE_POLICY_MODE=database
+HEADSCALE_DATABASE_TYPE=postgres
+HEADSCALE_PREFIXES_V4=100.64.0.0/10
+HEADSCALE_PREFIXES_V6=fd7a:115c:a1e0::/48
+HEADSCALE_DNS_MAGIC_DNS=true
+HEADSCALE_DERP_URLS=https://controlplane.tailscale.com/derpmap/default
+HEADSCALE_DERP_SERVER_ENABLED=false
+HEADSCALE_LOG_LEVEL=info
+oidc: enabled, email_verified_required: false
+tuning: defaults (we also tried node_store_batch_size=1000, node_store_batch_timeout=5000ms, batch_change_delay=10s, batcher_workers=4, without restoring service)
+```
+
+**Resource usage and timings by version** (same tailnet, same evening, Prometheus)
+
+| | 0.26.1 | 0.27.1 | 0.28.0 | 0.29.4 |
+|---|---|---|---|---|
+| CPU, average (cores) | 0.33 | 1.24 | 1.37 | 3.52 |
+| CPU, max (cores) | 1.03 | 1.33 | 1.41 | 9.47 |
+| `headscale_nodestore_peers_calculation_duration_seconds`, average | n/a | 9.4 s | 7.6 s | 13.0 s |
+| subnet routers available | 2 | 2 | 2 | 0 |
+| first netmap for a router with 946 peers | ≤ 1 s | not measured | not measured | never within 120 s |
+
+**Router log on 0.29.4** (Tailscale 1.102.5, `TS_BOOT_TIMEOUT=4m`, reverse proxy timeout raised to 3600 s)
+
+```
+19:00:54 control: RegisterReq: got response; nodeKeyExpired=false, machineAuthorized=true; authURL=false
+19:00:54 health(warnable=login-state): ok
+19:02:54 control: map response long-poll timed out!
+19:02:54 Received error: PollNetMap: Post &quot;https://&lt;server&gt;/machine/map&quot;: context canceled
+```
+
+**Headscale log on 0.29.4** (isolated reproduction, single client)
+
+```
+INF http request bytes=366760 elapsed=96213.596872 method=POST path=/machine/map proto=HTTP/2.0 status=200
+INF http request bytes=0 elapsed=157059.834707 method=POST path=/machine/map proto=HTTP/2.0 status=200
+ERR cannot write update to client error=&quot;http2: stream closed&quot; component=poll
+```
+
+**Goroutine dump on 0.29.4** (production, `/debug/pprof/goroutine?debug=1`, 370 goroutines)
+
+```
+106  mapper.(*Batcher).MapResponseFromChange &lt; mapper.(*Batcher).AddNode &lt; (*mapSession).serveLongPoll
+  3  policy/v2.(*Username).resolveUser &lt; (*Username).resolve &lt; (*Group).resolve &lt; (*PolicyManager).ViaRoutesForPeer &lt; (*State).RoutesForPeer
+  1  types.(*Node).AppendToIPSet &lt; (*Username).resolve &lt; (*Group).resolve &lt; (*PolicyManager).ViaRoutesForPeer
+  3  sync.(*Mutex).Lock &lt; mapper.(*Batcher).worker
+```
+
+The full CPU profiles (0.26.1 and 0.29.4) are available on request.
+</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/3512#issuecomment-5898633485">barthdvs</a></h3><p>Created: 2026-09-29T20:51:39Z; updated: 2026-09-29T20:51:39Z</p><pre>Follow-up with measurements. We reproduced the problem offline on a copy of the database and measured each step of the upgrade path with a real client.
+
+**Protocol**: database restored from a dump taken on 0.26.1, one Tailscale 1.102.5 client registered under the subnet router&#x27;s user, its 60 routes advertised and approved, then the client restarted with its state. The timer stops when the client is `Running` and has received its peers. Same machine for all runs, no reverse proxy, no other client.
+
+**First netmap for a node with 946 peers**
+
+| Version | First netmap | headscale CPU time | Registering a node |
+|---|---|---|---|
+| 0.26.1 | 2.6 s | 0.1 s | 2.4 s |
+| 0.27.1 | 10.3–11.3 s | 10–12 s | 20.0 s |
+| 0.28.0 | 10.3–15.4 s | 11–16 s | 18.8–24.1 s |
+| 0.29.4 | 82.8–86.1 s | 90–92 s | 11.9 s |
+
+On 0.29.4, after a second restart of the client, the netmap was **never delivered within 600 s** (2 runs out of 2), with `map response long-poll timed out!` every 120 s.
+
+**This is not a deadlock or an endless loop.** Goroutine dumps taken every 25 s during the failing case show one worker computing in `resolveUser` / `AppendToIPSet`, and `headscale_mapresponse_generated_total` keeps increasing slowly. The computation is simply too slow, and the work started for a request that the client has already given up on (after 120 s) is not cancelled, so the queue for that node never drains.
+
+**Where the time goes** (CPU profiles)
+
+| Case | Hot path | Share |
+|---|---|---|
+| 0.29.4, netmap of the router | `generateMapResponse → buildTailPeers → TailNode → RoutesForPeer → ViaRoutesForPeer → Group.Resolve → Username.resolve → resolveUser` | 90 % |
+| 0.29.4, registering a node | `snapshotFromNodes → BuildPeerMap` | 59 % |
+| 0.28.0, netmap of the router | `snapshotFromNodes → BuildPeerMap` | 77 % |
+
+**Control experiment**: with an allow-all policy on 0.29.4, the same node gets its netmap in 2.8–7.2 s with 1026 peers. The cost comes from resolving the policy, not from the size of the netmap.
+
+**Workarounds measured on 0.29.4** (no code change)
+
+| Change | First netmap | After restart | Peers |
+|---|---|---|---|
+| none | 86.1 s | fails at 600 s | 946 |
+| `tuning` (`node_store_batch_size=1000`, `node_store_batch_timeout=5000ms`, `batch_change_delay=10s`, `batcher_workers=4`) and `node.routes.ha.probe_interval: 0s` | 98.3 s | fails at 600 s | 946 |
+| router converted to a tagged node | 88.8 s | not measured | 946 |
+| usernames matching no user removed from groups | 43.9 s | 60.9 s | 946 |
+| 477 stale nodes deleted (expired, or offline for more than 90 days) | 36.0 s | 44.8 s | 514 |
+| `acls` rewritten as native `grants`, one grant per rule (52 instead of 341) | 19.4 s | 14.2 s | 946 |
+| `grants` and unmatched usernames removed | 12.7 s | 12.6 s | 946 |
+| `grants`, unmatched usernames removed, stale nodes deleted | 9.0 s | 4.6 s, 8.7 s | 514 |
+
+With the last combination and 12 clients restarted together with headscale (2 routers, 10 regular clients): regular clients get their netmap in 7.9–9.4 s, routers in 12.6 s and 12.9 s.
+
+The `grants` rewrite is equivalent: the compiled filter from `/debug/filter` is identical to the one produced by the original `acls` policy, and the router keeps its 946 peers. All variants pass `headscale policy check` on 0.29.4.
+
+**Takeaways**
+
+- Offline, stale and expired nodes still count as peers, so they cost as much as online ones.
+- Writing the same rules as `acls` costs about 4 times more than writing them as `grants`, because `aclToGrants` emits one grant per destination and the sources are resolved again for each of them.
+- An early return in `ViaRoutesForPeer` when the policy has no `via` grant should bring 0.29 back to the 0.28 numbers for policies like ours.
+
+Correction to the description above: the 96 s figure came from a log line read during an earlier run; with the protocol described here the first netmap takes 82.8–86.1 s.
+
+Possibly related: #3417, #3108, #3501, #3156.
+
+We can run more measurements on this copy of the database, or test a patch, if that is useful.
+</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/3512#issuecomment-6023643493">joscdk</a></h3><p>Created: 2026-10-06T19:14:35Z; updated: 2026-10-06T19:14:35Z</p><pre>@kradalby 
+- We hit the same thing on 0.29.3/0.29.4: about 450 nodes, SQLite, a file-mode policy with 5 rules, no via, no groups.
+- Same hot path, but through AutoGroup.Resolve (we use autogroup:member/autogroup:tagged as sources) rather than Group.Resolve/resolveUser. That shows it isn&#x27;t specific to groups. Any source alias pays it.
+- Profile: 82% of CPU in ViaRoutesForPeer. The host maxed out every weekday, and the write queue backed up.
+- Confirming the reporter&#x27;s workaround: acls → grants, one per rule, took our 16 effective grants down to 5. That&#x27;s 3.3× on this path, with an identical compiled filter, which we verified across the whole fleet.
+
+Opened #3536 as a potential fix, but it got rejected by the vouch system. If you agree with the fix, any chance i can be allowed to open it?</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/3512#issuecomment-6034247113">joscdk</a></h3><p>Created: 2026-10-07T08:39:46Z; updated: 2026-10-07T08:39:46Z</p><pre>Thank you @kradalby new PR https://github.com/juanfont/headscale/pull/3538</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2026-09-29T20:45:07Z · labeled · barthdvs</summary><pre>{
+  &quot;id&quot;: 32113194403,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABT_rK788AAAAHehh1ow&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32113194403&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;barthdvs&quot;,
+    &quot;id&quot;: 102857359,
+    &quot;node_id&quot;: &quot;U_kgDOBiF6jw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/102857359?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/barthdvs&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/barthdvs&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/barthdvs/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/barthdvs/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/barthdvs/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/barthdvs/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/barthdvs/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/barthdvs/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/barthdvs/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/barthdvs/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/barthdvs/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-29T20:45:07Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-29T20:47:07Z · subscribed · barthdvs</summary><pre>{
+  &quot;id&quot;: 32113322807,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz888AAAABT_rK788AAAAHehprNw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32113322807&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;barthdvs&quot;,
+    &quot;id&quot;: 102857359,
+    &quot;node_id&quot;: &quot;U_kgDOBiF6jw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/102857359?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/barthdvs&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/barthdvs&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/barthdvs/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/barthdvs/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/barthdvs/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/barthdvs/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/barthdvs/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/barthdvs/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/barthdvs/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/barthdvs/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/barthdvs/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-29T20:47:07Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-29T20:51:39Z · commented · barthdvs</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/5898633485&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3512#issuecomment-5898633485&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3512&quot;,
+  &quot;id&quot;: 5898633485,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABX5YBDQ&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;barthdvs&quot;,
+    &quot;id&quot;: 102857359,
+    &quot;node_id&quot;: &quot;U_kgDOBiF6jw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/102857359?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/barthdvs&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/barthdvs&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/barthdvs/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/barthdvs/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/barthdvs/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/barthdvs/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/barthdvs/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/barthdvs/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/barthdvs/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/barthdvs/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/barthdvs/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-09-29T20:51:39Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-09-29T20:51:39Z&quot;,
+  &quot;body&quot;: &quot;Follow-up with measurements. We reproduced the problem offline on a copy of the database and measured each step of the upgrade path with a real client.\n\n**Protocol**: database restored from a dump taken on 0.26.1, one Tailscale 1.102.5 client registered under the subnet router&#x27;s user, its 60 routes advertised and approved, then the client restarted with its state. The timer stops when the client is `Running` and has received its peers. Same machine for all runs, no reverse proxy, no other client.\n\n**First netmap for a node with 946 peers**\n\n| Version | First netmap | headscale CPU time | Registering a node |\n|---|---|---|---|\n| 0.26.1 | 2.6 s | 0.1 s | 2.4 s |\n| 0.27.1 | 10.3–11.3 s | 10–12 s | 20.0 s |\n| 0.28.0 | 10.3–15.4 s | 11–16 s | 18.8–24.1 s |\n| 0.29.4 | 82.8–86.1 s | 90–92 s | 11.9 s |\n\nOn 0.29.4, after a second restart of the client, the netmap was **never delivered within 600 s** (2 runs out of 2), with `map response long-poll timed out!` every 120 s.\n\n**This is not a deadlock or an endless loop.** Goroutine dumps taken every 25 s during the failing case show one worker computing in `resolveUser` / `AppendToIPSet`, and `headscale_mapresponse_generated_total` keeps increasing slowly. The computation is simply too slow, and the work started for a request that the client has already given up on (after 120 s) is not cancelled, so the queue for that node never drains.\n\n**Where the time goes** (CPU profiles)\n\n| Case | Hot path | Share |\n|---|---|---|\n| 0.29.4, netmap of the router | `generateMapResponse → buildTailPeers → TailNode → RoutesForPeer → ViaRoutesForPeer → Group.Resolve → Username.resolve → resolveUser` | 90 % |\n| 0.29.4, registering a node | `snapshotFromNodes → BuildPeerMap` | 59 % |\n| 0.28.0, netmap of the router | `snapshotFromNodes → BuildPeerMap` | 77 % |\n\n**Control experiment**: with an allow-all policy on 0.29.4, the same node gets its netmap in 2.8–7.2 s with 1026 peers. The cost comes from resolving the policy, not from the size of the netmap.\n\n**Workarounds measured on 0.29.4** (no code change)\n\n| Change | First netmap | After restart | Peers |\n|---|---|---|---|\n| none | 86.1 s | fails at 600 s | 946 |\n| `tuning` (`node_store_batch_size=1000`, `node_store_batch_timeout=5000ms`, `batch_change_delay=10s`, `batcher_workers=4`) and `node.routes.ha.probe_interval: 0s` | 98.3 s | fails at 600 s | 946 |\n| router converted to a tagged node | 88.8 s | not measured | 946 |\n| usernames matching no user removed from groups | 43.9 s | 60.9 s | 946 |\n| 477 stale nodes deleted (expired, or offline for more than 90 days) | 36.0 s | 44.8 s | 514 |\n| `acls` rewritten as native `grants`, one grant per rule (52 instead of 341) | 19.4 s | 14.2 s | 946 |\n| `grants` and unmatched usernames removed | 12.7 s | 12.6 s | 946 |\n| `grants`, unmatched usernames removed, stale nodes deleted | 9.0 s | 4.6 s, 8.7 s | 514 |\n\nWith the last combination and 12 clients restarted together with headscale (2 routers, 10 regular clients): regular clients get their netmap in 7.9–9.4 s, routers in 12.6 s and 12.9 s.\n\nThe `grants` rewrite is equivalent: the compiled filter from `/debug/filter` is identical to the one produced by the original `acls` policy, and the router keeps its 946 peers. All variants pass `headscale policy check` on 0.29.4.\n\n**Takeaways**\n\n- Offline, stale and expired nodes still count as peers, so they cost as much as online ones.\n- Writing the same rules as `acls` costs about 4 times more than writing them as `grants`, because `aclToGrants` emits one grant per destination and the sources are resolved again for each of them.\n- An early return in `ViaRoutesForPeer` when the policy has no `via` grant should bring 0.29 back to the 0.28 numbers for policies like ours.\n\nCorrection to the description above: the 96 s figure came from a log line read during an earlier run; with the protocol described here the first netmap takes 82.8–86.1 s.\n\nPossibly related: #3417, #3108, #3501, #3156.\n\nWe can run more measurements on this copy of the database, or test a patch, if that is useful.\n&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/5898633485/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;barthdvs&quot;,
+    &quot;id&quot;: 102857359,
+    &quot;node_id&quot;: &quot;U_kgDOBiF6jw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/102857359?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/barthdvs&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/barthdvs&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/barthdvs/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/barthdvs/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/barthdvs/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/barthdvs/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/barthdvs/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/barthdvs/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/barthdvs/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/barthdvs/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/barthdvs/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-09-30T13:49:22Z · labeled · kradalby</summary><pre>{
+  &quot;id&quot;: 32170561556,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABT_rK788AAAAHfYPQFA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32170561556&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-30T13:49:22Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;performance&quot;,
+    &quot;color&quot;: &quot;60571D&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-30T13:49:22Z · labeled · kradalby</summary><pre>{
+  &quot;id&quot;: 32170561665,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABT_rK788AAAAHfYPQgQ&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32170561665&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-30T13:49:22Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;routes&quot;,
+    &quot;color&quot;: &quot;e46439&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-30T13:49:22Z · labeled · kradalby</summary><pre>{
+  &quot;id&quot;: 32170561748,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABT_rK788AAAAHfYPQ1A&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32170561748&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-30T13:49:22Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;well described ❤️&quot;,
+    &quot;color&quot;: &quot;C2E0C6&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-06T07:31:39Z · subscribed · pejakm</summary><pre>{
+  &quot;id&quot;: 32577078276,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz888AAAABT_rK788AAAAHlb7EBA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32577078276&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;pejakm&quot;,
+    &quot;id&quot;: 913292,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjkxMzI5Mg==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/913292?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/pejakm&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/pejakm&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/pejakm/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/pejakm/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/pejakm/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/pejakm/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/pejakm/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/pejakm/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/pejakm/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/pejakm/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/pejakm/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-10-06T07:31:39Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-06T19:14:35Z · commented · joscdk</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/6023643493&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3512#issuecomment-6023643493&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3512&quot;,
+  &quot;id&quot;: 6023643493,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABZwmBZQ&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;joscdk&quot;,
+    &quot;id&quot;: 2535140,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI1MzUxNDA=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/2535140?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/joscdk&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/joscdk&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/joscdk/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/joscdk/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/joscdk/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/joscdk/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/joscdk/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/joscdk/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/joscdk/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/joscdk/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/joscdk/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-10-06T19:14:35Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-10-06T19:14:35Z&quot;,
+  &quot;body&quot;: &quot;@kradalby \n- We hit the same thing on 0.29.3/0.29.4: about 450 nodes, SQLite, a file-mode policy with 5 rules, no via, no groups.\n- Same hot path, but through AutoGroup.Resolve (we use autogroup:member/autogroup:tagged as sources) rather than Group.Resolve/resolveUser. That shows it isn&#x27;t specific to groups. Any source alias pays it.\n- Profile: 82% of CPU in ViaRoutesForPeer. The host maxed out every weekday, and the write queue backed up.\n- Confirming the reporter&#x27;s workaround: acls → grants, one per rule, took our 16 effective grants down to 5. That&#x27;s 3.3× on this path, with an identical compiled filter, which we verified across the whole fleet.\n\nOpened #3536 as a potential fix, but it got rejected by the vouch system. If you agree with the fix, any chance i can be allowed to open it?&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/6023643493/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;joscdk&quot;,
+    &quot;id&quot;: 2535140,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI1MzUxNDA=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/2535140?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/joscdk&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/joscdk&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/joscdk/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/joscdk/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/joscdk/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/joscdk/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/joscdk/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/joscdk/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/joscdk/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/joscdk/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/joscdk/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-10-06T19:14:37Z · mentioned · kradalby</summary><pre>{
+  &quot;id&quot;: 32630153101,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz888AAAABT_rK788AAAAHmOifjQ&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32630153101&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-10-06T19:14:37Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-06T19:14:37Z · subscribed · kradalby</summary><pre>{
+  &quot;id&quot;: 32630153193,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz888AAAABT_rK788AAAAHmOif6Q&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32630153193&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-10-06T19:14:37Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-07T08:39:46Z · commented · joscdk</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/6034247113&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3512#issuecomment-6034247113&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3512&quot;,
+  &quot;id&quot;: 6034247113,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABZ6tNyQ&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;joscdk&quot;,
+    &quot;id&quot;: 2535140,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI1MzUxNDA=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/2535140?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/joscdk&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/joscdk&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/joscdk/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/joscdk/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/joscdk/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/joscdk/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/joscdk/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/joscdk/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/joscdk/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/joscdk/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/joscdk/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-10-07T08:39:46Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-10-07T08:39:46Z&quot;,
+  &quot;body&quot;: &quot;Thank you @kradalby new PR https://github.com/juanfont/headscale/pull/3538&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/6034247113/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;joscdk&quot;,
+    &quot;id&quot;: 2535140,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI1MzUxNDA=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/2535140?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/joscdk&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/joscdk&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/joscdk/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/joscdk/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/joscdk/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/joscdk/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/joscdk/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/joscdk/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/joscdk/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/joscdk/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/joscdk/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-10-07T08:39:48Z · mentioned · kradalby</summary><pre>{
+  &quot;id&quot;: 32673073423,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz888AAAABT_rK788AAAAHm3eJDw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32673073423&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-10-07T08:39:48Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-07T08:39:48Z · subscribed · kradalby</summary><pre>{
+  &quot;id&quot;: 32673073518,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz888AAAABT_rK788AAAAHm3eJbg&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32673073518&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-10-07T08:39:48Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-08T09:25:56Z · referenced · joscdk</summary><pre>{
+  &quot;id&quot;: 32769881760,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABT_rK788AAAAHoTy2oA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32769881760&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;joscdk&quot;,
+    &quot;id&quot;: 2535140,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI1MzUxNDA=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/2535140?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/joscdk&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/joscdk&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/joscdk/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/joscdk/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/joscdk/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/joscdk/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/joscdk/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/joscdk/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/joscdk/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/joscdk/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/joscdk/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;63b572062db6d3a588a77c59efdd337067fb7686&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/joscdk/headscale/commits/63b572062db6d3a588a77c59efdd337067fb7686&quot;,
+  &quot;created_at&quot;: &quot;2026-10-08T09:25:56Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-08T10:43:48Z · closed · kradalby</summary><pre>{
+  &quot;id&quot;: 32776385035,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz888AAAABT_rK788AAAAHoZ_yCw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32776385035&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-10-08T10:43:48Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-08T10:46:19Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 32776643154,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABT_rK788AAAAHoaPiUg&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32776643154&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;f8018f177aa870b7b4163c4b5ff2ed8e8de6a0fd&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/kradalby/headscale/commits/f8018f177aa870b7b4163c4b5ff2ed8e8de6a0fd&quot;,
+  &quot;created_at&quot;: &quot;2026-10-08T10:46:19Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-09T12:50:57Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 32875845743,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABT_rK788AAAAHp42Ybw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32875845743&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;b03cf9daf6c539bad3fc81e3664e74fb7d1bdba9&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/kradalby/headscale/commits/b03cf9daf6c539bad3fc81e3664e74fb7d1bdba9&quot;,
+  &quot;created_at&quot;: &quot;2026-10-09T12:50:57Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-13T09:54:04Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 33121207033,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABT_rK788AAAAHti2C-Q&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/33121207033&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;1978b73c637564654ec31ec2063ec63afc563abc&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/kradalby/headscale/commits/1978b73c637564654ec31ec2063ec63afc563abc&quot;,
+  &quot;created_at&quot;: &quot;2026-10-13T09:54:04Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-13T12:35:56Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 33132697988,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABT_rK788AAAAHttzZhA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/33132697988&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;a4e56d7bf1d73a8738a1d390f0d864fa59e299d9&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/commits/a4e56d7bf1d73a8738a1d390f0d864fa59e299d9&quot;,
+  &quot;created_at&quot;: &quot;2026-10-13T12:35:56Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><article><h3><a href="https://api.github.com/repos/joscdk/headscale/commits/63b572062db6d3a588a77c59efdd337067fb7686">63b572062db6d3a588a77c59efdd337067fb7686</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/32769881760">referenced</a> · 2026-10-08T09:25:56Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/kradalby/headscale/commits/f8018f177aa870b7b4163c4b5ff2ed8e8de6a0fd">f8018f177aa870b7b4163c4b5ff2ed8e8de6a0fd</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/32776643154">referenced</a> · 2026-10-08T10:46:19Z</p><p><a href="../commits/f8018f177aa870b7b4163c4b5ff2ed8e8de6a0fd.patch">Full local Git patch</a>; policy/v2: skip via resolution when the policy has no via grants; in release ancestry: False.</p></article><article><h3><a href="https://api.github.com/repos/kradalby/headscale/commits/b03cf9daf6c539bad3fc81e3664e74fb7d1bdba9">b03cf9daf6c539bad3fc81e3664e74fb7d1bdba9</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/32875845743">referenced</a> · 2026-10-09T12:50:57Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/kradalby/headscale/commits/1978b73c637564654ec31ec2063ec63afc563abc">1978b73c637564654ec31ec2063ec63afc563abc</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/33121207033">referenced</a> · 2026-10-13T09:54:04Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/juanfont/headscale/commits/a4e56d7bf1d73a8738a1d390f0d864fa59e299d9">a4e56d7bf1d73a8738a1d390f0d864fa59e299d9</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/33132697988">referenced</a> · 2026-10-13T12:35:56Z</p><p><a href="../commits/a4e56d7bf1d73a8738a1d390f0d864fa59e299d9.patch">Full local Git patch</a>; policy/v2: skip route resolution without via grants; in release ancestry: True.</p></article></body></html>

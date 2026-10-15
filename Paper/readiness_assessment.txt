@@ -1,0 +1,89 @@
+Headscale manuscript readiness assessment — 15 October 2026
+
+The objective remains a software-engineering paper suitable for CCF B or a
+second-quartile journal. The current output is a research working draft.
+Neither manuscript length, dataset size nor passing tests proves that quality.
+Venue classifications do not grade an individual article.
+
+Verified evidence
+- Git analysis is pinned to the official v0.29.5 release commit. The v0.28.0
+  baseline and original coursework remain preserved.
+- Metadata, submitted reviews and lifecycle timelines cover all 2,166 census PRs.
+- All 1,318 merged human-account PRs have complete file lists matching metadata.
+- Author, reviewer and integrator activity are compared on matched PR populations.
+  Role differences also occur in Go-touched and exclusively-Go-file subsets.
+- Reopened PRs are reconstructed into initial episodes. Final state, episode
+  outcomes and historical pending queues are kept distinct.
+- Exploratory models include role/experience strata, 30/90/180-day exposures,
+  omitted-backlog checks and elapsed-time-varying concentration coefficients.
+  Constant-effect intervals include one. The late association involves a small,
+  selected risk set and does not establish a causal maintenance benefit.
+- Raw pages, numerical sources, fit scripts, dependency lock and figure inputs
+  have provenance checks. The 41-test suite covers known hazards, temporal risk
+  boundaries, review-credit conservation, adjudication and exact commit linkage.
+- All 100 sampled issues have neutral offline review packets in each reviewer's
+  existing order. Full SHA matching links 10 issues to 12 merged PRs; only 48 of
+  243 distinct referenced commits are locally readable. These are evidence
+  pointers and explicit coverage limits, not verified repairs or human labels.
+- Missing reviewer identities are now bounded on the fixed 1,259 known-reviewed
+  merged PRs. There are 177 eligible unattributed records on 74 PRs in four
+  quarters. Integrator HHI exceeds the conservative reviewer upper bound in
+  each affected quarter. Conditional known-only and all-distinct-account
+  scenarios reverse reviewer/author ordering in 2025 Q2 and Q3. These are
+  collected-record sensitivity results, not actual identity imputations,
+  confidence intervals or a new bus-factor method. Deleted and informal
+  reviews and known-account aliases remain outside their coverage.
+- Two source-available final-closure commits with exact merged-PR matches now
+  have executed component checks against their official first parents. Three
+  regression oracles fail before and pass after the repairs; two normal-case
+  controls pass on both sides. Source, fixture and dependency hashes are checked,
+  as are the actual semantic failure messages. An additional cached execution
+  reproduced the outcomes. These are two cases, not independent replications or
+  full replays of the original DNS/client and Kubernetes deployments. They do
+  not supply the deferred human labels or a population repair prevalence.
+
+Novelty assessment
+Ownership, integration, response latency, Stale bot, issue misclassification and
+OSS-health assessment already have directly related research. HHI, a Linux port
+and more commits do not establish a new contribution. The candidate explanation
+concerns how maintenance roles and component-responsibility boundaries affect
+interpretation of maintenance outcomes in an upstream-dependent implementation.
+Role observations are available; that explanatory mechanism is not validated.
+
+The scoped search also verifies a peer-reviewed Headscale VPN-performance study
+and a direct review-aware bus-factor precedent. They limit first-study and
+role-separation novelty claims, but do not establish duplication of this exact
+maintenance-process question. The search is not exhaustive. A conditional B-
+conference assessment, with ESEM as the preferred scope fit and ICSME as a
+maintenance-focused alternative, is recorded in submission/venue_assessment.txt.
+The present draft has not yet established the validated additional knowledge
+needed for either research main track.
+
+Remaining requirements
+1. Conduct actual human responsibility/outcome coding of the fixed sample.
+   The author has deferred this stage. Two-reviewer and declared single-reviewer
+   designs remain available; neither has been completed. Assistant suggestions,
+   closure timestamps and missing commit links cannot supply repair truth.
+2. Trace responsibility evidence to explicit maintenance decisions and treatment.
+   Examine unclear and contradictory cases. Relate the result to the closest
+   prior work; if only known measurement pitfalls recur, strengthen comparison
+   or triangulation rather than claim an established novel mechanism.
+3. Interpret robustness within its limits. Episode coalescing and quarter
+   influence checks do not remove selection, confounding or limited clustering,
+   and cannot replace semantic validation.
+4. Complete author review, settle corresponding authorship and any additional
+   authors, supply funding/competing-interest declarations, and finalize the
+   selected venue's format, data-access statement and AI disclosure.
+
+Author and submission state
+Xiaoyu SHEN and University of Nottingham Ningbo China are author-confirmed.
+George.Zhou@nottingham.edu.cn is a provisional contact; corresponding authorship
+and supervisor coauthorship remain unsettled. The author states that the project
+was independently completed. All manuscript and submission documentation use
+English. No submission, public deposit or participant contact has occurred.
+
+Current decision
+Keep the research objective active and unachieved. Continue the authorized
+preparation work; retain deferred semantic validation and the contribution
+assessment as substantive requirements, rather than infer readiness from
+artifact completeness.

@@ -1,0 +1,170 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #806: How to use routes? In Android for example.</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #806: How to use routes? In Android for example.</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/806">Original issue #806</a></p><p>Created: 2022-09-14T10:51:30Z; updated: 2022-09-20T21:59:38Z; observed state: closed; reason: not_planned</p><h2>Report body</h2><pre>&lt;!-- Headscale is a multinational community across the globe. Our common language is English. Please consider raising the issue in this language. --&gt;
+
+&lt;!-- If you have a question, please consider using our Discord for asking questions --&gt;
+
+**Issue description**
+
+I think this is third time I am setting up Headscale. Each previous attempts I gave up as I was unable to configure it the same way as with Wireguard directly. I have three networks at home. All three reachable on docker server. 10.0.107.0/24, 10.0.208.0/24 and 192.168.28.0/24. My goal is to reach all three when I connect to Headscale server with any client. Client should be Windows or Android.
+
+**To Reproduce**
+
+I started the server using Docker. Then created namespace and connected two clients to it. One is another linux server, other is my Android phone. For linux server I added &quot;--advertise-routes=192.168.28.0/24,10.0.107.0/24,10.0.208.0/24&quot; parameter to tailscale command. Then I enabled all three routes on Headscale and this seems to work.
+
+But for Android client I just can not find an option to add this routes client side. So when I am connected I for example can not ping 10.0.107.0/24 devices.
+
+Can I add them on Headscale server side?
+
+**Context info**
+
+Headscale version: 0.17.0-alpha2
+Android client: 1.30.1
+OS: Linux Ubuntu
+
+```
+root@docker-server:~# docker exec headscale headscale nodes list
+ID | Hostname      | Name          | NodeKey | Namespace | IP addresses                    | Ephemeral | Last seen           | Online  | Expired
+1  | Mi 10T Pro    | mi-10t-pro    | [4LfgH] | clients   | 100.64.0.1, fd7a:115c:a1e0::1   | false     | 2022-09-14 10:39:52 | offline | no
+2  | web-wg-server | web-wg-server | [goF/h] | clients   | 192.168.28.1, fd7a:115c:a1e0::2 | false     | 2022-09-14 10:01:20 | offline | no
+root@docker-server:~# docker exec headscale headscale machines routes list -i 1
+Route | Enabled
+root@docker-server:~# docker exec headscale headscale machines routes list -i 2
+Route           | Enabled
+10.0.107.0/24   | true
+10.0.208.0/24   | true
+192.168.28.0/24 | true
+```</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/806#issuecomment-1252958140">juanfont</a></h3><p>Created: 2022-09-20T21:59:24Z; updated: 2022-09-20T21:59:24Z</p><pre>Can you please raise this in Discord?</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2022-09-14T10:51:30Z · labeled · thehijacker</summary><pre>{
+  &quot;id&quot;: 7384608715,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz885R0ucbzwAAAAG4KC_L&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/7384608715&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;thehijacker&quot;,
+    &quot;id&quot;: 13857043,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzODU3MDQz&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/13857043?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thehijacker&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thehijacker&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thehijacker/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thehijacker/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thehijacker/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thehijacker/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thehijacker/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thehijacker/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thehijacker/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thehijacker/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thehijacker/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2022-09-14T10:51:30Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2022-09-20T21:59:24Z · commented · juanfont</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1252958140&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/806#issuecomment-1252958140&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/806&quot;,
+  &quot;id&quot;: 1252958140,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885Krp-8&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2022-09-20T21:59:24Z&quot;,
+  &quot;updated_at&quot;: &quot;2022-09-20T21:59:24Z&quot;,
+  &quot;body&quot;: &quot;Can you please raise this in Discord?&quot;,
+  &quot;author_association&quot;: &quot;OWNER&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1252958140/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2022-09-20T21:59:38Z · closed · juanfont</summary><pre>{
+  &quot;id&quot;: 7425935839,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz885R0ucbzwAAAAG6nsnf&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/7425935839&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2022-09-20T21:59:38Z&quot;,
+  &quot;state_reason&quot;: &quot;not_planned&quot;,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

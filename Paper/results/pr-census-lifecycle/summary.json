@@ -1,0 +1,35 @@
+{
+  "metadata_complete": true,
+  "total_prs": 2166,
+  "human_prs": 1667,
+  "lookback_days": 90,
+  "known_mergers": 1318,
+  "merge_events": 1318,
+  "unique_merger_accounts": 5,
+  "self_merges": 783,
+  "model_episode_scope": "first disposition",
+  "backlog_reconstructed_from_timelines": true,
+  "model_dispositions": {
+    "merge": 1287,
+    "nonmerge_close": 319,
+    "censor": 61
+  },
+  "human_final_dispositions": {
+    "merge": 1318,
+    "nonmerge_close": 287,
+    "censor": 62
+  },
+  "human_reopened_prs": 42,
+  "first_closed_then_eventually_merged": 31,
+  "clock_disagreement_prs": 160,
+  "script_sha256": "13951ac61796016956ec298251214d5fa572caa01932e3fa353a37096f62d622",
+  "analysis_scope": "Complete PR metadata with validated lifecycle histories",
+  "limitations": [
+    "PR labels/current draft states are not historical submission covariates.",
+    "Final size variables are post-submission descriptions and excluded from the primary model.",
+    "First-disposition models stop at the first observed closure, including briefly closed/reopened cases.",
+    "User logins are observed at collection time; account rename effects remain a sensitivity.",
+    "Prior integrator means a recorded earlier merge action, not verified organisational authority.",
+    "Review-event census remains incomplete; metadata coverage is not review coverage."
+  ]
+}

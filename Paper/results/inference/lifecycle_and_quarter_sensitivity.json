@@ -1,0 +1,406 @@
+{
+  "grace_window_seconds": 300,
+  "coalesced_short_closures": 31,
+  "modified_prs": [
+    {
+      "number": 51,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 60,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 311,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 346,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 600,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "nonmerge_close",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 928,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 998,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 1244,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 1245,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 1420,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 1477,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 2
+    },
+    {
+      "number": 1546,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 1575,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 1610,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 1616,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "nonmerge_close",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 1649,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 1668,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 1685,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "nonmerge_close",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 1823,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 1866,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 2322,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 2490,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 2640,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 2775,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 2861,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 3045,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 3126,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "nonmerge_close",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 3283,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 3334,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    },
+    {
+      "number": 3494,
+      "strict_outcome": "nonmerge_close",
+      "coalesced_outcome": "merge",
+      "ignored_short_closures": 1
+    }
+  ],
+  "cutoff_ambiguous_prs": 0,
+  "close_reopen_transitions": 45,
+  "reopen_gaps_at_most_five_minutes": 32,
+  "coalesced_dispositions": {
+    "merge": 1313,
+    "nonmerge_close": 293,
+    "censor": 61
+  },
+  "coalesced_models": {
+    "primary": {
+      "observations": 1661,
+      "merge_events": 1310,
+      "lookback_days": 90,
+      "backlog_covariate_included": true,
+      "censored_before_first_event_excluded": 3,
+      "quarter_clusters": 23,
+      "coefficients": [
+        {
+          "variable": "lag90_merger_hhi_per_01",
+          "log_hazard_coefficient": -0.002835707394384852,
+          "cluster_standard_error": 0.035513017766116525,
+          "hazard_ratio": 0.9971683094260889,
+          "lower_95": 0.9263666258033926,
+          "upper_95": 1.0733813261691476,
+          "residual_time_spearman": 0.06626859526643356,
+          "residual_time_p": 0.01644584512478911
+        },
+        {
+          "variable": "lag90_merges_log2",
+          "log_hazard_coefficient": 0.03851104956274048,
+          "cluster_standard_error": 0.09605966541358267,
+          "hazard_ratio": 1.039262211687553,
+          "lower_95": 0.8515436621472102,
+          "upper_95": 1.2683623784108302,
+          "residual_time_spearman": -0.08630640269132399,
+          "residual_time_p": 0.001768279157486122
+        },
+        {
+          "variable": "backlog_log2",
+          "log_hazard_coefficient": -0.06942929129091555,
+          "cluster_standard_error": 0.0644357047831619,
+          "hazard_ratio": 0.9329260970524194,
+          "lower_95": 0.816228642558925,
+          "upper_95": 1.066307964681144,
+          "residual_time_spearman": -0.018833432929227168,
+          "residual_time_p": 0.49583005366497573
+        },
+        {
+          "variable": "prior_author_prs_log2",
+          "log_hazard_coefficient": 0.10251008070551697,
+          "cluster_standard_error": 0.040916422726025574,
+          "hazard_ratio": 1.1079484707557714,
+          "lower_95": 1.0178113774456665,
+          "upper_95": 1.206068080051092,
+          "residual_time_spearman": 0.07078300398523828,
+          "residual_time_p": 0.010386662301439436
+        },
+        {
+          "variable": "prior_integrator_author",
+          "log_hazard_coefficient": 0.2958586563230671,
+          "cluster_standard_error": 0.3115394007297849,
+          "hazard_ratio": 1.3442801379058629,
+          "lower_95": 0.7045228481523096,
+          "upper_95": 2.5649829439989063,
+          "residual_time_spearman": 0.389422951887429,
+          "residual_time_p": 1.094736407415142e-48
+        },
+        {
+          "variable": "calendar_years",
+          "log_hazard_coefficient": -0.18209815659548462,
+          "cluster_standard_error": 0.049619291546444705,
+          "hazard_ratio": 0.8335195209617939,
+          "lower_95": 0.7520125480144108,
+          "upper_95": 0.9238606372443999,
+          "residual_time_spearman": 0.015094994860723238,
+          "residual_time_p": 0.5851645030310747
+        }
+      ],
+      "baseline_stratification": "none",
+      "condition_number": 68.02534548053835,
+      "log_likelihood": -8544.710648180137,
+      "interval_method": "Quarter-clustered sandwich SE, Student t critical value with clusters minus one degrees of freedom",
+      "diagnostics": "Residual-time Spearman checks are exploratory, not a formal global PH test",
+      "interpretation": "Cause-specific merge hazard associations; not causal effects or merge probabilities"
+    },
+    "role_experience_stratified": {
+      "observations": 1637,
+      "merge_events": 1310,
+      "lookback_days": 90,
+      "backlog_covariate_included": true,
+      "censored_before_first_event_excluded": 27,
+      "quarter_clusters": 23,
+      "coefficients": [
+        {
+          "variable": "lag90_merger_hhi_per_01",
+          "log_hazard_coefficient": -0.004390387218334822,
+          "cluster_standard_error": 0.03518917164122739,
+          "hazard_ratio": 0.9956192364426113,
+          "lower_95": 0.9255489458079565,
+          "upper_95": 1.070994320142898,
+          "residual_time_spearman": 0.05805524314623389,
+          "residual_time_p": 0.03563980411154523
+        },
+        {
+          "variable": "lag90_merges_log2",
+          "log_hazard_coefficient": 0.05381083452425114,
+          "cluster_standard_error": 0.09594678512837078,
+          "hazard_ratio": 1.0552849597914844,
+          "lower_95": 0.8648747163709588,
+          "upper_95": 1.2876157960021375,
+          "residual_time_spearman": -0.07207498902314691,
+          "residual_time_p": 0.009065326570905616
+        },
+        {
+          "variable": "backlog_log2",
+          "log_hazard_coefficient": -0.013657792892626017,
+          "cluster_standard_error": 0.05739105885855388,
+          "hazard_ratio": 0.9864350515964831,
+          "lower_95": 0.8757456674185794,
+          "upper_95": 1.1111149586231028,
+          "residual_time_spearman": -0.012852114574616642,
+          "residual_time_p": 0.6421151031192737
+        },
+        {
+          "variable": "calendar_years",
+          "log_hazard_coefficient": -0.1649237165213925,
+          "cluster_standard_error": 0.04743824502491586,
+          "hazard_ratio": 0.8479583868362341,
+          "lower_95": 0.7685077624550412,
+          "upper_95": 0.9356228537092663,
+          "residual_time_spearman": 0.010183347361844043,
+          "residual_time_p": 0.7126995205043474
+        }
+      ],
+      "baseline_stratification": "prior integrator role x prior PR experience (0, 1-4, 5+)",
+      "condition_number": 20.85307468548425,
+      "log_likelihood": -7297.292332800993,
+      "interval_method": "Quarter-clustered sandwich SE, Student t critical value with clusters minus one degrees of freedom",
+      "diagnostics": "Residual-time Spearman checks are exploratory, not a formal global PH test",
+      "interpretation": "Cause-specific merge hazard associations; not causal effects or merge probabilities"
+    },
+    "piecewise": {
+      "lookback_days": 90,
+      "split_days": 30,
+      "backlog_covariate_included": true,
+      "observations": 1637,
+      "interval_rows": 1863,
+      "merge_events": 1310,
+      "quarter_clusters": 23,
+      "no_event_risk_intervals_excluded": 31,
+      "concentration_effects": [
+        {
+          "period": "through_split",
+          "log_hazard_coefficient": -0.02076338347541776,
+          "merge_events_in_period": 1244,
+          "eligible_subjects_in_period": 1664,
+          "cluster_standard_error": 0.03743272541058608,
+          "hazard_ratio": 0.9794506913717752,
+          "lower_95": 0.9062916596845865,
+          "upper_95": 1.0585153759028507
+        },
+        {
+          "period": "after_split",
+          "log_hazard_coefficient": 0.26850968279665893,
+          "merge_events_in_period": 66,
+          "eligible_subjects_in_period": 230,
+          "cluster_standard_error": 0.07669731253111715,
+          "hazard_ratio": 1.308013642199383,
+          "lower_95": 1.11566338482272,
+          "upper_95": 1.5335267890427
+        }
+      ],
+      "log_likelihood": -7290.354027032656,
+      "baseline_stratification": "prior integration role x prior PR experience (0, 1-4, 5+)",
+      "interval_method": "Quarter-clustered sandwich covariance, Student t critical value",
+      "limitations": [
+        "Post-pilot diagnostic with a 30-day elapsed-time split.",
+        "Other covariates remain proportional within each role/experience stratum.",
+        "Submission-time exposure is fixed; this does not model evolving workload.",
+        "Backlog interpretation depends on input lifecycle reconstruction; see the result provenance.",
+        "Time-dependent hazard ratios are not merge probabilities or causal effects."
+      ]
+    }
+  },
+  "planned_influence_quarters": 23,
+  "completed_influence_fits": 23,
+  "failed_influence_fits": [],
+  "leave_quarter_out_ranges": {
+    "constant": {
+      "minimum_hazard_ratio": 0.9739821435330291,
+      "maximum_hazard_ratio": 1.0131052724349952,
+      "intervals_containing_one": 23
+    },
+    "early": {
+      "minimum_hazard_ratio": 0.9572567249348364,
+      "maximum_hazard_ratio": 0.9981996921037215,
+      "intervals_containing_one": 23
+    },
+    "late": {
+      "minimum_hazard_ratio": 1.2262772385527403,
+      "maximum_hazard_ratio": 1.3726664442127416,
+      "intervals_containing_one": 0
+    }
+  },
+  "interpretation": "Exploratory endpoint and influence diagnostics; not confirmatory tests, predictions or causal interventions",
+  "limitations": [
+    "Five-minute coalescing is an operational sensitivity, not evidence about the intent of closing a PR.",
+    "Brief closed periods remain included in the coalesced elapsed-time clock.",
+    "Historical queue and concentration exposures remain based on actual prior transitions.",
+    "Leave-quarter-out intervals are related fits, not independent replications.",
+    "Small-cluster uncertainty, omitted covariates and proportionality limitations remain."
+  ],
+  "provenance": {
+    "input_sha256": "7c15b04527fc7665a915e322d2e3f96b840e1fa1053033ba3352be25f9897a4d",
+    "script_sha256": "b5765bf895623a314995afb0b51781dd8dde97d781bc879fb812fc041965713e",
+    "constant_fit_script_sha256": "f9bd8dd15b34bca5d1be49884979e73af87250416bf8185f1a090c5b45f60a24",
+    "piecewise_fit_script_sha256": "dfd86c374851ef0a1e5bdcb2ec91283f3e5002c3c6ea5d79ad6b0eec22eaf31b",
+    "history_script_sha256": "f1cdf433d9114e8bee27eea54f40b866e87d2ee3972f9602cbccba20da82ea0b",
+    "uv_lock_sha256": "63bdd8a6cfa7f84a4a8cc3bb5b8d2892a11bec354814c4fa9beeb591bf9a6148"
+  }
+}

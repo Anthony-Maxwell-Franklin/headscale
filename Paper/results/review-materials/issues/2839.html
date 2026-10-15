@@ -1,0 +1,341 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #2839: [Bug] SQLite schema failed to validate</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #2839: [Bug] SQLite schema failed to validate</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/2839">Original issue #2839</a></p><p>Created: 2025-10-30T06:59:57Z; updated: 2025-11-01T07:03:39Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+v0.26.1 to v0.27.0
+
+### Expected Behavior
+
+everything went smoothly and the upgrade was successful.
+
+### Steps To Reproduce
+
+v0.26.1 to v0.27.0
+
+### Environment
+
+```markdown
+- OS:Debian 12
+- Headscale version: 
+Docker for Headscale
+version:headscale/headscale:latest
+- Tailscale version: 1.90.4
+```
+
+### Runtime environment
+
+- [ ] Headscale is behind a (reverse) proxy
+- [x] Headscale runs in a container
+
+### Debug information
+
+SQLite schema failed to validate:
+
+\&gt;&gt; Remove table &quot;kvs&quot;
+
+\&gt;&gt; Remove table &quot;machines&quot;
+
+2025-10-30T06:31:17Z FTL home/runner/work/headscale/headscale/cmd/headscale/cli/serve.go:32 &gt; Error initializing error=&quot;creating new headscale: init state: init database: validating schema: invalid schema (-got, +want):\n\n&gt;&gt; Remove table &quot;kvs&quot;\n\n&gt;&gt; Remove table &quot;machines&quot;\n&quot;</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/2839#issuecomment-3474792805">angelbarrera92</a></h3><p>Created: 2025-10-31T20:29:33Z; updated: 2025-10-31T20:29:33Z</p><pre>Same here</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2025-10-30T06:59:58Z · labeled · wolfcdd</summary><pre>{
+  &quot;id&quot;: 20599724310,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz887UvYHYzwAAAATL1tkW&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/20599724310&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;wolfcdd&quot;,
+    &quot;id&quot;: 5728354,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjU3MjgzNTQ=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/5728354?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/wolfcdd&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/wolfcdd&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/wolfcdd/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/wolfcdd/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/wolfcdd/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/wolfcdd/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/wolfcdd/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/wolfcdd/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/wolfcdd/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/wolfcdd/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/wolfcdd/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-10-30T06:59:58Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-10-30T07:55:32Z · renamed · wolfcdd</summary><pre>{
+  &quot;id&quot;: 20600549728,
+  &quot;node_id&quot;: &quot;RTE_lADOEFLz887UvYHYzwAAAATL43Fg&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/20600549728&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;wolfcdd&quot;,
+    &quot;id&quot;: 5728354,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjU3MjgzNTQ=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/5728354?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/wolfcdd&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/wolfcdd&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/wolfcdd/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/wolfcdd/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/wolfcdd/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/wolfcdd/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/wolfcdd/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/wolfcdd/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/wolfcdd/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/wolfcdd/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/wolfcdd/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;renamed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-10-30T07:55:32Z&quot;,
+  &quot;rename&quot;: {
+    &quot;from&quot;: &quot;[Bug] &lt;title&gt;SQLite schema failed to validate&quot;,
+    &quot;to&quot;: &quot;[Bug] SQLite schema failed to validate&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-10-30T09:34:54Z · labeled · kradalby</summary><pre>{
+  &quot;id&quot;: 20602987555,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz887UvYHYzwAAAATMCKQj&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/20602987555&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-10-30T09:34:54Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;database&quot;,
+    &quot;color&quot;: &quot;F31389&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-10-30T09:47:44Z · milestoned · kradalby</summary><pre>{
+  &quot;id&quot;: 20603388907,
+  &quot;node_id&quot;: &quot;MIE_lADOEFLz887UvYHYzwAAAATMDsPr&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/20603388907&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;milestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-10-30T09:47:44Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.27.0&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-10-30T19:02:11Z · unsubscribed · mrabino1</summary><pre>{
+  &quot;id&quot;: 20617444141,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz887UvYHYzwAAAATM5Tst&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/20617444141&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mrabino1&quot;,
+    &quot;id&quot;: 4902221,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ5MDIyMjE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4902221?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mrabino1&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mrabino1&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mrabino1/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mrabino1/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mrabino1/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mrabino1/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mrabino1/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mrabino1/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mrabino1/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mrabino1/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mrabino1/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-10-30T19:02:11Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-10-31T15:11:08Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 20636630742,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz887UvYHYzwAAAATOCf7W&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/20636630742&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;4d87e85a2804fab1887641fe1537467e4bf62974&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/kradalby/headscale/commits/4d87e85a2804fab1887641fe1537467e4bf62974&quot;,
+  &quot;created_at&quot;: &quot;2025-10-31T15:11:08Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-10-31T20:29:33Z · commented · angelbarrera92</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3474792805&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2839#issuecomment-3474792805&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2839&quot;,
+  &quot;id&quot;: 3474792805,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz887PHSFl&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;angelbarrera92&quot;,
+    &quot;id&quot;: 14357604,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE0MzU3NjA0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/14357604?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/angelbarrera92&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/angelbarrera92&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/angelbarrera92/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/angelbarrera92/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/angelbarrera92/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/angelbarrera92/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/angelbarrera92/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/angelbarrera92/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/angelbarrera92/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/angelbarrera92/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/angelbarrera92/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-10-31T20:29:33Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-10-31T20:29:33Z&quot;,
+  &quot;body&quot;: &quot;Same here&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3474792805/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;angelbarrera92&quot;,
+    &quot;id&quot;: 14357604,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE0MzU3NjA0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/14357604?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/angelbarrera92&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/angelbarrera92&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/angelbarrera92/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/angelbarrera92/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/angelbarrera92/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/angelbarrera92/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/angelbarrera92/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/angelbarrera92/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/angelbarrera92/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/angelbarrera92/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/angelbarrera92/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-11-01T07:03:39Z · closed · kradalby</summary><pre>{
+  &quot;id&quot;: 20648667672,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz887UvYHYzwAAAATOwaoY&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/20648667672&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-11-01T07:03:39Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><article><h3><a href="https://api.github.com/repos/kradalby/headscale/commits/4d87e85a2804fab1887641fe1537467e4bf62974">4d87e85a2804fab1887641fe1537467e4bf62974</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/20636630742">referenced</a> · 2025-10-31T15:11:08Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article></body></html>

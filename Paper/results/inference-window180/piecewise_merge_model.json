@@ -1,0 +1,91 @@
+{
+  "lookback_days": 180,
+  "split_days": 30,
+  "backlog_covariate_included": true,
+  "observations": 1639,
+  "interval_rows": 1865,
+  "merge_events": 1286,
+  "quarter_clusters": 24,
+  "no_event_risk_intervals_excluded": 31,
+  "concentration_effects": [
+    {
+      "period": "through_split",
+      "log_hazard_coefficient": -0.05116684403038479,
+      "merge_events_in_period": 1230,
+      "eligible_subjects_in_period": 1666,
+      "cluster_standard_error": 0.035534844429716606,
+      "hazard_ratio": 0.9501201354347317,
+      "lower_95": 0.8827826392065113,
+      "upper_95": 1.0225940471257224
+    },
+    {
+      "period": "after_split",
+      "log_hazard_coefficient": 0.18665922187074052,
+      "merge_events_in_period": 56,
+      "eligible_subjects_in_period": 230,
+      "cluster_standard_error": 0.07503259327490476,
+      "hazard_ratio": 1.2052165036357776,
+      "lower_95": 1.0319420132434427,
+      "upper_95": 1.4075856995788207
+    }
+  ],
+  "log_likelihood": -7174.11936838183,
+  "baseline_stratification": "prior integration role x prior PR experience (0, 1-4, 5+)",
+  "interval_method": "Quarter-clustered sandwich covariance, Student t critical value",
+  "limitations": [
+    "Post-pilot diagnostic with a 30-day elapsed-time split.",
+    "Other covariates remain proportional within each role/experience stratum.",
+    "Submission-time exposure is fixed; this does not model evolving workload.",
+    "Backlog interpretation depends on input lifecycle reconstruction; see the result provenance.",
+    "Time-dependent hazard ratios are not merge probabilities or causal effects."
+  ],
+  "episode_scope": "first disposition",
+  "backlog_reconstructed": true,
+  "without_backlog_sensitivity": {
+    "lookback_days": 180,
+    "split_days": 30,
+    "backlog_covariate_included": false,
+    "observations": 1639,
+    "interval_rows": 1865,
+    "merge_events": 1286,
+    "quarter_clusters": 24,
+    "no_event_risk_intervals_excluded": 31,
+    "concentration_effects": [
+      {
+        "period": "through_split",
+        "log_hazard_coefficient": -0.044689464959117305,
+        "merge_events_in_period": 1230,
+        "eligible_subjects_in_period": 1666,
+        "cluster_standard_error": 0.03862956717998011,
+        "hazard_ratio": 0.9562943986493565,
+        "lower_95": 0.882849254115799,
+        "upper_95": 1.0358495208834193
+      },
+      {
+        "period": "after_split",
+        "log_hazard_coefficient": 0.1858532779483066,
+        "merge_events_in_period": 56,
+        "eligible_subjects_in_period": 230,
+        "cluster_standard_error": 0.07476220586127648,
+        "hazard_ratio": 1.204245558035864,
+        "lower_95": 1.0316875626193462,
+        "upper_95": 1.4056652581593454
+      }
+    ],
+    "log_likelihood": -7174.5888014961165,
+    "baseline_stratification": "prior integration role x prior PR experience (0, 1-4, 5+)",
+    "interval_method": "Quarter-clustered sandwich covariance, Student t critical value",
+    "limitations": [
+      "Post-pilot diagnostic with a 30-day elapsed-time split.",
+      "Other covariates remain proportional within each role/experience stratum.",
+      "Submission-time exposure is fixed; this does not model evolving workload.",
+      "Backlog interpretation depends on input lifecycle reconstruction; see the result provenance.",
+      "Time-dependent hazard ratios are not merge probabilities or causal effects."
+    ]
+  },
+  "provenance": {
+    "input_sha256": "0aa20085a1d34f2e5ef88800eeed4d6770ad5a77f66f07f967cc098606cdffea",
+    "script_sha256": "dfd86c374851ef0a1e5bdcb2ec91283f3e5002c3c6ea5d79ad6b0eec22eaf31b",
+    "uv_lock_sha256": "63bdd8a6cfa7f84a4a8cc3bb5b8d2892a11bec354814c4fa9beeb591bf9a6148"
+  }
+}

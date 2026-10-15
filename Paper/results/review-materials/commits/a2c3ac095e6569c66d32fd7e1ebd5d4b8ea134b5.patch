@@ -1,0 +1,496 @@
+commit a2c3ac095e6569c66d32fd7e1ebd5d4b8ea134b5
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Fri Apr 17 12:04:07 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Sat Apr 18 15:12:21 2026 +0100
+
+    state: auto-bump GivenName on collision and add SetGivenName
+    
+    NodeStore's writer goroutine now resolves GivenName collisions inside
+    applyBatch: on PutNode/UpdateNode the landing label gets -N appended
+    until unique, matching Tailscale SaaS. Empty labels fall back to the
+    literal "node".
+    
+    SetGivenName exposes the admin-rename path: validates via
+    dnsname.ValidLabel and rejects on collision with ErrGivenNameTaken,
+    so renames do not silently rewrite behind the caller.
+    
+    Updates #3188
+    Updates #2926
+    Updates #2343
+    Updates #2762
+---
+ hscontrol/state/node_store.go               | 158 +++++++++++++++++++-
+ hscontrol/state/node_store_hostname_test.go | 219 ++++++++++++++++++++++++++++
+ 2 files changed, 376 insertions(+), 1 deletion(-)
+
+diff --git a/hscontrol/state/node_store.go b/hscontrol/state/node_store.go
+index 7956afa1..0453ad2d 100644
+--- a/hscontrol/state/node_store.go
++++ b/hscontrol/state/node_store.go
+@@ -1,8 +1,10 @@
+ package state
+ 
+ import (
++	"errors"
+ 	"fmt"
+ 	"maps"
++	"strconv"
+ 	"strings"
+ 	"sync/atomic"
+ 	"time"
+@@ -12,6 +14,19 @@ import (
+ 	"github.com/prometheus/client_golang/prometheus/promauto"
+ 	"tailscale.com/types/key"
+ 	"tailscale.com/types/views"
++	"tailscale.com/util/dnsname"
++)
++
++// fallbackGivenName is the DNS label used when a node is written with
++// an empty GivenName. Matches Tailscale SaaS behaviour for empty
++// sanitised labels.
++const fallbackGivenName = "node"
++
++// Errors returned by SetGivenName. ErrNodeNotFound is defined in
++// state.go and reused here.
++var (
++	ErrGivenNameTaken   = errors.New("given name already in use by another node")
++	ErrGivenNameInvalid = errors.New("given name is not a valid DNS label")
+ )
+ 
+ const (
+@@ -19,6 +34,7 @@ const (
+ 	del             = 2
+ 	update          = 3
+ 	rebuildPeerMaps = 4
++	setName         = 5
+ )
+ 
+ const prometheusNamespace = "headscale"
+@@ -146,6 +162,9 @@ type work struct {
+ 	nodeResult chan types.NodeView // Channel to return the resulting node after batch application
+ 	// For rebuildPeerMaps operation
+ 	rebuildResult chan struct{}
++	// For setName operation (admin rename, reject-on-collision path).
++	name      string
++	errResult chan error
+ }
+ 
+ // PutNode adds or updates a node in the store.
+@@ -245,6 +264,49 @@ func (s *NodeStore) DeleteNode(id types.NodeID) {
+ 	nodeStoreOperations.WithLabelValues("delete").Inc()
+ }
+ 
++// SetGivenName sets node.GivenName on the node identified by id,
++// rejecting the write if the name is already held by another node.
++// Intended for the admin rename path, where auto-bumping a
++// user-supplied name would be surprising.
++//
++// Returns:
++//   - the stored NodeView and nil on success
++//   - ErrGivenNameInvalid   if name is not a valid DNS label
++//   - ErrGivenNameTaken     if another node already holds name
++//   - ErrNodeNotFound       if no node with id exists
++//
++// Runs as a single writer-goroutine op, so the uniqueness check and
++// the write are atomic with respect to concurrent PutNode/UpdateNode.
++func (s *NodeStore) SetGivenName(id types.NodeID, name string) (types.NodeView, error) {
++	timer := prometheus.NewTimer(nodeStoreOperationDuration.WithLabelValues("set_name"))
++	defer timer.ObserveDuration()
++
++	w := work{
++		op:         setName,
++		nodeID:     id,
++		name:       name,
++		result:     make(chan struct{}),
++		nodeResult: make(chan types.NodeView, 1),
++		errResult:  make(chan error, 1),
++	}
++
++	nodeStoreQueueDepth.Inc()
++
++	s.writeQueue <- w
++
++	<-w.result
++	nodeStoreQueueDepth.Dec()
++
++	nodeStoreOperations.WithLabelValues("set_name").Inc()
++
++	err := <-w.errResult
++	if err != nil {
++		return types.NodeView{}, err
++	}
++
++	return <-w.nodeResult, nil
++}
++
+ // Start initializes the NodeStore and starts processing the write queue.
+ func (s *NodeStore) Start() {
+ 	s.writeQueue = make(chan work)
+@@ -318,18 +380,31 @@ func (s *NodeStore) applyBatch(batch []work) {
+ 	// Track rebuildPeerMaps operations
+ 	var rebuildOps []*work
+ 
++	// setErrResults collects per-work errors from the setName path so
++	// they can be delivered after the snapshot swap, together with the
++	// NodeView for that work.
++	setErrResults := make(map[*work]error)
++
+ 	for i := range batch {
+ 		w := &batch[i]
+ 		switch w.op {
+ 		case put:
+-			nodes[w.nodeID] = w.node
++			n := w.node
++			n.GivenName = resolveGivenName(nodes, n.ID, n.GivenName)
++
++			nodes[w.nodeID] = n
+ 			if w.nodeResult != nil {
+ 				nodeResultRequests[w.nodeID] = append(nodeResultRequests[w.nodeID], w)
+ 			}
+ 		case update:
+ 			// Update the specific node identified by nodeID
+ 			if n, exists := nodes[w.nodeID]; exists {
++				oldGivenName := n.GivenName
+ 				w.updateFn(&n)
++
++				if n.GivenName != oldGivenName {
++					n.GivenName = resolveGivenName(nodes, n.ID, n.GivenName)
++				}
+ 				nodes[w.nodeID] = n
+ 			}
+ 
+@@ -342,6 +417,41 @@ func (s *NodeStore) applyBatch(batch []work) {
+ 			if w.nodeResult != nil {
+ 				nodeResultRequests[w.nodeID] = append(nodeResultRequests[w.nodeID], w)
+ 			}
++		case setName:
++			n, exists := nodes[w.nodeID]
++			if !exists {
++				setErrResults[w] = ErrNodeNotFound
++				nodeResultRequests[w.nodeID] = append(nodeResultRequests[w.nodeID], w)
++
++				continue
++			}
++
++			if dnsname.ValidLabel(w.name) != nil {
++				setErrResults[w] = ErrGivenNameInvalid
++				nodeResultRequests[w.nodeID] = append(nodeResultRequests[w.nodeID], w)
++
++				continue
++			}
++
++			taken := false
++
++			for id, other := range nodes {
++				if id != w.nodeID && other.GivenName == w.name {
++					taken = true
++					break
++				}
++			}
++
++			if taken {
++				setErrResults[w] = ErrGivenNameTaken
++				nodeResultRequests[w.nodeID] = append(nodeResultRequests[w.nodeID], w)
++
++				continue
++			}
++
++			n.GivenName = w.name
++			nodes[w.nodeID] = n
++			nodeResultRequests[w.nodeID] = append(nodeResultRequests[w.nodeID], w)
+ 		case rebuildPeerMaps:
+ 			// rebuildPeerMaps doesn't modify nodes, it just forces the snapshot rebuild
+ 			// below to recalculate peer relationships using the current peersFunc
+@@ -363,6 +473,12 @@ func (s *NodeStore) applyBatch(batch []work) {
+ 				w.nodeResult <- nodeView
+ 
+ 				close(w.nodeResult)
++
++				if w.errResult != nil {
++					w.errResult <- setErrResults[w]
++
++					close(w.errResult)
++				}
+ 			}
+ 		} else {
+ 			// Node was deleted or doesn't exist
+@@ -370,6 +486,12 @@ func (s *NodeStore) applyBatch(batch []work) {
+ 				w.nodeResult <- types.NodeView{} // Send invalid view
+ 
+ 				close(w.nodeResult)
++
++				if w.errResult != nil {
++					w.errResult <- setErrResults[w]
++
++					close(w.errResult)
++				}
+ 			}
+ 		}
+ 	}
+@@ -387,6 +509,40 @@ func (s *NodeStore) applyBatch(batch []work) {
+ 	}
+ }
+ 
++// resolveGivenName returns a unique DNS label for the node identified
++// by self, based on the caller-supplied base label. If base is empty
++// it falls back to fallbackGivenName ("node"). The label's own holder
++// (self) is excluded from the collision scan so an idempotent write
++// keeps the current label.
++//
++// On collision the label is bumped as base, base-1, base-2, …, first
++// unused wins. Must be called from the NodeStore writer goroutine
++// (inside applyBatch) so the nodes map reflects all earlier ops in
++// the batch and no other writer can interleave.
++func resolveGivenName(nodes map[types.NodeID]types.Node, self types.NodeID, base string) string {
++	if base == "" {
++		base = fallbackGivenName
++	}
++
++	taken := make(map[string]struct{}, len(nodes))
++	for id, n := range nodes {
++		if id == self {
++			continue
++		}
++
++		taken[n.GivenName] = struct{}{}
++	}
++
++	candidate := base
++	for i := 1; ; i++ {
++		if _, busy := taken[candidate]; !busy {
++			return candidate
++		}
++
++		candidate = base + "-" + strconv.Itoa(i)
++	}
++}
++
+ // snapshotFromNodes creates a new Snapshot from the provided nodes.
+ // It builds a lot of "indexes" to make lookups fast for datasets we
+ // that is used frequently, like nodesByNodeKey, peersByNode, and nodesByUser.
+diff --git a/hscontrol/state/node_store_hostname_test.go b/hscontrol/state/node_store_hostname_test.go
+new file mode 100644
+index 00000000..da14f049
+--- /dev/null
++++ b/hscontrol/state/node_store_hostname_test.go
+@@ -0,0 +1,219 @@
++package state
++
++import (
++	"fmt"
++	"sync"
++	"testing"
++
++	"github.com/juanfont/headscale/hscontrol/types"
++	"github.com/stretchr/testify/require"
++)
++
++// TestPutNodeGivenNameCollisionBumps is the reproduction for #3188.
++// Before the hostname-cleanroom rewrite, two nodes could be written
++// with the same GivenName, producing duplicates. After the rewrite,
++// the NodeStore writer goroutine detects GivenName collisions inside
++// applyBatch and appends -1, -2, … to make the label unique.
++func TestPutNodeGivenNameCollisionBumps(t *testing.T) {
++	store := NewNodeStore(nil, allowAllPeersFunc, TestBatchSize, TestBatchTimeout)
++
++	store.Start()
++	defer store.Stop()
++
++	n1 := createTestNode(1, 1, "alice", "laptop")
++	n2 := createTestNode(2, 1, "alice", "laptop")
++	n3 := createTestNode(3, 1, "alice", "laptop")
++
++	got1 := store.PutNode(n1)
++	got2 := store.PutNode(n2)
++	got3 := store.PutNode(n3)
++
++	require.Equal(t, "laptop", got1.GivenName(), "first registration keeps base label")
++	require.Equal(t, "laptop-1", got2.GivenName(), "second registration bumps to -1")
++	require.Equal(t, "laptop-2", got3.GivenName(), "third registration bumps to -2")
++}
++
++// TestPutNodeEmptyGivenNameFallsBackToNode covers the SaaS rule that
++// an empty sanitised label becomes the literal "node". Subsequent
++// empty-label registrations bump as usual.
++func TestPutNodeEmptyGivenNameFallsBackToNode(t *testing.T) {
++	store := NewNodeStore(nil, allowAllPeersFunc, TestBatchSize, TestBatchTimeout)
++
++	store.Start()
++	defer store.Stop()
++
++	n1 := createTestNode(1, 1, "alice", "")
++	n1.GivenName = ""
++	n2 := createTestNode(2, 1, "alice", "")
++	n2.GivenName = ""
++
++	got1 := store.PutNode(n1)
++	got2 := store.PutNode(n2)
++
++	require.Equal(t, "node", got1.GivenName())
++	require.Equal(t, "node-1", got2.GivenName())
++}
++
++// TestPutNodeIdempotentKeepsLabel asserts that re-putting the same
++// node (same ID, same GivenName) does not bump its own label.
++func TestPutNodeIdempotentKeepsLabel(t *testing.T) {
++	store := NewNodeStore(nil, allowAllPeersFunc, TestBatchSize, TestBatchTimeout)
++
++	store.Start()
++	defer store.Stop()
++
++	n := createTestNode(1, 1, "alice", "laptop")
++	first := store.PutNode(n)
++	require.Equal(t, "laptop", first.GivenName())
++
++	second := store.PutNode(n)
++	require.Equal(t, "laptop", second.GivenName(), "re-put of same node must not bump its own label")
++}
++
++// TestUpdateNodeBumpsOnCollision asserts that UpdateNode also runs
++// the collision-bump branch when a callback rewrites GivenName to a
++// label held by another node.
++func TestUpdateNodeBumpsOnCollision(t *testing.T) {
++	store := NewNodeStore(nil, allowAllPeersFunc, TestBatchSize, TestBatchTimeout)
++
++	store.Start()
++	defer store.Stop()
++
++	store.PutNode(createTestNode(1, 1, "alice", "laptop"))
++	store.PutNode(createTestNode(2, 1, "alice", "phone"))
++
++	view, ok := store.UpdateNode(2, func(n *types.Node) {
++		n.GivenName = "laptop"
++	})
++	require.True(t, ok)
++	require.Equal(t, "laptop-1", view.GivenName(), "UpdateNode must bump on collision")
++}
++
++// TestConcurrentPutNodeSameGivenNameAllUnique is the race regression
++// for the plan's safety argument: N goroutines concurrently PutNode
++// with the same GivenName and distinct IDs. All N stored labels must
++// be unique (no two nodes holding the same GivenName).
++func TestConcurrentPutNodeSameGivenNameAllUnique(t *testing.T) {
++	const N = 20
++
++	store := NewNodeStore(nil, allowAllPeersFunc, TestBatchSize, TestBatchTimeout)
++
++	store.Start()
++	defer store.Stop()
++
++	var wg sync.WaitGroup
++
++	results := make(chan string, N)
++	for i := range N {
++		wg.Add(1)
++
++		go func(id int) {
++			defer wg.Done()
++
++			n := createTestNode(types.NodeID(id+1), 1, "alice", "laptop") //nolint:gosec // test ids
++
++			view := store.PutNode(n)
++			results <- view.GivenName()
++		}(i)
++	}
++
++	wg.Wait()
++	close(results)
++
++	seen := make(map[string]struct{}, N)
++	for label := range results {
++		if _, dup := seen[label]; dup {
++			t.Fatalf("duplicate label %q across concurrent PutNode", label)
++		}
++
++		seen[label] = struct{}{}
++	}
++
++	require.Len(t, seen, N, "all concurrent PutNodes must land with unique labels")
++
++	for i := range N {
++		want := "laptop"
++		if i > 0 {
++			want = fmt.Sprintf("laptop-%d", i)
++		}
++
++		if _, ok := seen[want]; !ok {
++			t.Errorf("expected label %q in result set, got %v", want, seen)
++		}
++	}
++}
++
++// TestSetGivenNameSuccess renames a node to a free label and asserts
++// the NodeView reflects the new label.
++func TestSetGivenNameSuccess(t *testing.T) {
++	store := NewNodeStore(nil, allowAllPeersFunc, TestBatchSize, TestBatchTimeout)
++
++	store.Start()
++	defer store.Stop()
++
++	store.PutNode(createTestNode(1, 1, "alice", "laptop"))
++
++	view, err := store.SetGivenName(1, "workhorse")
++	require.NoError(t, err)
++	require.Equal(t, "workhorse", view.GivenName())
++}
++
++// TestSetGivenNameRejectsTaken refuses to rename a node to a label
++// held by a different node, leaving both labels unchanged.
++func TestSetGivenNameRejectsTaken(t *testing.T) {
++	store := NewNodeStore(nil, allowAllPeersFunc, TestBatchSize, TestBatchTimeout)
++
++	store.Start()
++	defer store.Stop()
++
++	store.PutNode(createTestNode(1, 1, "alice", "laptop"))
++	store.PutNode(createTestNode(2, 1, "alice", "phone"))
++
++	_, err := store.SetGivenName(2, "laptop")
++	require.ErrorIs(t, err, ErrGivenNameTaken)
++
++	view, _ := store.GetNode(2)
++	require.Equal(t, "phone", view.GivenName(), "rejected rename must not mutate state")
++}
++
++// TestSetGivenNameRejectsInvalid returns ErrGivenNameInvalid for
++// labels that are not valid DNS labels.
++func TestSetGivenNameRejectsInvalid(t *testing.T) {
++	store := NewNodeStore(nil, allowAllPeersFunc, TestBatchSize, TestBatchTimeout)
++
++	store.Start()
++	defer store.Stop()
++
++	store.PutNode(createTestNode(1, 1, "alice", "laptop"))
++
++	for _, bad := range []string{"Joe's Mac", "has space", "-leading", "trailing-", "", "dot.in.label"} {
++		_, err := store.SetGivenName(1, bad)
++		require.ErrorIsf(t, err, ErrGivenNameInvalid, "label %q must reject as invalid", bad)
++	}
++}
++
++// TestSetGivenNameRejectsMissingNode returns ErrNodeNotFound.
++func TestSetGivenNameRejectsMissingNode(t *testing.T) {
++	store := NewNodeStore(nil, allowAllPeersFunc, TestBatchSize, TestBatchTimeout)
++
++	store.Start()
++	defer store.Stop()
++
++	_, err := store.SetGivenName(999, "something")
++	require.ErrorIs(t, err, ErrNodeNotFound, "got %v", err)
++}
++
++// TestSetGivenNameIdempotent renaming a node to its own current label
++// succeeds (not a collision against itself).
++func TestSetGivenNameIdempotent(t *testing.T) {
++	store := NewNodeStore(nil, allowAllPeersFunc, TestBatchSize, TestBatchTimeout)
++
++	store.Start()
++	defer store.Stop()
++
++	store.PutNode(createTestNode(1, 1, "alice", "laptop"))
++
++	view, err := store.SetGivenName(1, "laptop")
++	require.NoError(t, err)
++	require.Equal(t, "laptop", view.GivenName())
++}

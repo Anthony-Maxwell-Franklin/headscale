@@ -1,0 +1,491 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #673: Container&#x27;s embedded DERP only has STUN port</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #673: Container&#x27;s embedded DERP only has STUN port</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/673">Original issue #673</a></p><p>Created: 2022-07-09T14:34:38Z; updated: 2024-10-26T12:03:38Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>config.yml
+```yaml
+server_url: https://*.com:8080
+listen_addr: 0.0.0.0:8080
+metrics_listen_addr: 0.0.0.0:19090
+grpc_listen_addr: 0.0.0.0:50443
+grpc_allow_insecure: false
+private_key_path: /etc/headscale/private.key
+ip_prefixes:
+  - 10.10.0.0/16
+derp:
+  server:
+    enabled: false
+    region_id: 999
+    region_code: &quot;headscale&quot;
+    region_name: &quot;Headscale Embedded DERP&quot;
+    stun_listen_addr: &quot;0.0.0.0:44444&quot;
+  paths: [&quot;/etc/headscale/derp.yaml&quot;]
+  auto_update_enabled: true
+  update_frequency: 5m
+disable_check_updates: false
+ephemeral_node_inactivity_timeout: 30m
+db_type: sqlite3
+db_path: /etc/headscale/db.sqlite
+tls_client_auth_mode: disabled
+tls_cert_path: &quot;/etc/headscale/*.com/fullchain1.pem&quot;
+tls_key_path: &quot;/etc/headscale/*.com/privkey1.pem&quot;
+log_level: debug
+acl_policy_path: &quot;&quot;
+dns_config:
+  nameservers:
+    - 10.10.0.1
+  domains: []
+  magic_dns: false
+  base_domain: lan
+unix_socket: /var/run/headscale.sock
+unix_socket_permission: &quot;0770&quot;
+```
+
+docker-compose.yml
+```yaml
+version: &quot;3&quot;
+services:
+  headscale:
+    container_name: headscale
+    restart: always
+    environment:
+      - TZ=UTC+8
+      - GIN_MODE=release
+    image: headscale/headscale:latest
+    ports:
+      - 8080:8080/tcp
+      - 10.0.21.1:19090:19090/tcp
+      - 44444:44444/udp
+    volumes:
+      - /root/docker/headscale/config:/etc/headscale/
+    command:
+      - headscale
+      - serve
+```
+
+port status
+![图片](https://user-images.githubusercontent.com/29831189/178110188-e768a8e9-d969-4187-af8a-d4545aa6049f.png)
+
+STUN port is working. I didn&#x27;t capture a screenshot but it can be found with nmap</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/673#issuecomment-1179696534">kradalby</a></h3><p>Created: 2022-07-10T10:01:39Z; updated: 2022-07-10T10:01:39Z</p><pre>Hi, can you elaborate what the problem is? I do not understand what is not working.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/673#issuecomment-1179728743">1itt1eB0y</a></h3><p>Created: 2022-07-10T13:25:28Z; updated: 2022-07-10T13:25:28Z</p><pre>It is simple, the embedded DERP doesn&#x27;t create a DERP port to accept the DERP connection.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/673#issuecomment-1179733867">juanfont</a></h3><p>Created: 2022-07-10T13:56:00Z; updated: 2022-07-10T13:56:00Z</p><pre>The DERP endpoint runs in the same addr:port as the Headscale API.
+
+On Sun, Jul 10, 2022, 15:25 1itt1eB0y ***@***.***&gt; wrote:
+
+&gt; It is simple, the embedded DERP doesn&#x27;t create a DERP port to accept the
+&gt; DERP connection.
+&gt;
+&gt; —
+&gt; Reply to this email directly, view it on GitHub
+&gt; &lt;https://github.com/juanfont/headscale/issues/673#issuecomment-1179728743&gt;,
+&gt; or unsubscribe
+&gt; &lt;https://github.com/notifications/unsubscribe-auth/AABMGQ6I5XIEQ3VEPTGRWM3VTLFNJANCNFSM53DO4N3Q&gt;
+&gt; .
+&gt; You are receiving this because you are subscribed to this thread.Message
+&gt; ID: ***@***.***&gt;
+&gt;
+</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/673#issuecomment-1179736852">1itt1eB0y</a></h3><p>Created: 2022-07-10T14:12:32Z; updated: 2022-07-10T14:12:32Z</p><pre>OH! Got it 🤣 
+BTW, can I set the embedded DERP running with `-verify-clients` or it will run with it by default</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/673#issuecomment-2439552537">Houiin</a></h3><p>Created: 2024-10-26T12:03:36Z; updated: 2024-10-26T12:03:36Z</p><pre>&gt; OH! Got it 🤣 BTW, can I set the embedded DERP running with `-verify-clients` or it will run with it by default
+
+same question... Do you have any answer, bro?</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2022-07-09T14:34:38Z · labeled · 1itt1eB0y</summary><pre>{
+  &quot;id&quot;: 6964021083,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz885Nd8n4zwAAAAGfFodb&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/6964021083&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;1itt1eB0y&quot;,
+    &quot;id&quot;: 29831189,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI5ODMxMTg5&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/29831189?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/1itt1eB0y&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/1itt1eB0y&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2022-07-09T14:34:38Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2022-07-10T10:01:39Z · commented · kradalby</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1179696534&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/673#issuecomment-1179696534&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/673&quot;,
+  &quot;id&quot;: 1179696534,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885GUL2W&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2022-07-10T10:01:39Z&quot;,
+  &quot;updated_at&quot;: &quot;2022-07-10T10:01:39Z&quot;,
+  &quot;body&quot;: &quot;Hi, can you elaborate what the problem is? I do not understand what is not working.&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1179696534/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2022-07-10T13:25:28Z · commented · 1itt1eB0y</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1179728743&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/673#issuecomment-1179728743&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/673&quot;,
+  &quot;id&quot;: 1179728743,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885GUTtn&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;1itt1eB0y&quot;,
+    &quot;id&quot;: 29831189,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI5ODMxMTg5&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/29831189?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/1itt1eB0y&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/1itt1eB0y&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2022-07-10T13:25:28Z&quot;,
+  &quot;updated_at&quot;: &quot;2022-07-10T13:25:28Z&quot;,
+  &quot;body&quot;: &quot;It is simple, the embedded DERP doesn&#x27;t create a DERP port to accept the DERP connection.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1179728743/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;1itt1eB0y&quot;,
+    &quot;id&quot;: 29831189,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI5ODMxMTg5&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/29831189?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/1itt1eB0y&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/1itt1eB0y&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2022-07-10T13:56:00Z · commented · juanfont</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1179733867&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/673#issuecomment-1179733867&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/673&quot;,
+  &quot;id&quot;: 1179733867,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885GUU9r&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2022-07-10T13:56:00Z&quot;,
+  &quot;updated_at&quot;: &quot;2022-07-10T13:56:00Z&quot;,
+  &quot;body&quot;: &quot;The DERP endpoint runs in the same addr:port as the Headscale API.\n\nOn Sun, Jul 10, 2022, 15:25 1itt1eB0y ***@***.***&gt; wrote:\n\n&gt; It is simple, the embedded DERP doesn&#x27;t create a DERP port to accept the\n&gt; DERP connection.\n&gt;\n&gt; —\n&gt; Reply to this email directly, view it on GitHub\n&gt; &lt;https://github.com/juanfont/headscale/issues/673#issuecomment-1179728743&gt;,\n&gt; or unsubscribe\n&gt; &lt;https://github.com/notifications/unsubscribe-auth/AABMGQ6I5XIEQ3VEPTGRWM3VTLFNJANCNFSM53DO4N3Q&gt;\n&gt; .\n&gt; You are receiving this because you are subscribed to this thread.Message\n&gt; ID: ***@***.***&gt;\n&gt;\n&quot;,
+  &quot;author_association&quot;: &quot;OWNER&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1179733867/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2022-07-10T14:12:32Z · commented · 1itt1eB0y</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1179736852&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/673#issuecomment-1179736852&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/673&quot;,
+  &quot;id&quot;: 1179736852,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885GUVsU&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;1itt1eB0y&quot;,
+    &quot;id&quot;: 29831189,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI5ODMxMTg5&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/29831189?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/1itt1eB0y&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/1itt1eB0y&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2022-07-10T14:12:32Z&quot;,
+  &quot;updated_at&quot;: &quot;2022-07-10T14:12:32Z&quot;,
+  &quot;body&quot;: &quot;OH! Got it 🤣 \r\nBTW, can I set the embedded DERP running with `-verify-clients` or it will run with it by default&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1179736852/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;1itt1eB0y&quot;,
+    &quot;id&quot;: 29831189,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI5ODMxMTg5&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/29831189?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/1itt1eB0y&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/1itt1eB0y&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2022-07-10T14:14:32Z · closed · 1itt1eB0y</summary><pre>{
+  &quot;id&quot;: 6965111617,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz885Nd8n4zwAAAAGfJytB&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/6965111617&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;1itt1eB0y&quot;,
+    &quot;id&quot;: 29831189,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI5ODMxMTg5&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/29831189?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/1itt1eB0y&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/1itt1eB0y&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/1itt1eB0y/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2022-07-10T14:14:32Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-10-26T12:03:36Z · commented · Houiin</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2439552537&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/673#issuecomment-2439552537&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/673&quot;,
+  &quot;id&quot;: 2439552537,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886RaJ4Z&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;Houiin&quot;,
+    &quot;id&quot;: 30932544,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjMwOTMyNTQ0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/30932544?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/Houiin&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/Houiin&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/Houiin/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/Houiin/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/Houiin/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/Houiin/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/Houiin/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/Houiin/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/Houiin/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/Houiin/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/Houiin/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-10-26T12:03:36Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-10-26T12:03:36Z&quot;,
+  &quot;body&quot;: &quot;&gt; OH! Got it 🤣 BTW, can I set the embedded DERP running with `-verify-clients` or it will run with it by default\r\n\r\nsame question... Do you have any answer, bro?&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2439552537/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;Houiin&quot;,
+    &quot;id&quot;: 30932544,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjMwOTMyNTQ0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/30932544?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/Houiin&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/Houiin&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/Houiin/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/Houiin/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/Houiin/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/Houiin/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/Houiin/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/Houiin/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/Houiin/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/Houiin/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/Houiin/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

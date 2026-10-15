@@ -1,0 +1,1061 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #117: Is subnet routing supported?</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #117: Is subnet routing supported?</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/117">Original issue #117</a></p><p>Created: 2021-09-21T21:07:28Z; updated: 2023-12-09T17:12:22Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>Hello,
+
+Thanks for creating this project.
+
+I want to do what&#x27;s outlined in this article: https://tailscale.com/kb/1021/install-aws/. Is that supported?
+
+I set up headscale and tailscale on an EC2 instance in a public subnet of my VPC, and was able to connect to it from my local machine without a problem. However I am not able to route traffic through this instance to other resources in my private subnet. Following the steps in the linked article works with the tailscale server, so my networking and security group are set up correctly. Step number 5 in the article requires using the Admin console to authorize subnet routes on the EC2 instance. Is that required with headscale and if so, is it possible to do it given that headscale doesn&#x27;t have an admin console?
+
+I am using the MacOS client on my local machine.
+
+Thanks</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/117#issuecomment-924931536">juanfont</a></h3><p>Created: 2021-09-22T13:28:21Z; updated: 2021-09-22T13:28:21Z</p><pre>@Probotect0r yep, it is supported. You have to use the CLI client.
+
+```
+headscale -n NAMESPACE routes list NODENAME
+headscale -n NAMESPACE routes enable NODENAME ROUTE
+```
+
+Can you give it a try?</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/117#issuecomment-925013230">Probotect0r</a></h3><p>Created: 2021-09-22T14:58:48Z; updated: 2021-09-22T14:58:48Z</p><pre>@juanfont 
+Thanks for the response. Unfortunately it&#x27;s not working for me. Here is what I have done:
+
+Enable the route and start headscale server:
+```
+headscale -n myfirstnamespace routes enable NODENAME 10.1.0.0/16
+headscale serve
+```
+Run tailscale:
+```
+sudo tailscale up --login-server http://localhost:8080 --advertise-routes=10.1.0.0/16
+```
+
+Run MacOS client. It connects successfully.
+```
+/Applications/Tailscale.app/Contents/MacOS/Tailscale up -login-server http://myserver:8080 --accept-routes --authkey myauthkey
+```
+
+Then I am trying to run this from my Mac, but it is not responding. This same command works when I run it on the EC2 instance running Tailscale. 
+```
+curl http://10.1.16.253:4000/
+```
+
+Note that Tailscale and Headscale are running on the same EC2 instance, hence the use of `localhost` for login-server when starting tailscale.
+
+Any ideas what I am doing wrong?</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/117#issuecomment-925025235">Probotect0r</a></h3><p>Created: 2021-09-22T15:11:59Z; updated: 2021-09-22T16:00:58Z</p><pre>I seem to be able to ping the host via tailscale:
+```
+/Applications/Tailscale.app/Contents/MacOS/Tailscale ping 10.1.16.253
+pong from ip-10-1-71-161 (100.64.0.1) via 18.117.81.172:41641 in 32ms
+```
+Do I have to do something in the Tailscale client to specifically connect to the EC2 instance?
+
+Edit:
+Actually, I can&#x27;t even seem to connect to the EC2 instance itself via SSH over Tailscale, so maybe something else is not working.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/117#issuecomment-953537537">a1ad</a></h3><p>Created: 2021-10-28T06:21:46Z; updated: 2021-10-28T06:21:46Z</p><pre>I don&#x27;t have this issue. Do you still have this? Are you running tailscale and headscale on the same server? (sudo tailscale up --login-server http://localhost:8080) using localhost on the client suggest just that?</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/117#issuecomment-954058177">juanfont</a></h3><p>Created: 2021-10-28T17:36:55Z; updated: 2021-10-28T17:36:55Z</p><pre>I am going to close this. We haven being able to replicate it.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/117#issuecomment-954062202">Probotect0r</a></h3><p>Created: 2021-10-28T17:42:45Z; updated: 2021-10-28T17:42:45Z</p><pre>I couldn&#x27;t get it working so I abandoned my efforts.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/117#issuecomment-1169896492">weironz</a></h3><p>Created: 2022-06-29T12:02:47Z; updated: 2022-06-29T12:02:47Z</p><pre>dont give up
+
+查看注册的节点列表
+
+```bash
+/ # headscale nodes ls
+ID | Name        | NodeKey | Namespace        | IP addresses                  | Ephemeral | Last seen           | Online | Expired
+1  | will-laptop | [YC7fY] | myfirstnamespace | fd7a:115c:a1e0::1, 100.64.0.1 | false     | 2022-06-29 11:36:12 | online | no     
+2  | willpc      | [VLyBR] | myfirstnamespace | fd7a:115c:a1e0::2, 100.64.0.2 | false     | 2022-06-29 11:36:42 | online | no     
+```
+
+删除节点
+
+```bash
+
+# headscale nodes delete -i 2
+```
+
+查看客户端发布的subnet
+
+```bash
+/ # headscale nodes routes list -i 2
+Route           | Enabled
+192.168.72.0/24 | false  
+192.168.93.0/24 | false 
+```
+
+启用客户端发布的subnet
+
+```bash
+/ # headscale nodes routes enable -i 2 -r 192.168.93.0/24,192.168.72.0/24
+Route           | Enabled
+192.168.72.0/24 | true   
+192.168.93.0/24 | true
+```
+</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/117#issuecomment-1208824541">lqqkk</a></h3><p>Created: 2022-08-09T01:57:43Z; updated: 2022-08-09T02:00:21Z</p><pre>I had the same problem. Changed route to TRUE as follows:
+
+Route           | Enabled
+0.0.0.0/0       | false  
+::/0            | false  
+192.168.50.0/24 | true 
+
+But the subnet still doesn&#x27;t work. What else needs to be configured?</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/117#issuecomment-1250044439">iamid0</a></h3><p>Created: 2022-09-17T10:20:07Z; updated: 2022-09-17T10:20:07Z</p><pre>Need to enable ip_forward on the server which advertises the custom route.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/117#issuecomment-1445308928">Nothend</a></h3><p>Created: 2023-02-26T09:32:50Z; updated: 2023-02-26T09:35:15Z</p><pre>&gt; 
+
+thanks a lot buddy ! I have a question , my headscale is installed in docker-compose , when i send the command &quot;docker exec -it headscale headscale nodes routes list -i 2&quot; , it shows &quot;Error: unknown shorthand flag: &#x27;i&#x27; in -i&quot;
+
+![image](https://user-images.githubusercontent.com/73117056/221402653-5650f766-3df6-48a7-a047-774872b7f036.png)
+
+but when i send the command &quot; docker exec -it headscale headscale nodes ls&quot; ，it works right .
+![image](https://user-images.githubusercontent.com/73117056/221402755-7f2de82c-1037-48db-a5af-a97dd76d7706.png)
+
+and the command &quot;docker exec -it headscale /bin/sh &quot;  , it shows &quot;OCI runtime exec failed: exec failed: unable to start container process: exec: &quot;/bin/sh&quot;: stat /bin/sh: no such file or directory: unknown&quot; .
+
+it seems the command &quot;routes&quot; is not supportted in docker ?
+
+please help me , thanks a lot
+
+</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/117#issuecomment-1848584506">unknown1818</a></h3><p>Created: 2023-12-09T17:10:50Z; updated: 2023-12-09T17:12:22Z</p><pre>&gt; &gt; 
+&gt; 
+&gt; thanks a lot buddy ! I have a question , my headscale is installed in docker-compose , when i send the command &quot;docker exec -it headscale headscale nodes routes list -i 2&quot; , it shows &quot;Error: unknown shorthand flag: &#x27;i&#x27; in -i&quot;
+&gt; 
+&gt; ![image](https://user-images.githubusercontent.com/73117056/221402653-5650f766-3df6-48a7-a047-774872b7f036.png)
+&gt; 
+&gt; but when i send the command &quot; docker exec -it headscale headscale nodes ls&quot; ，it works right . ![image](https://user-images.githubusercontent.com/73117056/221402755-7f2de82c-1037-48db-a5af-a97dd76d7706.png)
+&gt; 
+&gt; and the command &quot;docker exec -it headscale /bin/sh &quot; , it shows &quot;OCI runtime exec failed: exec failed: unable to start container process: exec: &quot;/bin/sh&quot;: stat /bin/sh: no such file or directory: unknown&quot; .
+&gt; 
+&gt; it seems the command &quot;routes&quot; is not supportted in docker ?
+&gt; 
+&gt; please help me , thanks a lot
+
+you need to use
+`sudo docker exec headscale headscale routes list`
+command
+or to enable by ID 1
+`sudo docker exec headscale headscale routes enable -r 1`</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2021-09-22T13:28:21Z · commented · juanfont</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/924931536&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/117#issuecomment-924931536&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/117&quot;,
+  &quot;id&quot;: 924931536,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8843IVXQ&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2021-09-22T13:28:21Z&quot;,
+  &quot;updated_at&quot;: &quot;2021-09-22T13:28:21Z&quot;,
+  &quot;body&quot;: &quot;@Probotect0r yep, it is supported. You have to use the CLI client.\r\n\r\n```\r\nheadscale -n NAMESPACE routes list NODENAME\r\nheadscale -n NAMESPACE routes enable NODENAME ROUTE\r\n```\r\n\r\nCan you give it a try?&quot;,
+  &quot;author_association&quot;: &quot;OWNER&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/924931536/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2021-09-22T13:28:21Z · mentioned · Probotect0r</summary><pre>{
+  &quot;id&quot;: 5343214019,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz8847zOi0zwAAAAE-evnD&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/5343214019&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;Probotect0r&quot;,
+    &quot;id&quot;: 6376824,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjYzNzY4MjQ=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6376824?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/Probotect0r&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/Probotect0r&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/Probotect0r/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/Probotect0r/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/Probotect0r/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/Probotect0r/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/Probotect0r/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/Probotect0r/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/Probotect0r/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/Probotect0r/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/Probotect0r/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2021-09-22T13:28:21Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2021-09-22T13:28:21Z · subscribed · Probotect0r</summary><pre>{
+  &quot;id&quot;: 5343214023,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz8847zOi0zwAAAAE-evnH&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/5343214023&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;Probotect0r&quot;,
+    &quot;id&quot;: 6376824,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjYzNzY4MjQ=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6376824?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/Probotect0r&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/Probotect0r&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/Probotect0r/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/Probotect0r/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/Probotect0r/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/Probotect0r/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/Probotect0r/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/Probotect0r/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/Probotect0r/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/Probotect0r/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/Probotect0r/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2021-09-22T13:28:21Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2021-09-22T14:58:48Z · commented · Probotect0r</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/925013230&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/117#issuecomment-925013230&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/117&quot;,
+  &quot;id&quot;: 925013230,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8843IpTu&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;Probotect0r&quot;,
+    &quot;id&quot;: 6376824,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjYzNzY4MjQ=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6376824?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/Probotect0r&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/Probotect0r&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/Probotect0r/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/Probotect0r/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/Probotect0r/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/Probotect0r/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/Probotect0r/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/Probotect0r/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/Probotect0r/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/Probotect0r/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/Probotect0r/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2021-09-22T14:58:48Z&quot;,
+  &quot;updated_at&quot;: &quot;2021-09-22T14:58:48Z&quot;,
+  &quot;body&quot;: &quot;@juanfont \r\nThanks for the response. Unfortunately it&#x27;s not working for me. Here is what I have done:\r\n\r\nEnable the route and start headscale server:\r\n```\r\nheadscale -n myfirstnamespace routes enable NODENAME 10.1.0.0/16\r\nheadscale serve\r\n```\r\nRun tailscale:\r\n```\r\nsudo tailscale up --login-server http://localhost:8080 --advertise-routes=10.1.0.0/16\r\n```\r\n\r\nRun MacOS client. It connects successfully.\r\n```\r\n/Applications/Tailscale.app/Contents/MacOS/Tailscale up -login-server http://myserver:8080 --accept-routes --authkey myauthkey\r\n```\r\n\r\nThen I am trying to run this from my Mac, but it is not responding. This same command works when I run it on the EC2 instance running Tailscale. \r\n```\r\ncurl http://10.1.16.253:4000/\r\n```\r\n\r\nNote that Tailscale and Headscale are running on the same EC2 instance, hence the use of `localhost` for login-server when starting tailscale.\r\n\r\nAny ideas what I am doing wrong?&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/925013230/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;Probotect0r&quot;,
+    &quot;id&quot;: 6376824,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjYzNzY4MjQ=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6376824?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/Probotect0r&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/Probotect0r&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/Probotect0r/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/Probotect0r/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/Probotect0r/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/Probotect0r/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/Probotect0r/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/Probotect0r/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/Probotect0r/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/Probotect0r/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/Probotect0r/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2021-09-22T14:58:48Z · mentioned · juanfont</summary><pre>{
+  &quot;id&quot;: 5343858094,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz8847zOi0zwAAAAE-hM2u&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/5343858094&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2021-09-22T14:58:48Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2021-09-22T14:58:48Z · subscribed · juanfont</summary><pre>{
+  &quot;id&quot;: 5343858098,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz8847zOi0zwAAAAE-hM2y&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/5343858098&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2021-09-22T14:58:48Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2021-09-22T15:11:59Z · commented · Probotect0r</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/925025235&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/117#issuecomment-925025235&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/117&quot;,
+  &quot;id&quot;: 925025235,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8843IsPT&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;Probotect0r&quot;,
+    &quot;id&quot;: 6376824,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjYzNzY4MjQ=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6376824?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/Probotect0r&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/Probotect0r&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/Probotect0r/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/Probotect0r/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/Probotect0r/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/Probotect0r/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/Probotect0r/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/Probotect0r/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/Probotect0r/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/Probotect0r/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/Probotect0r/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2021-09-22T15:11:59Z&quot;,
+  &quot;updated_at&quot;: &quot;2021-09-22T16:00:58Z&quot;,
+  &quot;body&quot;: &quot;I seem to be able to ping the host via tailscale:\r\n```\r\n/Applications/Tailscale.app/Contents/MacOS/Tailscale ping 10.1.16.253\r\npong from ip-10-1-71-161 (100.64.0.1) via 18.117.81.172:41641 in 32ms\r\n```\r\nDo I have to do something in the Tailscale client to specifically connect to the EC2 instance?\r\n\r\nEdit:\r\nActually, I can&#x27;t even seem to connect to the EC2 instance itself via SSH over Tailscale, so maybe something else is not working.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/925025235/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;Probotect0r&quot;,
+    &quot;id&quot;: 6376824,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjYzNzY4MjQ=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6376824?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/Probotect0r&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/Probotect0r&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/Probotect0r/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/Probotect0r/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/Probotect0r/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/Probotect0r/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/Probotect0r/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/Probotect0r/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/Probotect0r/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/Probotect0r/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/Probotect0r/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2021-10-16T10:41:38Z · labeled · juanfont</summary><pre>{
+  &quot;id&quot;: 5472930078,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz8847zOi0zwAAAAFGNkke&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/5472930078&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2021-10-16T10:41:38Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2021-10-28T06:21:46Z · commented · a1ad</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/953537537&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/117#issuecomment-953537537&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/117&quot;,
+  &quot;id&quot;: 953537537,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz88441dQB&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;a1ad&quot;,
+    &quot;id&quot;: 29516835,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI5NTE2ODM1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/29516835?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/a1ad&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/a1ad&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/a1ad/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/a1ad/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/a1ad/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/a1ad/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/a1ad/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/a1ad/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/a1ad/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/a1ad/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/a1ad/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2021-10-28T06:21:46Z&quot;,
+  &quot;updated_at&quot;: &quot;2021-10-28T06:21:46Z&quot;,
+  &quot;body&quot;: &quot;I don&#x27;t have this issue. Do you still have this? Are you running tailscale and headscale on the same server? (sudo tailscale up --login-server http://localhost:8080) using localhost on the client suggest just that?&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/953537537/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;a1ad&quot;,
+    &quot;id&quot;: 29516835,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI5NTE2ODM1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/29516835?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/a1ad&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/a1ad&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/a1ad/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/a1ad/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/a1ad/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/a1ad/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/a1ad/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/a1ad/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/a1ad/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/a1ad/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/a1ad/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2021-10-28T17:36:55Z · commented · juanfont</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/954058177&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/117#issuecomment-954058177&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/117&quot;,
+  &quot;id&quot;: 954058177,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz88443cXB&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2021-10-28T17:36:55Z&quot;,
+  &quot;updated_at&quot;: &quot;2021-10-28T17:36:55Z&quot;,
+  &quot;body&quot;: &quot;I am going to close this. We haven being able to replicate it.&quot;,
+  &quot;author_association&quot;: &quot;OWNER&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/954058177/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2021-10-28T17:36:55Z · closed · juanfont</summary><pre>{
+  &quot;id&quot;: 5535731740,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz8847zOi0zwAAAAFJ9JAc&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/5535731740&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2021-10-28T17:36:55Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2021-10-28T17:42:45Z · commented · Probotect0r</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/954062202&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/117#issuecomment-954062202&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/117&quot;,
+  &quot;id&quot;: 954062202,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz88443dV6&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;Probotect0r&quot;,
+    &quot;id&quot;: 6376824,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjYzNzY4MjQ=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6376824?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/Probotect0r&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/Probotect0r&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/Probotect0r/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/Probotect0r/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/Probotect0r/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/Probotect0r/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/Probotect0r/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/Probotect0r/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/Probotect0r/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/Probotect0r/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/Probotect0r/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2021-10-28T17:42:45Z&quot;,
+  &quot;updated_at&quot;: &quot;2021-10-28T17:42:45Z&quot;,
+  &quot;body&quot;: &quot;I couldn&#x27;t get it working so I abandoned my efforts.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/954062202/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;Probotect0r&quot;,
+    &quot;id&quot;: 6376824,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjYzNzY4MjQ=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6376824?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/Probotect0r&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/Probotect0r&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/Probotect0r/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/Probotect0r/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/Probotect0r/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/Probotect0r/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/Probotect0r/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/Probotect0r/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/Probotect0r/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/Probotect0r/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/Probotect0r/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2022-06-29T12:02:47Z · commented · weironz</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1169896492&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/117#issuecomment-1169896492&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/117&quot;,
+  &quot;id&quot;: 1169896492,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885FuzQs&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;weironz&quot;,
+    &quot;id&quot;: 33590311,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjMzNTkwMzEx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/33590311?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/weironz&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/weironz&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/weironz/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/weironz/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/weironz/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/weironz/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/weironz/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/weironz/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/weironz/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/weironz/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/weironz/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2022-06-29T12:02:47Z&quot;,
+  &quot;updated_at&quot;: &quot;2022-06-29T12:02:47Z&quot;,
+  &quot;body&quot;: &quot;dont give up\r\n\r\n查看注册的节点列表\r\n\r\n```bash\r\n/ # headscale nodes ls\r\nID | Name        | NodeKey | Namespace        | IP addresses                  | Ephemeral | Last seen           | Online | Expired\r\n1  | will-laptop | [YC7fY] | myfirstnamespace | fd7a:115c:a1e0::1, 100.64.0.1 | false     | 2022-06-29 11:36:12 | online | no     \r\n2  | willpc      | [VLyBR] | myfirstnamespace | fd7a:115c:a1e0::2, 100.64.0.2 | false     | 2022-06-29 11:36:42 | online | no     \r\n```\r\n\r\n删除节点\r\n\r\n```bash\r\n\r\n# headscale nodes delete -i 2\r\n```\r\n\r\n查看客户端发布的subnet\r\n\r\n```bash\r\n/ # headscale nodes routes list -i 2\r\nRoute           | Enabled\r\n192.168.72.0/24 | false  \r\n192.168.93.0/24 | false \r\n```\r\n\r\n启用客户端发布的subnet\r\n\r\n```bash\r\n/ # headscale nodes routes enable -i 2 -r 192.168.93.0/24,192.168.72.0/24\r\nRoute           | Enabled\r\n192.168.72.0/24 | true   \r\n192.168.93.0/24 | true\r\n```\r\n&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1169896492/reactions&quot;,
+    &quot;total_count&quot;: 8,
+    &quot;+1&quot;: 8,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;weironz&quot;,
+    &quot;id&quot;: 33590311,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjMzNTkwMzEx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/33590311?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/weironz&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/weironz&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/weironz/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/weironz/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/weironz/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/weironz/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/weironz/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/weironz/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/weironz/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/weironz/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/weironz/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2022-08-09T01:57:43Z · commented · lqqkk</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1208824541&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/117#issuecomment-1208824541&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/117&quot;,
+  &quot;id&quot;: 1208824541,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885IDTLd&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;lqqkk&quot;,
+    &quot;id&quot;: 4134620,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQxMzQ2MjA=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4134620?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/lqqkk&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/lqqkk&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/lqqkk/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/lqqkk/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/lqqkk/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/lqqkk/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/lqqkk/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/lqqkk/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/lqqkk/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/lqqkk/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/lqqkk/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2022-08-09T01:57:43Z&quot;,
+  &quot;updated_at&quot;: &quot;2022-08-09T02:00:21Z&quot;,
+  &quot;body&quot;: &quot;I had the same problem. Changed route to TRUE as follows:\r\n\r\nRoute           | Enabled\r\n0.0.0.0/0       | false  \r\n::/0            | false  \r\n192.168.50.0/24 | true \r\n\r\nBut the subnet still doesn&#x27;t work. What else needs to be configured?&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1208824541/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;lqqkk&quot;,
+    &quot;id&quot;: 4134620,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQxMzQ2MjA=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4134620?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/lqqkk&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/lqqkk&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/lqqkk/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/lqqkk/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/lqqkk/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/lqqkk/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/lqqkk/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/lqqkk/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/lqqkk/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/lqqkk/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/lqqkk/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2022-09-17T10:20:07Z · commented · iamid0</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1250044439&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/117#issuecomment-1250044439&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/117&quot;,
+  &quot;id&quot;: 1250044439,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885KgioX&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;iamid0&quot;,
+    &quot;id&quot;: 51473429,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjUxNDczNDI5&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/51473429?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/iamid0&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/iamid0&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/iamid0/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/iamid0/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/iamid0/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/iamid0/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/iamid0/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/iamid0/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/iamid0/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/iamid0/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/iamid0/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2022-09-17T10:20:07Z&quot;,
+  &quot;updated_at&quot;: &quot;2022-09-17T10:20:07Z&quot;,
+  &quot;body&quot;: &quot;Need to enable ip_forward on the server which advertises the custom route.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1250044439/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;iamid0&quot;,
+    &quot;id&quot;: 51473429,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjUxNDczNDI5&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/51473429?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/iamid0&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/iamid0&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/iamid0/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/iamid0/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/iamid0/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/iamid0/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/iamid0/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/iamid0/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/iamid0/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/iamid0/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/iamid0/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2023-02-26T09:32:50Z · commented · Nothend</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1445308928&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/117#issuecomment-1445308928&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/117&quot;,
+  &quot;id&quot;: 1445308928,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885WJaoA&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;Nothend&quot;,
+    &quot;id&quot;: 73117056,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjczMTE3MDU2&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/73117056?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/Nothend&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/Nothend&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/Nothend/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/Nothend/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/Nothend/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/Nothend/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/Nothend/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/Nothend/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/Nothend/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/Nothend/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/Nothend/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2023-02-26T09:32:50Z&quot;,
+  &quot;updated_at&quot;: &quot;2023-02-26T09:35:15Z&quot;,
+  &quot;body&quot;: &quot;&gt; \r\n\r\nthanks a lot buddy ! I have a question , my headscale is installed in docker-compose , when i send the command \&quot;docker exec -it headscale headscale nodes routes list -i 2\&quot; , it shows \&quot;Error: unknown shorthand flag: &#x27;i&#x27; in -i\&quot;\r\n\r\n![image](https://user-images.githubusercontent.com/73117056/221402653-5650f766-3df6-48a7-a047-774872b7f036.png)\r\n\r\nbut when i send the command \&quot; docker exec -it headscale headscale nodes ls\&quot; ，it works right .\r\n![image](https://user-images.githubusercontent.com/73117056/221402755-7f2de82c-1037-48db-a5af-a97dd76d7706.png)\r\n\r\nand the command \&quot;docker exec -it headscale /bin/sh \&quot;  , it shows \&quot;OCI runtime exec failed: exec failed: unable to start container process: exec: \&quot;/bin/sh\&quot;: stat /bin/sh: no such file or directory: unknown\&quot; .\r\n\r\nit seems the command \&quot;routes\&quot; is not supportted in docker ?\r\n\r\nplease help me , thanks a lot\r\n\r\n&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1445308928/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;Nothend&quot;,
+    &quot;id&quot;: 73117056,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjczMTE3MDU2&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/73117056?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/Nothend&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/Nothend&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/Nothend/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/Nothend/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/Nothend/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/Nothend/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/Nothend/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/Nothend/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/Nothend/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/Nothend/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/Nothend/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2023-12-09T17:10:50Z · commented · unknown1818</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1848584506&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/117#issuecomment-1848584506&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/117&quot;,
+  &quot;id&quot;: 1848584506,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885uLyk6&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;unknown1818&quot;,
+    &quot;id&quot;: 92212915,
+    &quot;node_id&quot;: &quot;U_kgDOBX8Osw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/92212915?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/unknown1818&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/unknown1818&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/unknown1818/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/unknown1818/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/unknown1818/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/unknown1818/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/unknown1818/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/unknown1818/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/unknown1818/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/unknown1818/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/unknown1818/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2023-12-09T17:10:50Z&quot;,
+  &quot;updated_at&quot;: &quot;2023-12-09T17:12:22Z&quot;,
+  &quot;body&quot;: &quot;&gt; &gt; \r\n&gt; \r\n&gt; thanks a lot buddy ! I have a question , my headscale is installed in docker-compose , when i send the command \&quot;docker exec -it headscale headscale nodes routes list -i 2\&quot; , it shows \&quot;Error: unknown shorthand flag: &#x27;i&#x27; in -i\&quot;\r\n&gt; \r\n&gt; ![image](https://user-images.githubusercontent.com/73117056/221402653-5650f766-3df6-48a7-a047-774872b7f036.png)\r\n&gt; \r\n&gt; but when i send the command \&quot; docker exec -it headscale headscale nodes ls\&quot; ，it works right . ![image](https://user-images.githubusercontent.com/73117056/221402755-7f2de82c-1037-48db-a5af-a97dd76d7706.png)\r\n&gt; \r\n&gt; and the command \&quot;docker exec -it headscale /bin/sh \&quot; , it shows \&quot;OCI runtime exec failed: exec failed: unable to start container process: exec: \&quot;/bin/sh\&quot;: stat /bin/sh: no such file or directory: unknown\&quot; .\r\n&gt; \r\n&gt; it seems the command \&quot;routes\&quot; is not supportted in docker ?\r\n&gt; \r\n&gt; please help me , thanks a lot\r\n\r\nyou need to use\r\n`sudo docker exec headscale headscale routes list`\r\ncommand\r\nor to enable by ID 1\r\n`sudo docker exec headscale headscale routes enable -r 1`&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1848584506/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;unknown1818&quot;,
+    &quot;id&quot;: 92212915,
+    &quot;node_id&quot;: &quot;U_kgDOBX8Osw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/92212915?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/unknown1818&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/unknown1818&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/unknown1818/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/unknown1818/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/unknown1818/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/unknown1818/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/unknown1818/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/unknown1818/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/unknown1818/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/unknown1818/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/unknown1818/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

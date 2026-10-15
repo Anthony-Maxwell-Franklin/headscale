@@ -1,0 +1,333 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #2352: [Bug] Calling routes API endpoint crashes with SIGSEGV</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #2352: [Bug] Calling routes API endpoint crashes with SIGSEGV</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/2352">Original issue #2352</a></p><p>Created: 2025-01-18T16:13:38Z; updated: 2025-01-27T06:37:59Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+Headscale crashes with SIGSEGV when the API endpoint https://example.com/api/v1/routes is called.
+
+Log output of headscale running in trace mode:
+```
+headscale  | 2025-01-18T15:59:50Z TRC home/runner/work/headscale/headscale/hscontrol/app.go:382 &gt; HTTP authentication invoked client_address=172.20.2.12:45804
+headscale  | panic: runtime error: invalid memory address or nil pointer dereference
+headscale  | [signal SIGSEGV: segmentation violation code=0x1 addr=0x8 pc=0xce9bc2]
+headscale  | 
+headscale  | goroutine 445 [running]:
+headscale  | github.com/juanfont/headscale/hscontrol/types.(*Node).Proto(0x0)
+headscale  | 	/home/runner/work/headscale/headscale/hscontrol/types/node.go:239 +0x22
+headscale  | github.com/juanfont/headscale/hscontrol/types.Routes.Proto({0xc0003acc08?, 0x0?, 0x2294470?})
+headscale  | 	/home/runner/work/headscale/headscale/hscontrol/types/routes.go:82 +0xbd
+headscale  | github.com/juanfont/headscale/hscontrol.headscaleV1APIServer.GetRoutes({{}, 0x410c00?}, {0x28?, 0x1f95860?}, 0xc0002bc170?)
+headscale  | 	/home/runner/work/headscale/headscale/hscontrol/grpcv1.go:558 +0x36
+headscale  | github.com/juanfont/headscale/gen/go/headscale/v1._HeadscaleService_GetRoutes_Handler({0x2142b20, 0xc00050e4a0}, {0x25482d8, 0xc00048b140}, 0xc000a2c080, 0x0)
+headscale  | 	/home/runner/work/headscale/headscale/gen/go/headscale/v1/headscale_grpc.pb.go:806 +0x1a9
+headscale  | google.golang.org/grpc.(*Server).processUnaryRPC(0xc0003fee00, {0x25482d8, 0xc00048b0e0}, 0xc000698240, 0xc0004390b0, 0x36a3118, 0x0)
+headscale  | 	/home/runner/go/pkg/mod/google.golang.org/grpc@v1.69.0/server.go:1392 +0xfc3
+headscale  | google.golang.org/grpc.(*Server).handleStream(0xc0003fee00, {0x2548a98, 0xc000234000}, 0xc000698240)
+headscale  | 	/home/runner/go/pkg/mod/google.golang.org/grpc@v1.69.0/server.go:1802 +0xbaa
+headscale  | google.golang.org/grpc.(*Server).serveStreams.func2.1()
+headscale  | 	/home/runner/go/pkg/mod/google.golang.org/grpc@v1.69.0/server.go:1030 +0x7f
+headscale  | created by google.golang.org/grpc.(*Server).serveStreams.func2 in goroutine 90
+headscale  | 	/home/runner/go/pkg/mod/google.golang.org/grpc@v1.69.0/server.go:1041 +0x125
+headscale exited with code 0
+headscale  | 2025-01-18T15:59:51Z INF Opening database database=sqlite3 path=/var/lib/headscale/db.sqlite
+```
+
+### Expected Behavior
+
+The API endpoint `/api/v1/routes` returns the expected response instead of responding with &quot;Bad Gateway&quot;.
+
+### Steps To Reproduce
+
+Call the API endpoint with a valid api key:
+```shell
+user@host:~$ curl -X GET &#x27;https://headscale.example.com/api/v1/routes&#x27; -H &#x27;Authorization: Bearer &lt;redacted&gt;&#x27;`
+Bad Gateway
+```
+
+### Environment
+
+```markdown
+- OS: Docker on ArchLinux
+- Headscale version: v0.24.0
+- Headplane version: v0.4.1
+```
+
+### Runtime environment
+
+- [x] Headscale is behind a (reverse) proxy
+- [x] Headscale runs in a container
+
+### Anything else?
+
+I noticed this when the tab &quot;Machines&quot; of the web UI Headplane showed &quot;Unexpected Server Error&quot;. After further investigation it receives the &quot;Bad Gateway&quot; response from Headscale when calling the routes endpoint I was able to reproduce this behavior when calling the endpoint manually using curl.</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/2352#issuecomment-2599781468">strobeltobias</a></h3><p>Created: 2025-01-18T16:41:50Z; updated: 2025-01-18T16:41:50Z</p><pre>I was curious what&#x27;s in the routes table and looked into it using sqlite3. By clearing the table manually and removing and re-adding the nodes advertising routes I was able to fix this.
+
+So it probably was a bad route without a valid node, i.e. a route that was not cleaned up after removing the node it belongs to?
+As I was removing old nodes earlier via the headscale cli:
+```shell
+docker exec headscale headscale nodes delete -i 2
+```
+
+If this needs no further investigation from this point on, feel free to close the issue.</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2025-01-18T16:13:38Z · labeled · strobeltobias</summary><pre>{
+  &quot;id&quot;: 15986150440,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz886mt7DpzwAAAAO42Uwo&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/15986150440&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;strobeltobias&quot;,
+    &quot;id&quot;: 6691273,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjY2OTEyNzM=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6691273?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/strobeltobias&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/strobeltobias&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/strobeltobias/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/strobeltobias/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/strobeltobias/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/strobeltobias/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/strobeltobias/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/strobeltobias/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/strobeltobias/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/strobeltobias/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/strobeltobias/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-01-18T16:13:38Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-01-18T16:20:24Z · subscribed · multi-max</summary><pre>{
+  &quot;id&quot;: 15986162894,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz886mt7DpzwAAAAO42XzO&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/15986162894&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;multi-max&quot;,
+    &quot;id&quot;: 67010223,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjY3MDEwMjIz&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/67010223?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/multi-max&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/multi-max&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/multi-max/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/multi-max/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/multi-max/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/multi-max/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/multi-max/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/multi-max/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/multi-max/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/multi-max/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/multi-max/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-01-18T16:20:24Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-01-18T16:41:50Z · commented · strobeltobias</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2599781468&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2352#issuecomment-2599781468&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2352&quot;,
+  &quot;id&quot;: 2599781468,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886a9YRc&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;strobeltobias&quot;,
+    &quot;id&quot;: 6691273,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjY2OTEyNzM=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6691273?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/strobeltobias&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/strobeltobias&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/strobeltobias/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/strobeltobias/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/strobeltobias/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/strobeltobias/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/strobeltobias/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/strobeltobias/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/strobeltobias/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/strobeltobias/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/strobeltobias/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-01-18T16:41:50Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-01-18T16:41:50Z&quot;,
+  &quot;body&quot;: &quot;I was curious what&#x27;s in the routes table and looked into it using sqlite3. By clearing the table manually and removing and re-adding the nodes advertising routes I was able to fix this.\n\nSo it probably was a bad route without a valid node, i.e. a route that was not cleaned up after removing the node it belongs to?\nAs I was removing old nodes earlier via the headscale cli:\n```shell\ndocker exec headscale headscale nodes delete -i 2\n```\n\nIf this needs no further investigation from this point on, feel free to close the issue.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2599781468/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;strobeltobias&quot;,
+    &quot;id&quot;: 6691273,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjY2OTEyNzM=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6691273?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/strobeltobias&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/strobeltobias&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/strobeltobias/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/strobeltobias/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/strobeltobias/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/strobeltobias/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/strobeltobias/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/strobeltobias/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/strobeltobias/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/strobeltobias/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/strobeltobias/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-01-18T17:21:00Z · unsubscribed · HomeLabJunkie</summary><pre>{
+  &quot;id&quot;: 15986275362,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz886mt7DpzwAAAAO42zQi&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/15986275362&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;HomeLabJunkie&quot;,
+    &quot;id&quot;: 126406464,
+    &quot;node_id&quot;: &quot;U_kgDOB4jPQA&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/126406464?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/HomeLabJunkie&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/HomeLabJunkie&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/HomeLabJunkie/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/HomeLabJunkie/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/HomeLabJunkie/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/HomeLabJunkie/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/HomeLabJunkie/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/HomeLabJunkie/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/HomeLabJunkie/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/HomeLabJunkie/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/HomeLabJunkie/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-01-18T17:21:00Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-01-18T17:21:25Z · unsubscribed · mrabino1</summary><pre>{
+  &quot;id&quot;: 15986276185,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz886mt7DpzwAAAAO42zdZ&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/15986276185&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mrabino1&quot;,
+    &quot;id&quot;: 4902221,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ5MDIyMjE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4902221?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mrabino1&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mrabino1&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mrabino1/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mrabino1/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mrabino1/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mrabino1/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mrabino1/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mrabino1/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mrabino1/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mrabino1/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mrabino1/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-01-18T17:21:25Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-01-19T16:17:25Z · closed · strobeltobias</summary><pre>{
+  &quot;id&quot;: 15989251938,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz886mt7DpzwAAAAO5CJ9i&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/15989251938&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;strobeltobias&quot;,
+    &quot;id&quot;: 6691273,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjY2OTEyNzM=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6691273?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/strobeltobias&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/strobeltobias&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/strobeltobias/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/strobeltobias/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/strobeltobias/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/strobeltobias/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/strobeltobias/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/strobeltobias/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/strobeltobias/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/strobeltobias/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/strobeltobias/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-01-19T16:17:25Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-01-27T06:37:59Z · milestoned · nblock</summary><pre>{
+  &quot;id&quot;: 16073145522,
+  &quot;node_id&quot;: &quot;MIE_lADOEFLz886mt7DpzwAAAAO-CLyy&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/16073145522&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;milestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-01-27T06:37:59Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.24.1&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

@@ -1,0 +1,89 @@
+{
+  "lookback_days": 180,
+  "split_days": 30,
+  "backlog_approximation_included": true,
+  "observations": 1641,
+  "interval_rows": 1872,
+  "merge_events": 1317,
+  "quarter_clusters": 24,
+  "no_event_risk_intervals_excluded": 29,
+  "concentration_effects": [
+    {
+      "period": "through_split",
+      "log_hazard_coefficient": -0.0631806676901169,
+      "merge_events_in_period": 1248,
+      "eligible_subjects_in_period": 1666,
+      "cluster_standard_error": 0.03518115129070134,
+      "hazard_ratio": 0.9387738522636084,
+      "lower_95": 0.8728789225039443,
+      "upper_95": 1.0096432884022044
+    },
+    {
+      "period": "after_split",
+      "log_hazard_coefficient": 0.19410762681738317,
+      "merge_events_in_period": 69,
+      "eligible_subjects_in_period": 235,
+      "cluster_standard_error": 0.060787337807415416,
+      "hazard_ratio": 1.2142269593071782,
+      "lower_95": 1.0707501074300836,
+      "upper_95": 1.376929218570847
+    }
+  ],
+  "log_likelihood": -7333.158609643294,
+  "baseline_stratification": "prior integration role x prior PR experience (0, 1-4, 5+)",
+  "interval_method": "Quarter-clustered sandwich covariance, Student t critical value",
+  "limitations": [
+    "Post-pilot diagnostic with a 30-day elapsed-time split.",
+    "Other covariates remain proportional within each role/experience stratum.",
+    "Submission-time exposure is fixed; this does not model evolving workload.",
+    "Included backlog is a final-disposition approximation, pending full reopening-history validation.",
+    "Time-dependent hazard ratios are not merge probabilities or causal effects."
+  ],
+  "without_backlog_sensitivity": {
+    "lookback_days": 180,
+    "split_days": 30,
+    "backlog_approximation_included": false,
+    "observations": 1641,
+    "interval_rows": 1872,
+    "merge_events": 1317,
+    "quarter_clusters": 24,
+    "no_event_risk_intervals_excluded": 29,
+    "concentration_effects": [
+      {
+        "period": "through_split",
+        "log_hazard_coefficient": -0.055531140782327,
+        "merge_events_in_period": 1248,
+        "eligible_subjects_in_period": 1666,
+        "cluster_standard_error": 0.03889240258939717,
+        "hazard_ratio": 0.9459825645746188,
+        "lower_95": 0.8728546730986463,
+        "upper_95": 1.0252371214354914
+      },
+      {
+        "period": "after_split",
+        "log_hazard_coefficient": 0.1924003170986457,
+        "merge_events_in_period": 69,
+        "eligible_subjects_in_period": 235,
+        "cluster_standard_error": 0.05999434623292436,
+        "hazard_ratio": 1.2121556664911128,
+        "lower_95": 1.0706784962768243,
+        "upper_95": 1.3723273278728676
+      }
+    ],
+    "log_likelihood": -7333.861332625476,
+    "baseline_stratification": "prior integration role x prior PR experience (0, 1-4, 5+)",
+    "interval_method": "Quarter-clustered sandwich covariance, Student t critical value",
+    "limitations": [
+      "Post-pilot diagnostic with a 30-day elapsed-time split.",
+      "Other covariates remain proportional within each role/experience stratum.",
+      "Submission-time exposure is fixed; this does not model evolving workload.",
+      "Included backlog is a final-disposition approximation, pending full reopening-history validation.",
+      "Time-dependent hazard ratios are not merge probabilities or causal effects."
+    ]
+  },
+  "provenance": {
+    "input_sha256": "c3ce99551b8f6796a24bb6417c3667a8f7ab9fa7bdfdb9df2c14d1fdf209e6d8",
+    "script_sha256": "0e65eb7f8c18869a43f90f5e194e8d0dbe03020b4355c0bd43a72488d1e0bacf",
+    "uv_lock_sha256": "63bdd8a6cfa7f84a4a8cc3bb5b8d2892a11bec354814c4fa9beeb591bf9a6148"
+  }
+}

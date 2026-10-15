@@ -1,0 +1,177 @@
+commit f8018f177aa870b7b4163c4b5ff2ed8e8de6a0fd
+Author:     Jonas Schwartz <js@monta.com>
+AuthorDate: Tue Oct 6 20:35:08 2026 +0200
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Thu Oct 8 12:43:45 2026 +0200
+
+    policy/v2: skip via resolution when the policy has no via grants
+    
+    ViaRoutesForPeer runs for every peer of every map response. Before it
+    looks at Via, it converts every ACL to grants and resolves each grant's
+    sources and destinations against the whole node set. Only via grants
+    can add to the result and ACLs never carry via, so without a via grant
+    all of that work was discarded. On large tailnets it dominated map
+    generation. Return early instead.
+    
+    BenchmarkViaRoutesForPeer, mean per peer (Apple M3 Pro):
+    
+            policy     nodes  before    after
+            global     1000   21.8us    9ns, 0 allocs
+            self       1000   45.0us    9ns, 0 allocs
+            via        1000   8.1us     unchanged
+            via-mixed  1000   69.0us    unchanged
+    
+    Fixes #3512
+---
+ CHANGELOG.md                       |  1 +
+ hscontrol/policy/v2/policy.go      |  9 ++++
+ hscontrol/policy/v2/policy_test.go | 90 ++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 100 insertions(+)
+
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 9eed6337..00a29f2d 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -137,6 +137,7 @@ clients, and how to run the same setup without Nix.
+ - Fix SSH access surviving the removal of its policy rules; clients kept their last SSH rules, and a pending SSH check could still be approved [#3517](https://github.com/juanfont/headscale/pull/3517)
+ - Fix SSH check periods coming from the first check rule for a node pair instead of the rule for the login user [#3517](https://github.com/juanfont/headscale/pull/3517)
+ - Policy changes resend a node's SSH policy only when it changed, sparing clients a full netmap rebuild [#3517](https://github.com/juanfont/headscale/pull/3517)
++- Map generation no longer resolves every policy rule's sources and destinations for each peer when the policy has no `via` grants, which made map responses slow and CPU-bound on large tailnets [#3512](https://github.com/juanfont/headscale/issues/3512)
+ 
+ ## 0.29.5 (202x-xx-xx)
+ 
+diff --git a/hscontrol/policy/v2/policy.go b/hscontrol/policy/v2/policy.go
+index ff4e2258..ad2238f7 100644
+--- a/hscontrol/policy/v2/policy.go
++++ b/hscontrol/policy/v2/policy.go
+@@ -1368,6 +1368,11 @@ func (pm *PolicyManager) ViaRoutesForPeer(viewer, peer types.NodeView) types.Via
+ 		return result
+ 	}
+ 
++	// Only via grants can add to the result, and ACLs never carry via.
++	if !slices.ContainsFunc(pm.pol.Grants, grantHasVia) {
++		return result
++	}
++
+ 	// Clip so the appends below allocate: callers share pm.pol under RLock,
+ 	// and writing into its spare capacity races between them.
+ 	grants := slices.Clip(pm.pol.Grants)
+@@ -1574,6 +1579,10 @@ func (pm *PolicyManager) ViaRoutesForPeer(viewer, peer types.NodeView) types.Via
+ 	return result
+ }
+ 
++func grantHasVia(grant Grant) bool {
++	return len(grant.Via) > 0
++}
++
+ // grantReachesInternet reports whether a grant's destinations include
+ // the internet. Neither the wildcard nor autogroup:internet resolves
+ // to 0.0.0.0/0, so check the aliases themselves.
+diff --git a/hscontrol/policy/v2/policy_test.go b/hscontrol/policy/v2/policy_test.go
+index 4420a752..5e28831b 100644
+--- a/hscontrol/policy/v2/policy_test.go
++++ b/hscontrol/policy/v2/policy_test.go
+@@ -1902,6 +1902,58 @@ func TestViaRoutesForPeer(t *testing.T) {
+ 		require.Empty(t, result.Exclude)
+ 	})
+ 
++	t.Run("no_via_grant_returns_empty", func(t *testing.T) {
++		t.Parallel()
++
++		nodes := types.Nodes{
++			{
++				ID:       1,
++				Hostname: "viewer",
++				IPv4:     ap("100.64.0.1"),
++				User:     new(users[0]),
++				UserID:   new(users[0].ID),
++				Hostinfo: &tailcfg.Hostinfo{},
++			},
++			{
++				ID:       2,
++				Hostname: "router",
++				IPv4:     ap("100.64.0.2"),
++				User:     new(users[0]),
++				UserID:   new(users[0].ID),
++				Tags:     []string{"tag:router"},
++				Hostinfo: &tailcfg.Hostinfo{
++					RoutableIPs: []netip.Prefix{mp("10.0.0.0/24")},
++				},
++				ApprovedRoutes: []netip.Prefix{mp("10.0.0.0/24")},
++			},
++		}
++
++		// An ACL and a grant both cover the route, neither with via.
++		pol := `{
++			"tagOwners": {
++				"tag:router": ["user1@"]
++			},
++			"acls": [{
++				"action": "accept",
++				"src": ["autogroup:member"],
++				"dst": ["10.0.0.0/24:*"]
++			}],
++			"grants": [{
++				"src": ["user1@"],
++				"dst": ["10.0.0.0/24"],
++				"ip": ["*"]
++			}]
++		}`
++
++		pm, err := NewPolicyManager([]byte(pol), users, nodes.ViewSlice())
++		require.NoError(t, err)
++
++		result := pm.ViaRoutesForPeer(nodes[0].View(), nodes[1].View())
++		require.Empty(t, result.Include)
++		require.Empty(t, result.Exclude)
++		require.Empty(t, result.UsePrimary)
++	})
++
+ 	t.Run("peer_does_not_advertise_destination", func(t *testing.T) {
+ 		t.Parallel()
+ 
+@@ -3301,6 +3353,44 @@ func BenchmarkBuildPeerMap(b *testing.B) {
+ 	}
+ }
+ 
++// BenchmarkViaRoutesForPeer measures the mean per-peer cost of one map
++// response: a user node against every peer in turn. "via-mixed" adds
++// ordinary ACLs next to the via grant.
++func BenchmarkViaRoutesForPeer(b *testing.B) {
++	shapes := append(slices.Clone(benchPolicies), struct {
++		name           string
++		policy         string
++		routerFiltered bool
++	}{name: "via-mixed", policy: `{
++		"groups": {"group:a": ["u1@"]},
++		"tagOwners": {"tag:router": ["u1@"], "tag:srv": ["u1@"]},
++		"acls": [
++			{"action": "accept", "src": ["autogroup:member"], "dst": ["tag:srv:*"]},
++			{"action": "accept", "src": ["group:a"], "dst": ["10.0.0.0/8:22,443"]}
++		],
++		"grants": [{"src": ["u2@"], "dst": ["10.0.0.0/8"], "ip": ["*"], "via": ["tag:router"]}]}`})
++
++	for _, pol := range shapes {
++		for _, n := range []int{100, 300, 617, 1000} {
++			b.Run(fmt.Sprintf("%s/n=%d", pol.name, n), func(b *testing.B) {
++				users, nodes := benchNodes(n)
++				pm, err := NewPolicyManager([]byte(pol.policy), users, nodes.ViewSlice())
++				require.NoError(b, err)
++
++				viewer := nodes[1].View()
++
++				b.ReportAllocs()
++
++				i := 0
++				for b.Loop() {
++					pm.ViaRoutesForPeer(viewer, nodes[i%n].View())
++					i++
++				}
++			})
++		}
++	}
++}
++
+ // BenchmarkSetNodes measures PolicyManager.SetNodes when one node's
+ // route changes on every call, the same per-write cost
+ // BenchmarkNodeStoreWrite drives through a NodeStore.

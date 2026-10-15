@@ -1,0 +1,17 @@
+{
+  "cases": 100,
+  "sampling_design_sha256": "fd8f4863672e5545ecdd683dd4b4753562e55010808fa914b3c541f8160afd3b",
+  "codebook_sha256": "fd6be23a49e6b3ddaefb3210fe6373e76c4950385f134af9a07d93a123d3e607",
+  "codebook_version": 2,
+  "rater_1_fully_coded_cases": 0,
+  "rater_2_fully_coded_cases": 0,
+  "status": "Prepared forms; field completion alone does not establish independent human coding",
+  "evidence_packets": "Paper/results/issue-validation/review_packets.json",
+  "population": "Issues with the bug label at the pinned collection snapshot",
+  "limitations": [
+    "The two reviewers must work separately before adjudication.",
+    "Sample category frequencies require inclusion weights before population inference.",
+    "Supported repair evidence does not imply runtime reproduction.",
+    "Assistant-generated case suggestions are excluded from these forms."
+  ]
+}

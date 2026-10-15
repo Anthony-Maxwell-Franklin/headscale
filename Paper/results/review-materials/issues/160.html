@@ -1,0 +1,491 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #160: MagicDNS base domain clobbers valid records</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #160: MagicDNS base domain clobbers valid records</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/160">Original issue #160</a></p><p>Created: 2021-10-13T23:24:12Z; updated: 2021-10-18T10:16:08Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>The Domain used for MagicDNS&#x27; base domain must not match an actual domain, as any valid records within such domain are completely clobbered by MagicDNS and return NXDOMAIN.
+
+In my own testing I use my domain (anstee.dev) as the base, knowing full well that MagicDNS will include the namespace (&quot;nicka101&quot; for my testing) in the produced records , and thus there should be no conflict with actual records visible to upstream DNS.
+
+However checking DNS responses after making these changes reveals the following:
+
+Relevant section of headscale config:
+ ```
+&quot;dns_config&quot;: {
+        &quot;nameservers&quot;: [&quot;8.8.4.4&quot;, &quot;8.8.8.8&quot;],
+        &quot;domains&quot;: [],
+        &quot;magic_dns&quot;: true,
+        &quot;base_domain&quot;: &quot;anstee.dev&quot;
+    }
+```
+
+DNS query for the base domain against 8.8.8.8:
+```
+❯ dig @8.8.8.8 anstee.dev
+
+; &lt;&lt;&gt;&gt; DiG 9.16.21 &lt;&lt;&gt;&gt; @8.8.8.8 anstee.dev
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 11423
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 512
+;; QUESTION SECTION:
+;anstee.dev.                    IN      A
+
+;; ANSWER SECTION:
+anstee.dev.             3600    IN      A       51.195.219.36
+
+;; Query time: 116 msec
+;; SERVER: 8.8.8.8#53(8.8.8.8)
+;; WHEN: Thu Oct 14 01:13:26 CEST 2021
+;; MSG SIZE  rcvd: 55
+```
+
+DNS query for base domain against 100.100.100.100:
+```
+❯ dig @100.100.100.100 anstee.dev
+
+; &lt;&lt;&gt;&gt; DiG 9.16.21 &lt;&lt;&gt;&gt; @100.100.100.100 anstee.dev
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NXDOMAIN, id: 6569
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;anstee.dev.                    IN      A
+
+;; Query time: 0 msec
+;; SERVER: 100.100.100.100#53(100.100.100.100)
+;; WHEN: Thu Oct 14 01:14:34 CEST 2021
+;; MSG SIZE  rcvd: 28
+```
+
+Note that its not just the base domain that gets clobbered, any valid subdomains are also clobbered:
+```
+~ 
+❯ dig @8.8.8.8 +noall +answer anstee.dev
+anstee.dev.             2876    IN      A       51.195.219.36
+
+~ 
+❯ dig @8.8.8.8 +noall +answer git.anstee.dev
+git.anstee.dev.         3600    IN      CNAME   anstee.dev.
+anstee.dev.             3600    IN      A       51.195.219.36
+
+~ 
+❯ dig @100.100.100.100 +noall +answer git.anstee.dev
+
+~ 
+❯ dig @8.8.8.8 +noall +answer ldn1.anstee.dev
+ldn1.anstee.dev.        3600    IN      A       51.195.219.36
+
+~ 
+❯ dig @100.100.100.100 +noall +answer ldn1.anstee.dev
+
+~ 
+❯
+```
+
+MagicDNS entries themselves are working as expected however:
+```
+❯ dig @100.100.100.100 +noall +answer pi4.nicka101.anstee.dev
+pi4.nicka101.anstee.dev. 600    IN      A       100.99.123.231
+```</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/160#issuecomment-943080330">kradalby</a></h3><p>Created: 2021-10-14T07:16:05Z; updated: 2021-10-14T07:16:05Z</p><pre>Good observation, from what i understand, this is on the tailscale side and we can&#x27;t really do anything else than warning/recommending people.
+
+Would you be able to pr a doc change to inform the users?
+
+Let me know if I misunderstood.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/160#issuecomment-943753878">juanfont</a></h3><p>Created: 2021-10-14T21:36:11Z; updated: 2021-10-14T21:36:11Z</p><pre>I think this is a valid issue. Need to investigate a bit. I reckon we should only capture $NAMESPACE.$BASE_DOMAIN not the whole base domain.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/160#issuecomment-944234123">nicka101</a></h3><p>Created: 2021-10-15T11:48:39Z; updated: 2021-10-15T11:48:39Z</p><pre>I would tend to agree with Juan that the expected behavior would be for headscale/tailscale to only capture $NAMESPACE.$BASE_DOMAIN (along with any additional namespaces visible to the current user), rather than clobbering the entire base domain.
+
+I understand that the actual DNS responses are controlled by the tailscale client, which is running the DNS server, however it seems like modification of `generateMagicDNSRootDomains` within dns.go could resolve the issue if it were to actually specify the individual relevant subdomains, instead of the base domain itself like it currently does on [dns.go#40](https://github.com/juanfont/headscale/blob/main/dns.go#L40)</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/160#issuecomment-944236672">juanfont</a></h3><p>Created: 2021-10-15T11:53:30Z; updated: 2021-10-15T11:53:30Z</p><pre>Yep, I am working on a patch that fixes that already. Will probably launch
+a PR today.
+
+On Fri, Oct 15, 2021, 13:48 Nick Anstee ***@***.***&gt; wrote:
+
+&gt; I would tend to agree with Juan that the expected behavior would be for
+&gt; headscale/tailscale to only capture $NAMESPACE.$BASE_DOMAIN (along with any
+&gt; additional namespaces visible to the current user), rather than clobbering
+&gt; the entire base domain.
+&gt;
+&gt; I understand that the actual DNS responses are controlled by the tailscale
+&gt; client, which is running the DNS server, however it seems like modification
+&gt; of generateMagicDNSRootDomains within dns.go could resolve the issue if
+&gt; it were to actually specify the individual relevant subdomains, instead of
+&gt; the base domain itself like it currently does on dns.go#40
+&gt; &lt;https://github.com/juanfont/headscale/blob/main/dns.go#L40&gt;
+&gt;
+&gt; —
+&gt; You are receiving this because you commented.
+&gt; Reply to this email directly, view it on GitHub
+&gt; &lt;https://github.com/juanfont/headscale/issues/160#issuecomment-944234123&gt;,
+&gt; or unsubscribe
+&gt; &lt;https://github.com/notifications/unsubscribe-auth/AABMGQ6VJEHPUOHVHAHZ3DTUHAIKDANCNFSM5F6KPQKQ&gt;
+&gt; .
+&gt;
+</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2021-10-14T07:16:05Z · commented · kradalby</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/943080330&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/160#issuecomment-943080330&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/160&quot;,
+  &quot;id&quot;: 943080330,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8844NkOK&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2021-10-14T07:16:05Z&quot;,
+  &quot;updated_at&quot;: &quot;2021-10-14T07:16:05Z&quot;,
+  &quot;body&quot;: &quot;Good observation, from what i understand, this is on the tailscale side and we can&#x27;t really do anything else than warning/recommending people.\n\nWould you be able to pr a doc change to inform the users?\n\nLet me know if I misunderstood.&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/943080330/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2021-10-14T21:36:11Z · commented · juanfont</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/943753878&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/160#issuecomment-943753878&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/160&quot;,
+  &quot;id&quot;: 943753878,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8844QIqW&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2021-10-14T21:36:11Z&quot;,
+  &quot;updated_at&quot;: &quot;2021-10-14T21:36:11Z&quot;,
+  &quot;body&quot;: &quot;I think this is a valid issue. Need to investigate a bit. I reckon we should only capture $NAMESPACE.$BASE_DOMAIN not the whole base domain.&quot;,
+  &quot;author_association&quot;: &quot;OWNER&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/943753878/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2021-10-15T11:48:39Z · commented · nicka101</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/944234123&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/160#issuecomment-944234123&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/160&quot;,
+  &quot;id&quot;: 944234123,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8844R96L&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;nicka101&quot;,
+    &quot;id&quot;: 1499871,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE0OTk4NzE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/1499871?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nicka101&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nicka101&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nicka101/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nicka101/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nicka101/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nicka101/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nicka101/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nicka101/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nicka101/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nicka101/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nicka101/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2021-10-15T11:48:39Z&quot;,
+  &quot;updated_at&quot;: &quot;2021-10-15T11:48:39Z&quot;,
+  &quot;body&quot;: &quot;I would tend to agree with Juan that the expected behavior would be for headscale/tailscale to only capture $NAMESPACE.$BASE_DOMAIN (along with any additional namespaces visible to the current user), rather than clobbering the entire base domain.\r\n\r\nI understand that the actual DNS responses are controlled by the tailscale client, which is running the DNS server, however it seems like modification of `generateMagicDNSRootDomains` within dns.go could resolve the issue if it were to actually specify the individual relevant subdomains, instead of the base domain itself like it currently does on [dns.go#40](https://github.com/juanfont/headscale/blob/main/dns.go#L40)&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/944234123/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nicka101&quot;,
+    &quot;id&quot;: 1499871,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE0OTk4NzE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/1499871?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nicka101&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nicka101&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nicka101/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nicka101/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nicka101/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nicka101/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nicka101/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nicka101/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nicka101/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nicka101/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nicka101/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2021-10-15T11:53:30Z · commented · juanfont</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/944236672&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/160#issuecomment-944236672&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/160&quot;,
+  &quot;id&quot;: 944236672,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8844R-iA&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2021-10-15T11:53:30Z&quot;,
+  &quot;updated_at&quot;: &quot;2021-10-15T11:53:30Z&quot;,
+  &quot;body&quot;: &quot;Yep, I am working on a patch that fixes that already. Will probably launch\na PR today.\n\nOn Fri, Oct 15, 2021, 13:48 Nick Anstee ***@***.***&gt; wrote:\n\n&gt; I would tend to agree with Juan that the expected behavior would be for\n&gt; headscale/tailscale to only capture $NAMESPACE.$BASE_DOMAIN (along with any\n&gt; additional namespaces visible to the current user), rather than clobbering\n&gt; the entire base domain.\n&gt;\n&gt; I understand that the actual DNS responses are controlled by the tailscale\n&gt; client, which is running the DNS server, however it seems like modification\n&gt; of generateMagicDNSRootDomains within dns.go could resolve the issue if\n&gt; it were to actually specify the individual relevant subdomains, instead of\n&gt; the base domain itself like it currently does on dns.go#40\n&gt; &lt;https://github.com/juanfont/headscale/blob/main/dns.go#L40&gt;\n&gt;\n&gt; —\n&gt; You are receiving this because you commented.\n&gt; Reply to this email directly, view it on GitHub\n&gt; &lt;https://github.com/juanfont/headscale/issues/160#issuecomment-944234123&gt;,\n&gt; or unsubscribe\n&gt; &lt;https://github.com/notifications/unsubscribe-auth/AABMGQ6VJEHPUOHVHAHZ3DTUHAIKDANCNFSM5F6KPQKQ&gt;\n&gt; .\n&gt;\n&quot;,
+  &quot;author_association&quot;: &quot;OWNER&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/944236672/reactions&quot;,
+    &quot;total_count&quot;: 1,
+    &quot;+1&quot;: 1,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2021-10-16T10:39:41Z · labeled · juanfont</summary><pre>{
+  &quot;id&quot;: 5472928385,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz8849JCQ7zwAAAAFGNkKB&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/5472928385&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2021-10-16T10:39:41Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2021-10-18T10:16:08Z · closed · juanfont</summary><pre>{
+  &quot;id&quot;: 5477269345,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz8849JCQ7zwAAAAFGeH9h&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/5477269345&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2021-10-18T10:16:08Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-03-26T06:07:27Z · subscribed · kn107</summary><pre>{
+  &quot;id&quot;: 23919061643,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz8849JCQ7zwAAAAWRr-qL&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/23919061643&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kn107&quot;,
+    &quot;id&quot;: 140891599,
+    &quot;node_id&quot;: &quot;U_kgDOCGXVzw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/140891599?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kn107&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kn107&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kn107/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kn107/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kn107/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kn107/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kn107/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kn107/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kn107/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kn107/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kn107/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-03-26T06:07:27Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

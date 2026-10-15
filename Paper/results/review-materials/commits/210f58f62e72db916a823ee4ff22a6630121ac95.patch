@@ -1,0 +1,2946 @@
+commit 210f58f62e72db916a823ee4ff22a6630121ac95
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Mon Mar 30 13:48:58 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Tue Mar 31 22:06:25 2026 +0200
+
+    integration: use CI-scaled timeouts for all EventuallyWithT assertions
+    
+    Wrap all 329 hardcoded EventuallyWithT timeouts across 12 test files
+    with integrationutil.ScaledTimeout(), which applies a 2x multiplier
+    on CI runners. This addresses the systemic issue where hardcoded
+    timeouts that work locally are insufficient under CI resource
+    contention.
+    
+    Variable-based timeouts (propagationTime, assertTimeout in
+    route_test.go and totalWaitTime in auth_oidc_test.go) are wrapped
+    at their definition site so all downstream usages benefit.
+    
+    The retry intervals (second duration parameter) are intentionally
+    NOT scaled, as they control polling frequency, not total wait time.
+    
+    Updates #3125
+---
+ integration/acl_test.go           | 136 ++++++++++++++++-----------------
+ integration/api_auth_test.go      |   3 +-
+ integration/auth_key_test.go      |  33 ++++----
+ integration/auth_oidc_test.go     |  85 ++++++++++-----------
+ integration/auth_web_flow_test.go |  12 +--
+ integration/cli_test.go           |  91 +++++++++++-----------
+ integration/dns_test.go           |   5 +-
+ integration/embedded_derp_test.go |   7 +-
+ integration/general_test.go       |  36 ++++-----
+ integration/route_test.go         |  78 +++++++++----------
+ integration/ssh_test.go           |   7 +-
+ integration/tags_test.go          | 155 +++++++++++++++++++-------------------
+ 12 files changed, 328 insertions(+), 320 deletions(-)
+
+diff --git a/integration/acl_test.go b/integration/acl_test.go
+index 16fd1b03..b75a8898 100644
+--- a/integration/acl_test.go
++++ b/integration/acl_test.go
+@@ -375,7 +375,7 @@ func TestACLAllowUser80Dst(t *testing.T) {
+ 				result, err := client.Curl(url)
+ 				assert.NoError(c, err)
+ 				assert.Len(c, result, 13)
+-			}, 20*time.Second, 500*time.Millisecond, "Verifying user1 can reach user2")
++			}, integrationutil.ScaledTimeout(20*time.Second), 500*time.Millisecond, "Verifying user1 can reach user2")
+ 		}
+ 	}
+ 
+@@ -390,7 +390,7 @@ func TestACLAllowUser80Dst(t *testing.T) {
+ 
+ 			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 				assertCurlFailWithCollect(c, client, url, "user2 should not reach user1")
+-			}, 20*time.Second, 500*time.Millisecond, "Verifying user2 cannot reach user1")
++			}, integrationutil.ScaledTimeout(20*time.Second), 500*time.Millisecond, "Verifying user2 cannot reach user1")
+ 		}
+ 	}
+ }
+@@ -437,7 +437,7 @@ func TestACLDenyAllPort80(t *testing.T) {
+ 
+ 			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 				assertCurlFailWithCollect(c, client, url, "all traffic should be denied")
+-			}, 20*time.Second, 500*time.Millisecond, "Verifying all traffic is denied")
++			}, integrationutil.ScaledTimeout(20*time.Second), 500*time.Millisecond, "Verifying all traffic is denied")
+ 		}
+ 	}
+ }
+@@ -484,7 +484,7 @@ func TestACLAllowUserDst(t *testing.T) {
+ 				result, err := client.Curl(url)
+ 				assert.NoError(c, err)
+ 				assert.Len(c, result, 13)
+-			}, 20*time.Second, 500*time.Millisecond, "Verifying user1 can reach user2")
++			}, integrationutil.ScaledTimeout(20*time.Second), 500*time.Millisecond, "Verifying user1 can reach user2")
+ 		}
+ 	}
+ 
+@@ -499,7 +499,7 @@ func TestACLAllowUserDst(t *testing.T) {
+ 
+ 			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 				assertCurlFailWithCollect(c, client, url, "user2 should not reach user1")
+-			}, 20*time.Second, 500*time.Millisecond, "Verifying user2 cannot reach user1")
++			}, integrationutil.ScaledTimeout(20*time.Second), 500*time.Millisecond, "Verifying user2 cannot reach user1")
+ 		}
+ 	}
+ }
+@@ -545,7 +545,7 @@ func TestACLAllowStarDst(t *testing.T) {
+ 				result, err := client.Curl(url)
+ 				assert.NoError(c, err)
+ 				assert.Len(c, result, 13)
+-			}, 20*time.Second, 500*time.Millisecond, "Verifying user1 can reach user2")
++			}, integrationutil.ScaledTimeout(20*time.Second), 500*time.Millisecond, "Verifying user1 can reach user2")
+ 		}
+ 	}
+ 
+@@ -560,7 +560,7 @@ func TestACLAllowStarDst(t *testing.T) {
+ 
+ 			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 				assertCurlFailWithCollect(c, client, url, "user2 should not reach user1")
+-			}, 20*time.Second, 500*time.Millisecond, "Verifying user2 cannot reach user1")
++			}, integrationutil.ScaledTimeout(20*time.Second), 500*time.Millisecond, "Verifying user2 cannot reach user1")
+ 		}
+ 	}
+ }
+@@ -611,7 +611,7 @@ func TestACLNamedHostsCanReachBySubnet(t *testing.T) {
+ 				result, err := client.Curl(url)
+ 				assert.NoError(c, err)
+ 				assert.Len(c, result, 13)
+-			}, 20*time.Second, 500*time.Millisecond, "Verifying user1 can reach user2")
++			}, integrationutil.ScaledTimeout(20*time.Second), 500*time.Millisecond, "Verifying user1 can reach user2")
+ 		}
+ 	}
+ 
+@@ -630,7 +630,7 @@ func TestACLNamedHostsCanReachBySubnet(t *testing.T) {
+ 				result, err := client.Curl(url)
+ 				assert.NoError(c, err)
+ 				assert.Len(c, result, 13)
+-			}, 20*time.Second, 500*time.Millisecond, "Verifying user2 can reach user1")
++			}, integrationutil.ScaledTimeout(20*time.Second), 500*time.Millisecond, "Verifying user2 can reach user1")
+ 		}
+ 	}
+ }
+@@ -795,7 +795,7 @@ func TestACLNamedHostsCanReach(t *testing.T) {
+ 					test3ip4URL,
+ 					result,
+ 				)
+-			}, 10*time.Second, 200*time.Millisecond, "test1 should reach test3 via IPv4")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "test1 should reach test3 via IPv4")
+ 
+ 			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 				result, err := test1.Curl(test3ip6URL)
+@@ -808,7 +808,7 @@ func TestACLNamedHostsCanReach(t *testing.T) {
+ 					test3ip6URL,
+ 					result,
+ 				)
+-			}, 10*time.Second, 200*time.Millisecond, "test1 should reach test3 via IPv6")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "test1 should reach test3 via IPv6")
+ 
+ 			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 				result, err := test1.Curl(test3fqdnURL)
+@@ -821,7 +821,7 @@ func TestACLNamedHostsCanReach(t *testing.T) {
+ 					test3fqdnURL,
+ 					result,
+ 				)
+-			}, 10*time.Second, 200*time.Millisecond, "test1 should reach test3 via FQDN")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "test1 should reach test3 via FQDN")
+ 
+ 			// test2 can query test3
+ 			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+@@ -835,7 +835,7 @@ func TestACLNamedHostsCanReach(t *testing.T) {
+ 					test3ip4URL,
+ 					result,
+ 				)
+-			}, 10*time.Second, 200*time.Millisecond, "test2 should reach test3 via IPv4")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "test2 should reach test3 via IPv4")
+ 
+ 			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 				result, err := test2.Curl(test3ip6URL)
+@@ -848,7 +848,7 @@ func TestACLNamedHostsCanReach(t *testing.T) {
+ 					test3ip6URL,
+ 					result,
+ 				)
+-			}, 10*time.Second, 200*time.Millisecond, "test2 should reach test3 via IPv6")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "test2 should reach test3 via IPv6")
+ 
+ 			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 				result, err := test2.Curl(test3fqdnURL)
+@@ -861,7 +861,7 @@ func TestACLNamedHostsCanReach(t *testing.T) {
+ 					test3fqdnURL,
+ 					result,
+ 				)
+-			}, 10*time.Second, 200*time.Millisecond, "test2 should reach test3 via FQDN")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "test2 should reach test3 via FQDN")
+ 
+ 			// test3 cannot query test1
+ 			_, err = test3.CurlFailFast(test1ip4URL)
+@@ -895,7 +895,7 @@ func TestACLNamedHostsCanReach(t *testing.T) {
+ 					test2ip4URL,
+ 					result,
+ 				)
+-			}, 10*time.Second, 200*time.Millisecond, "test1 should reach test2 via IPv4")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "test1 should reach test2 via IPv4")
+ 
+ 			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 				result, err := test1.Curl(test2ip6URL)
+@@ -908,7 +908,7 @@ func TestACLNamedHostsCanReach(t *testing.T) {
+ 					test2ip6URL,
+ 					result,
+ 				)
+-			}, 10*time.Second, 200*time.Millisecond, "test1 should reach test2 via IPv6")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "test1 should reach test2 via IPv6")
+ 
+ 			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 				result, err := test1.Curl(test2fqdnURL)
+@@ -921,7 +921,7 @@ func TestACLNamedHostsCanReach(t *testing.T) {
+ 					test2fqdnURL,
+ 					result,
+ 				)
+-			}, 10*time.Second, 200*time.Millisecond, "test1 should reach test2 via FQDN")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "test1 should reach test2 via FQDN")
+ 
+ 			// test2 cannot query test1
+ 			_, err = test2.CurlFailFast(test1ip4URL)
+@@ -1074,7 +1074,7 @@ func TestACLDevice1CanAccessDevice2(t *testing.T) {
+ 					test2ipURL,
+ 					result,
+ 				)
+-			}, 10*time.Second, 200*time.Millisecond, "test1 should reach test2 via IPv4")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "test1 should reach test2 via IPv4")
+ 
+ 			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 				result, err := test1.Curl(test2ip6URL)
+@@ -1087,7 +1087,7 @@ func TestACLDevice1CanAccessDevice2(t *testing.T) {
+ 					test2ip6URL,
+ 					result,
+ 				)
+-			}, 10*time.Second, 200*time.Millisecond, "test1 should reach test2 via IPv6")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "test1 should reach test2 via IPv6")
+ 
+ 			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 				result, err := test1.Curl(test2fqdnURL)
+@@ -1100,20 +1100,20 @@ func TestACLDevice1CanAccessDevice2(t *testing.T) {
+ 					test2fqdnURL,
+ 					result,
+ 				)
+-			}, 10*time.Second, 200*time.Millisecond, "test1 should reach test2 via FQDN")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "test1 should reach test2 via FQDN")
+ 
+ 			// test2 cannot query test1 (negative test case)
+ 			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 				assertCurlFailWithCollect(c, test2, test1ipURL, "test2 should not reach test1 via IPv4")
+-			}, 10*time.Second, 200*time.Millisecond, "test2 should NOT reach test1 via IPv4")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "test2 should NOT reach test1 via IPv4")
+ 
+ 			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 				assertCurlFailWithCollect(c, test2, test1ip6URL, "test2 should not reach test1 via IPv6")
+-			}, 10*time.Second, 200*time.Millisecond, "test2 should NOT reach test1 via IPv6")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "test2 should NOT reach test1 via IPv6")
+ 
+ 			assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 				assertCurlFailWithCollect(c, test2, test1fqdnURL, "test2 should not reach test1 via FQDN")
+-			}, 10*time.Second, 200*time.Millisecond, "test2 should NOT reach test1 via FQDN")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "test2 should NOT reach test1 via FQDN")
+ 		})
+ 	}
+ }
+@@ -1177,7 +1177,7 @@ func TestPolicyUpdateWhileRunningWithCLIInDatabase(t *testing.T) {
+ 				result, err := client.Curl(url)
+ 				assert.NoError(c, err)
+ 				assert.Len(c, result, 13)
+-			}, 20*time.Second, 500*time.Millisecond, "Verifying user1 can reach user2")
++			}, integrationutil.ScaledTimeout(20*time.Second), 500*time.Millisecond, "Verifying user1 can reach user2")
+ 		}
+ 	}
+ 
+@@ -1223,7 +1223,7 @@ func TestPolicyUpdateWhileRunningWithCLIInDatabase(t *testing.T) {
+ 		if diff := cmp.Diff(p, *output, cmpopts.IgnoreUnexported(policyv2.Policy{}), cmpopts.EquateEmpty()); diff != "" {
+ 			ct.Errorf("unexpected policy(-want +got):\n%s", diff)
+ 		}
+-	}, 30*time.Second, 1*time.Second, "verifying that the new policy took place")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "verifying that the new policy took place")
+ 
+ 	assert.EventuallyWithT(t, func(ct *assert.CollectT) {
+ 		// Test that user1 can visit all user2
+@@ -1253,7 +1253,7 @@ func TestPolicyUpdateWhileRunningWithCLIInDatabase(t *testing.T) {
+ 				assertCurlFailWithCollect(ct, client, url, "user2 should not reach user1")
+ 			}
+ 		}
+-	}, 30*time.Second, 1*time.Second, "new policy did not get propagated to nodes")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "new policy did not get propagated to nodes")
+ }
+ 
+ func TestACLAutogroupMember(t *testing.T) {
+@@ -1292,7 +1292,7 @@ func TestACLAutogroupMember(t *testing.T) {
+ 
+ 			clientIsUntagged = status.Self.Tags == nil || status.Self.Tags.Len() == 0
+ 			assert.True(c, clientIsUntagged, "Expected client %s to be untagged for autogroup:member test", client.Hostname())
+-		}, 10*time.Second, 200*time.Millisecond, "Waiting for client %s to be untagged", client.Hostname())
++		}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for client %s to be untagged", client.Hostname())
+ 
+ 		if !clientIsUntagged {
+ 			continue
+@@ -1311,7 +1311,7 @@ func TestACLAutogroupMember(t *testing.T) {
+ 
+ 				peerIsUntagged = status.Self.Tags == nil || status.Self.Tags.Len() == 0
+ 				assert.True(c, peerIsUntagged, "Expected peer %s to be untagged for autogroup:member test", peer.Hostname())
+-			}, 10*time.Second, 200*time.Millisecond, "Waiting for peer %s to be untagged", peer.Hostname())
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for peer %s to be untagged", peer.Hostname())
+ 
+ 			if !peerIsUntagged {
+ 				continue
+@@ -1327,7 +1327,7 @@ func TestACLAutogroupMember(t *testing.T) {
+ 				result, err := client.Curl(url)
+ 				assert.NoError(c, err)
+ 				assert.Len(c, result, 13)
+-			}, 20*time.Second, 500*time.Millisecond, "Verifying autogroup:member connectivity")
++			}, integrationutil.ScaledTimeout(20*time.Second), 500*time.Millisecond, "Verifying autogroup:member connectivity")
+ 		}
+ 	}
+ }
+@@ -1503,7 +1503,7 @@ func TestACLAutogroupTagged(t *testing.T) {
+ 					untaggedClients = append(untaggedClients, client)
+ 				}
+ 			}
+-		}, 30*time.Second, 1*time.Second, "verifying peer visibility for node %s", hostname)
++		}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "verifying peer visibility for node %s", hostname)
+ 	}
+ 
+ 	// Verify we have the expected number of tagged and untagged nodes
+@@ -1517,7 +1517,7 @@ func TestACLAutogroupTagged(t *testing.T) {
+ 			assert.NoError(c, err)
+ 			assert.NotNil(c, status.Self.Tags, "tagged node %s should have tags", client.Hostname())
+ 			assert.Positive(c, status.Self.Tags.Len(), "tagged node %s should have at least one tag", client.Hostname())
+-		}, 10*time.Second, 200*time.Millisecond, "Waiting for tags to be applied to tagged nodes")
++		}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for tags to be applied to tagged nodes")
+ 	}
+ 
+ 	// Verify untagged nodes have no tags
+@@ -1529,7 +1529,7 @@ func TestACLAutogroupTagged(t *testing.T) {
+ 			if status.Self.Tags != nil {
+ 				assert.Equal(c, 0, status.Self.Tags.Len(), "untagged node %s should have no tags", client.Hostname())
+ 			}
+-		}, 10*time.Second, 200*time.Millisecond, "Waiting to verify untagged nodes have no tags")
++		}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting to verify untagged nodes have no tags")
+ 	}
+ 
+ 	// Test that tagged nodes can communicate with each other
+@@ -1550,7 +1550,7 @@ func TestACLAutogroupTagged(t *testing.T) {
+ 				result, err := client.Curl(url)
+ 				assert.NoError(ct, err)
+ 				assert.Len(ct, result, 13)
+-			}, 20*time.Second, 500*time.Millisecond, "tagged nodes should be able to communicate")
++			}, integrationutil.ScaledTimeout(20*time.Second), 500*time.Millisecond, "tagged nodes should be able to communicate")
+ 		}
+ 	}
+ 
+@@ -1569,7 +1569,7 @@ func TestACLAutogroupTagged(t *testing.T) {
+ 				result, err := client.CurlFailFast(url)
+ 				assert.Empty(ct, result)
+ 				assert.Error(ct, err)
+-			}, 5*time.Second, 200*time.Millisecond, "untagged nodes should not be able to reach tagged nodes")
++			}, integrationutil.ScaledTimeout(5*time.Second), 200*time.Millisecond, "untagged nodes should not be able to reach tagged nodes")
+ 		}
+ 
+ 		// Try to reach other untagged nodes (should also fail)
+@@ -1589,7 +1589,7 @@ func TestACLAutogroupTagged(t *testing.T) {
+ 				result, err := client.CurlFailFast(url)
+ 				assert.Empty(ct, result)
+ 				assert.Error(ct, err)
+-			}, 5*time.Second, 200*time.Millisecond, "untagged nodes should not be able to reach other untagged nodes")
++			}, integrationutil.ScaledTimeout(5*time.Second), 200*time.Millisecond, "untagged nodes should not be able to reach other untagged nodes")
+ 		}
+ 	}
+ 
+@@ -1607,7 +1607,7 @@ func TestACLAutogroupTagged(t *testing.T) {
+ 				result, err := client.CurlFailFast(url)
+ 				assert.Empty(ct, result)
+ 				assert.Error(ct, err)
+-			}, 5*time.Second, 200*time.Millisecond, "tagged nodes should not be able to reach untagged nodes")
++			}, integrationutil.ScaledTimeout(5*time.Second), 200*time.Millisecond, "tagged nodes should not be able to reach untagged nodes")
+ 		}
+ 	}
+ }
+@@ -1794,7 +1794,7 @@ func TestACLAutogroupSelf(t *testing.T) {
+ 				result, err := client.Curl(url)
+ 				assert.NoError(c, err)
+ 				assert.Len(c, result, 13)
+-			}, 10*time.Second, 200*time.Millisecond, "user1 device should reach other user1 device via autogroup:self")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "user1 device should reach other user1 device via autogroup:self")
+ 		}
+ 	}
+ 
+@@ -1815,7 +1815,7 @@ func TestACLAutogroupSelf(t *testing.T) {
+ 				result, err := client.Curl(url)
+ 				assert.NoError(c, err)
+ 				assert.Len(c, result, 13)
+-			}, 10*time.Second, 200*time.Millisecond, "user2 device should reach other user2 device via autogroup:self")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "user2 device should reach other user2 device via autogroup:self")
+ 		}
+ 	}
+ 
+@@ -1831,7 +1831,7 @@ func TestACLAutogroupSelf(t *testing.T) {
+ 			result, err := client.Curl(url)
+ 			assert.NoError(c, err)
+ 			assert.NotEmpty(c, result, "user1 should be able to access router-node via group:home -> tag:router-node rule")
+-		}, 10*time.Second, 200*time.Millisecond, "user1 device should reach router-node (proves autogroup:self doesn't interfere)")
++		}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "user1 device should reach router-node (proves autogroup:self doesn't interfere)")
+ 	}
+ 
+ 	// Test that user2's regular devices can access router-node
+@@ -1846,7 +1846,7 @@ func TestACLAutogroupSelf(t *testing.T) {
+ 			result, err := client.Curl(url)
+ 			assert.NoError(c, err)
+ 			assert.NotEmpty(c, result, "user2 should be able to access router-node via group:home -> tag:router-node rule")
+-		}, 10*time.Second, 200*time.Millisecond, "user2 device should reach router-node (proves autogroup:self doesn't interfere)")
++		}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "user2 device should reach router-node (proves autogroup:self doesn't interfere)")
+ 	}
+ 
+ 	// Test that devices from different users cannot access each other's regular devices
+@@ -1994,7 +1994,7 @@ func TestACLPolicyPropagationOverTime(t *testing.T) {
+ 					assert.Len(ct, result, 13, "iteration %d: response from %s to %s should be valid", iteration, client.Hostname(), fqdn)
+ 				}
+ 			}
+-		}, 90*time.Second, 500*time.Millisecond, "iteration %d: Phase 1 - all connectivity tests with allow-all policy", iteration)
++		}, integrationutil.ScaledTimeout(90*time.Second), 500*time.Millisecond, "iteration %d: Phase 1 - all connectivity tests with allow-all policy", iteration)
+ 
+ 		// Phase 2: Autogroup:self policy (only same user can access)
+ 		t.Logf("Iteration %d: Phase 2 - Setting autogroup:self policy", iteration)
+@@ -2074,7 +2074,7 @@ func TestACLPolicyPropagationOverTime(t *testing.T) {
+ 					assertCurlFailWithCollect(ct, client, url, fmt.Sprintf("iteration %d: user2 %s should NOT reach user1 %s", iteration, client.Hostname(), peer.Hostname()))
+ 				}
+ 			}
+-		}, 90*time.Second, 500*time.Millisecond, "iteration %d: Phase 2 - all connectivity tests with autogroup:self", iteration)
++		}, integrationutil.ScaledTimeout(90*time.Second), 500*time.Millisecond, "iteration %d: Phase 2 - all connectivity tests with autogroup:self", iteration)
+ 
+ 		// Phase 2b: Add a new node to user1 and validate policy propagation
+ 		t.Logf("Iteration %d: Phase 2b - Adding new node to user1 during autogroup:self policy", iteration)
+@@ -2138,7 +2138,7 @@ func TestACLPolicyPropagationOverTime(t *testing.T) {
+ 					assertCurlFailWithCollect(ct, client, url, fmt.Sprintf("iteration %d: user1 %s should NOT reach user2 %s", iteration, client.Hostname(), peer.Hostname()))
+ 				}
+ 			}
+-		}, 90*time.Second, 500*time.Millisecond, "iteration %d: Phase 2b - all connectivity tests after new node addition", iteration)
++		}, integrationutil.ScaledTimeout(90*time.Second), 500*time.Millisecond, "iteration %d: Phase 2b - all connectivity tests after new node addition", iteration)
+ 
+ 		// Delete the newly added node before Phase 3
+ 		t.Logf("Iteration %d: Phase 2b - Deleting the newly added node from user1", iteration)
+@@ -2160,7 +2160,7 @@ func TestACLPolicyPropagationOverTime(t *testing.T) {
+ 					nodeToDeleteID = node.GetId()
+ 				}
+ 			}
+-		}, 10*time.Second, 500*time.Millisecond, "iteration %d: Phase 2b - listing nodes before deletion", iteration)
++		}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "iteration %d: Phase 2b - listing nodes before deletion", iteration)
+ 
+ 		// Delete the node via headscale helper
+ 		t.Logf("Iteration %d: Phase 2b - Deleting node ID %d from headscale", iteration, nodeToDeleteID)
+@@ -2193,7 +2193,7 @@ func TestACLPolicyPropagationOverTime(t *testing.T) {
+ 			nodeListAfter, err := headscale.ListNodes("user1")
+ 			assert.NoError(ct, err, "failed to list nodes after deletion")
+ 			assert.Len(ct, nodeListAfter, 2, "iteration %d: should have 2 user1 nodes after deletion, got %d", iteration, len(nodeListAfter))
+-		}, 10*time.Second, 500*time.Millisecond, "iteration %d: Phase 2b - node should be deleted", iteration)
++		}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "iteration %d: Phase 2b - node should be deleted", iteration)
+ 
+ 		// Wait for sync after deletion to ensure peer counts are correct
+ 		// Use WaitForTailscaleSyncPerUser because autogroup:self is still active,
+@@ -2255,7 +2255,7 @@ func TestACLPolicyPropagationOverTime(t *testing.T) {
+ 					assertCurlFailWithCollect(ct, client, url, fmt.Sprintf("iteration %d: user2 %s should NOT reach user1 %s", iteration, client.Hostname(), peer.Hostname()))
+ 				}
+ 			}
+-		}, 90*time.Second, 500*time.Millisecond, "iteration %d: Phase 3 - all connectivity tests with directional policy", iteration)
++		}, integrationutil.ScaledTimeout(90*time.Second), 500*time.Millisecond, "iteration %d: Phase 3 - all connectivity tests with directional policy", iteration)
+ 
+ 		t.Logf("=== Iteration %d/5 completed successfully - All 3 phases passed ===", iteration)
+ 	}
+@@ -3068,7 +3068,7 @@ func TestACLGroupWithUnknownUser(t *testing.T) {
+ 		result, err := user1.Curl(url)
+ 		assert.NoError(c, err, "user1 should be able to reach user2")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 30*time.Second, 500*time.Millisecond, "user1 should reach user2")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "user1 should reach user2")
+ 
+ 	// Test that user2 can reach user1 (bidirectional)
+ 	t.Log("Testing connectivity: user2 -> user1 (should succeed despite unknown user in group)")
+@@ -3077,7 +3077,7 @@ func TestACLGroupWithUnknownUser(t *testing.T) {
+ 		result, err := user2.Curl(url)
+ 		assert.NoError(c, err, "user2 should be able to reach user1")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 30*time.Second, 500*time.Millisecond, "user2 should reach user1")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "user2 should reach user1")
+ 
+ 	t.Log("Test PASSED: Valid users can communicate despite unknown user reference in group")
+ }
+@@ -3174,14 +3174,14 @@ func TestACLGroupAfterUserDeletion(t *testing.T) {
+ 		result, err := user1.Curl(url)
+ 		assert.NoError(c, err, "user1 should be able to reach user2 initially")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 30*time.Second, 500*time.Millisecond, "initial user1 -> user2 connectivity")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "initial user1 -> user2 connectivity")
+ 
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		url := fmt.Sprintf("http://%s/etc/hostname", user1FQDN)
+ 		result, err := user2.Curl(url)
+ 		assert.NoError(c, err, "user2 should be able to reach user1 initially")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 30*time.Second, 500*time.Millisecond, "initial user2 -> user1 connectivity")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "initial user2 -> user1 connectivity")
+ 
+ 	// Step 2: Get user3's node and user, then delete them
+ 	t.Log("Step 2: Deleting user3's node and user from headscale")
+@@ -3219,7 +3219,7 @@ func TestACLGroupAfterUserDeletion(t *testing.T) {
+ 		result, err := user1.Curl(url)
+ 		assert.NoError(c, err, "user1 should still be able to reach user2 after user3 deletion (stale cache)")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 60*time.Second, 500*time.Millisecond, "user1 -> user2 after user3 deletion")
++	}, integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond, "user1 -> user2 after user3 deletion")
+ 
+ 	// Step 4: Create a NEW user - this triggers updatePolicyManagerUsers() which
+ 	// re-evaluates the policy. According to issue #2967, this is when the bug manifests:
+@@ -3244,7 +3244,7 @@ func TestACLGroupAfterUserDeletion(t *testing.T) {
+ 		result, err := user1.Curl(url)
+ 		assert.NoError(c, err, "user1 should still reach user2 after policy refresh (BUG if this fails)")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 60*time.Second, 500*time.Millisecond, "user1 -> user2 after policy refresh (issue #2967)")
++	}, integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond, "user1 -> user2 after policy refresh (issue #2967)")
+ 
+ 	// Test that user2 can still reach user1
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+@@ -3252,7 +3252,7 @@ func TestACLGroupAfterUserDeletion(t *testing.T) {
+ 		result, err := user2.Curl(url)
+ 		assert.NoError(c, err, "user2 should still reach user1 after policy refresh (BUG if this fails)")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 60*time.Second, 500*time.Millisecond, "user2 -> user1 after policy refresh (issue #2967)")
++	}, integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond, "user2 -> user1 after policy refresh (issue #2967)")
+ 
+ 	t.Log("Test PASSED: Remaining users can communicate after deleted user and policy refresh")
+ }
+@@ -3361,14 +3361,14 @@ func TestACLGroupDeletionExactReproduction(t *testing.T) {
+ 		result, err := user1.Curl(url)
+ 		assert.NoError(c, err, "user1 should reach user3")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 60*time.Second, 500*time.Millisecond, "user1 -> user3")
++	}, integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond, "user1 -> user3")
+ 
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		url := fmt.Sprintf("http://%s/etc/hostname", user1FQDN)
+ 		result, err := user3.Curl(url)
+ 		assert.NoError(c, err, "user3 should reach user1")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 60*time.Second, 500*time.Millisecond, "user3 -> user1")
++	}, integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond, "user3 -> user1")
+ 
+ 	t.Log("Step 1: PASSED - initial connectivity works")
+ 
+@@ -3398,14 +3398,14 @@ func TestACLGroupDeletionExactReproduction(t *testing.T) {
+ 		result, err := user1.Curl(url)
+ 		assert.NoError(c, err, "user1 should still reach user3 after user2 deletion")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 60*time.Second, 500*time.Millisecond, "user1 -> user3 after user2 deletion")
++	}, integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond, "user1 -> user3 after user2 deletion")
+ 
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		url := fmt.Sprintf("http://%s/etc/hostname", user1FQDN)
+ 		result, err := user3.Curl(url)
+ 		assert.NoError(c, err, "user3 should still reach user1 after user2 deletion")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 60*time.Second, 500*time.Millisecond, "user3 -> user1 after user2 deletion")
++	}, integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond, "user3 -> user1 after user2 deletion")
+ 
+ 	t.Log("Step 3: PASSED - connectivity works after user2 deletion")
+ 
+@@ -3427,14 +3427,14 @@ func TestACLGroupDeletionExactReproduction(t *testing.T) {
+ 		result, err := user1.Curl(url)
+ 		assert.NoError(c, err, "BUG #2967: user1 should still reach user3 after user4 creation")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 60*time.Second, 500*time.Millisecond, "user1 -> user3 after user4 creation (issue #2967)")
++	}, integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond, "user1 -> user3 after user4 creation (issue #2967)")
+ 
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		url := fmt.Sprintf("http://%s/etc/hostname", user1FQDN)
+ 		result, err := user3.Curl(url)
+ 		assert.NoError(c, err, "BUG #2967: user3 should still reach user1 after user4 creation")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 60*time.Second, 500*time.Millisecond, "user3 -> user1 after user4 creation (issue #2967)")
++	}, integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond, "user3 -> user1 after user4 creation (issue #2967)")
+ 
+ 	// Additional verification: check filter rules are not empty
+ 	filter, err := headscale.DebugFilter()
+@@ -3537,14 +3537,14 @@ func TestACLDynamicUnknownUserAddition(t *testing.T) {
+ 		result, err := user1.Curl(url)
+ 		assert.NoError(c, err, "user1 should reach user2")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 60*time.Second, 500*time.Millisecond, "initial user1 -> user2")
++	}, integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond, "initial user1 -> user2")
+ 
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		url := fmt.Sprintf("http://%s/etc/hostname", user1FQDN)
+ 		result, err := user2.Curl(url)
+ 		assert.NoError(c, err, "user2 should reach user1")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 60*time.Second, 500*time.Millisecond, "initial user2 -> user1")
++	}, integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond, "initial user2 -> user1")
+ 
+ 	t.Log("Step 1: PASSED - connectivity works with valid policy")
+ 
+@@ -3588,14 +3588,14 @@ func TestACLDynamicUnknownUserAddition(t *testing.T) {
+ 		result, err := user1.Curl(url)
+ 		assert.NoError(c, err, "user1 should STILL reach user2 after adding unknown user")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 60*time.Second, 500*time.Millisecond, "user1 -> user2 after unknown user added")
++	}, integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond, "user1 -> user2 after unknown user added")
+ 
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		url := fmt.Sprintf("http://%s/etc/hostname", user1FQDN)
+ 		result, err := user2.Curl(url)
+ 		assert.NoError(c, err, "user2 should STILL reach user1 after adding unknown user")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 60*time.Second, 500*time.Millisecond, "user2 -> user1 after unknown user added")
++	}, integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond, "user2 -> user1 after unknown user added")
+ 
+ 	t.Log("Step 3: PASSED - connectivity maintained after adding unknown user")
+ 	t.Log("Test PASSED: v0.28.0-beta.1 scenario - unknown user added dynamically, valid users still work")
+@@ -3694,14 +3694,14 @@ func TestACLDynamicUnknownUserRemoval(t *testing.T) {
+ 		result, err := user1.Curl(url)
+ 		assert.NoError(c, err, "user1 should reach user2 even with unknown user in policy")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 60*time.Second, 500*time.Millisecond, "initial user1 -> user2 with unknown")
++	}, integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond, "initial user1 -> user2 with unknown")
+ 
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		url := fmt.Sprintf("http://%s/etc/hostname", user1FQDN)
+ 		result, err := user2.Curl(url)
+ 		assert.NoError(c, err, "user2 should reach user1 even with unknown user in policy")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 60*time.Second, 500*time.Millisecond, "initial user2 -> user1 with unknown")
++	}, integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond, "initial user2 -> user1 with unknown")
+ 
+ 	t.Log("Step 1: PASSED - connectivity works even with unknown user (v2 graceful handling)")
+ 
+@@ -3743,14 +3743,14 @@ func TestACLDynamicUnknownUserRemoval(t *testing.T) {
+ 		result, err := user1.Curl(url)
+ 		assert.NoError(c, err, "user1 should reach user2 after removing unknown user")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 60*time.Second, 500*time.Millisecond, "user1 -> user2 after unknown removed")
++	}, integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond, "user1 -> user2 after unknown removed")
+ 
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		url := fmt.Sprintf("http://%s/etc/hostname", user1FQDN)
+ 		result, err := user2.Curl(url)
+ 		assert.NoError(c, err, "user2 should reach user1 after removing unknown user")
+ 		assert.Len(c, result, 13, "expected hostname response")
+-	}, 60*time.Second, 500*time.Millisecond, "user2 -> user1 after unknown removed")
++	}, integrationutil.ScaledTimeout(60*time.Second), 500*time.Millisecond, "user2 -> user1 after unknown removed")
+ 
+ 	t.Log("Step 3: PASSED - connectivity maintained after removing unknown user")
+ 	t.Log("Test PASSED: Removing unknown users from policy works correctly")
+diff --git a/integration/api_auth_test.go b/integration/api_auth_test.go
+index f074196d..33e4b49a 100644
+--- a/integration/api_auth_test.go
++++ b/integration/api_auth_test.go
+@@ -13,6 +13,7 @@ import (
+ 
+ 	v1 "github.com/juanfont/headscale/gen/go/headscale/v1"
+ 	"github.com/juanfont/headscale/integration/hsic"
++	"github.com/juanfont/headscale/integration/integrationutil"
+ 	"github.com/juanfont/headscale/integration/tsic"
+ 	"github.com/stretchr/testify/assert"
+ 	"github.com/stretchr/testify/require"
+@@ -62,7 +63,7 @@ func TestAPIAuthenticationBypass(t *testing.T) {
+ 		assert.NoError(ct, err)
+ 		assert.NotEmpty(ct, apiKeyOutput)
+ 		validAPIKey = strings.TrimSpace(apiKeyOutput)
+-	}, 20*time.Second, 1*time.Second)
++	}, integrationutil.ScaledTimeout(20*time.Second), 1*time.Second)
+ 
+ 	// Get the API endpoint
+ 	endpoint := headscale.GetEndpoint()
+diff --git a/integration/auth_key_test.go b/integration/auth_key_test.go
+index 21166907..0d9b83d3 100644
+--- a/integration/auth_key_test.go
++++ b/integration/auth_key_test.go
+@@ -12,6 +12,7 @@ import (
+ 	policyv2 "github.com/juanfont/headscale/hscontrol/policy/v2"
+ 	"github.com/juanfont/headscale/hscontrol/types"
+ 	"github.com/juanfont/headscale/integration/hsic"
++	"github.com/juanfont/headscale/integration/integrationutil"
+ 	"github.com/juanfont/headscale/integration/tsic"
+ 	"github.com/samber/lo"
+ 	"github.com/stretchr/testify/assert"
+@@ -87,7 +88,7 @@ func TestAuthKeyLogoutAndReloginSameUser(t *testing.T) {
+ 				for _, node := range listNodes {
+ 					assertLastSeenSetWithCollect(c, node)
+ 				}
+-			}, 10*time.Second, 200*time.Millisecond, "Waiting for expected node list before logout")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for expected node list before logout")
+ 
+ 			nodeCountBeforeLogout = len(listNodes)
+ 			t.Logf("node count before logout: %d", nodeCountBeforeLogout)
+@@ -114,7 +115,7 @@ func TestAuthKeyLogoutAndReloginSameUser(t *testing.T) {
+ 				listNodes, err = headscale.ListNodes()
+ 				assert.NoError(ct, err, "Failed to list nodes after logout")
+ 				assert.Len(ct, listNodes, nodeCountBeforeLogout, "Node count should match before logout count - expected %d nodes, got %d", nodeCountBeforeLogout, len(listNodes))
+-			}, 30*time.Second, 2*time.Second, "validating node persistence after logout (nodes should remain in database)")
++			}, integrationutil.ScaledTimeout(30*time.Second), 2*time.Second, "validating node persistence after logout (nodes should remain in database)")
+ 
+ 			for _, node := range listNodes {
+ 				assertLastSeenSet(t, node)
+@@ -152,7 +153,7 @@ func TestAuthKeyLogoutAndReloginSameUser(t *testing.T) {
+ 				listNodes, err = headscale.ListNodes()
+ 				assert.NoError(ct, err, "Failed to list nodes after relogin")
+ 				assert.Len(ct, listNodes, nodeCountBeforeLogout, "Node count should remain unchanged after relogin - expected %d nodes, got %d", nodeCountBeforeLogout, len(listNodes))
+-			}, 60*time.Second, 2*time.Second, "validating node count stability after same-user auth key relogin")
++			}, integrationutil.ScaledTimeout(60*time.Second), 2*time.Second, "validating node count stability after same-user auth key relogin")
+ 
+ 			for _, node := range listNodes {
+ 				assertLastSeenSet(t, node)
+@@ -210,7 +211,7 @@ func TestAuthKeyLogoutAndReloginSameUser(t *testing.T) {
+ 				for _, node := range listNodes {
+ 					assertLastSeenSetWithCollect(c, node)
+ 				}
+-			}, 10*time.Second, 200*time.Millisecond, "Waiting for node list after relogin")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for node list after relogin")
+ 		})
+ 	}
+ }
+@@ -266,7 +267,7 @@ func TestAuthKeyLogoutAndReloginNewUser(t *testing.T) {
+ 		listNodes, err = headscale.ListNodes()
+ 		assert.NoError(c, err)
+ 		assert.Len(c, listNodes, len(allClients))
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for expected node list before logout")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for expected node list before logout")
+ 
+ 	nodeCountBeforeLogout = len(listNodes)
+ 	t.Logf("node count before logout: %d", nodeCountBeforeLogout)
+@@ -313,7 +314,7 @@ func TestAuthKeyLogoutAndReloginNewUser(t *testing.T) {
+ 		user1Nodes, err = headscale.ListNodes("user1")
+ 		assert.NoError(ct, err, "Failed to list nodes for user1 after relogin")
+ 		assert.Len(ct, user1Nodes, len(allClients), "User1 should have all %d clients after relogin, got %d nodes", len(allClients), len(user1Nodes))
+-	}, 60*time.Second, 2*time.Second, "validating user1 has all client nodes after auth key relogin")
++	}, integrationutil.ScaledTimeout(60*time.Second), 2*time.Second, "validating user1 has all client nodes after auth key relogin")
+ 
+ 	// Collect expected node IDs for user1 after relogin
+ 	expectedUser1Nodes := make([]types.NodeID, 0, len(user1Nodes))
+@@ -337,7 +338,7 @@ func TestAuthKeyLogoutAndReloginNewUser(t *testing.T) {
+ 		user2Nodes, err = headscale.ListNodes("user2")
+ 		assert.NoError(ct, err, "Failed to list nodes for user2 after user1 relogin")
+ 		assert.Len(ct, user2Nodes, len(allClients)/2, "User2 should still have %d clients after user1 relogin, got %d nodes", len(allClients)/2, len(user2Nodes))
+-	}, 30*time.Second, 2*time.Second, "validating user2 nodes persist after user1 relogin (should not be affected)")
++	}, integrationutil.ScaledTimeout(30*time.Second), 2*time.Second, "validating user2 nodes persist after user1 relogin (should not be affected)")
+ 
+ 	t.Logf("Validating client login states after user switch at %s", time.Now().Format(TimestampFormat))
+ 
+@@ -346,7 +347,7 @@ func TestAuthKeyLogoutAndReloginNewUser(t *testing.T) {
+ 			status, err := client.Status()
+ 			assert.NoError(ct, err, "Failed to get status for client %s", client.Hostname())
+ 			assert.Equal(ct, "user1@test.no", status.User[status.Self.UserID].LoginName, "Client %s should be logged in as user1 after user switch, got %s", client.Hostname(), status.User[status.Self.UserID].LoginName)
+-		}, 30*time.Second, 2*time.Second, "validating %s is logged in as user1 after auth key user switch", client.Hostname())
++		}, integrationutil.ScaledTimeout(30*time.Second), 2*time.Second, "validating %s is logged in as user1 after auth key user switch", client.Hostname())
+ 	}
+ }
+ 
+@@ -412,7 +413,7 @@ func TestAuthKeyLogoutAndReloginSameUserExpiredKey(t *testing.T) {
+ 				listNodes, err = headscale.ListNodes()
+ 				assert.NoError(c, err)
+ 				assert.Len(c, listNodes, len(allClients))
+-			}, 10*time.Second, 200*time.Millisecond, "Waiting for expected node list before logout")
++			}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for expected node list before logout")
+ 
+ 			nodeCountBeforeLogout = len(listNodes)
+ 			t.Logf("node count before logout: %d", nodeCountBeforeLogout)
+@@ -527,7 +528,7 @@ func TestAuthKeyDeleteKey(t *testing.T) {
+ 		user1Nodes, err = headscale.ListNodes("user1")
+ 		assert.NoError(c, err)
+ 		assert.Len(c, user1Nodes, 1)
+-	}, 30*time.Second, 500*time.Millisecond, "waiting for node to be registered")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "waiting for node to be registered")
+ 
+ 	nodeID := user1Nodes[0].GetId()
+ 	nodeName := user1Nodes[0].GetName()
+@@ -554,7 +555,7 @@ func TestAuthKeyDeleteKey(t *testing.T) {
+ 		status, err := client.Status()
+ 		assert.NoError(c, err)
+ 		assert.Equal(c, "Stopped", status.BackendState)
+-	}, 10*time.Second, 200*time.Millisecond, "client should be stopped")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "client should be stopped")
+ 
+ 	err = client.Up()
+ 	require.NoError(t, err)
+@@ -659,7 +660,7 @@ func TestAuthKeyLogoutAndReloginRoutesPreserved(t *testing.T) {
+ 			assert.Contains(c, initialNode.GetSubnetRoutes(), advertiseRoute,
+ 				"Subnet routes should contain %s", advertiseRoute)
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "initial route should be serving")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "initial route should be serving")
+ 
+ 	require.NotNil(t, initialNode, "Initial node should be found")
+ 	initialNodeID := initialNode.GetId()
+@@ -677,7 +678,7 @@ func TestAuthKeyLogoutAndReloginRoutesPreserved(t *testing.T) {
+ 		status, err := client.Status()
+ 		assert.NoError(ct, err)
+ 		assert.Equal(ct, "NeedsLogin", status.BackendState, "Expected NeedsLogin state after logout")
+-	}, 30*time.Second, 1*time.Second, "waiting for logout to complete")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "waiting for logout to complete")
+ 
+ 	t.Logf("Logout completed, node should still exist in database")
+ 
+@@ -686,7 +687,7 @@ func TestAuthKeyLogoutAndReloginRoutesPreserved(t *testing.T) {
+ 		nodes, err := headscale.ListNodes()
+ 		assert.NoError(c, err)
+ 		assert.Len(c, nodes, 1, "Node should persist in database after logout")
+-	}, 10*time.Second, 500*time.Millisecond, "node should persist after logout")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "node should persist after logout")
+ 
+ 	// Step 3: Re-authenticate with the SAME user (using auth key)
+ 	t.Logf("Step 3: Re-authenticating with same user at %s", time.Now().Format(TimestampFormat))
+@@ -707,7 +708,7 @@ func TestAuthKeyLogoutAndReloginRoutesPreserved(t *testing.T) {
+ 		status, err := client.Status()
+ 		assert.NoError(ct, err)
+ 		assert.Equal(ct, "Running", status.BackendState, "Expected Running state after relogin")
+-	}, 30*time.Second, 1*time.Second, "waiting for relogin to complete")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "waiting for relogin to complete")
+ 
+ 	t.Logf("Re-authentication completed at %s", time.Now().Format(TimestampFormat))
+ 
+@@ -741,7 +742,7 @@ func TestAuthKeyLogoutAndReloginRoutesPreserved(t *testing.T) {
+ 			assert.Equal(c, initialNodeID, node.GetId(),
+ 				"Node ID should be preserved after same-user relogin")
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond,
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond,
+ 		"BUG #2896: routes should remain SERVING after logout/relogin with same user")
+ 
+ 	t.Logf("Test completed - verifying issue #2896 fix")
+diff --git a/integration/auth_oidc_test.go b/integration/auth_oidc_test.go
+index 7681f0d8..cd1d2ec2 100644
+--- a/integration/auth_oidc_test.go
++++ b/integration/auth_oidc_test.go
+@@ -15,6 +15,7 @@ import (
+ 	policyv2 "github.com/juanfont/headscale/hscontrol/policy/v2"
+ 	"github.com/juanfont/headscale/hscontrol/types"
+ 	"github.com/juanfont/headscale/integration/hsic"
++	"github.com/juanfont/headscale/integration/integrationutil"
+ 	"github.com/juanfont/headscale/integration/tsic"
+ 	"github.com/oauth2-proxy/mockoidc"
+ 	"github.com/samber/lo"
+@@ -198,7 +199,7 @@ func TestOIDCExpireNodesBasedOnTokenExpiry(t *testing.T) {
+ 	// - Safety margin for test reliability
+ 	loginTimeSpread := 1 * time.Minute // Account for sequential login delays
+ 	safetyBuffer := 30 * time.Second   // Additional safety margin
+-	totalWaitTime := shortAccessTTL + loginTimeSpread + safetyBuffer
++	totalWaitTime := integrationutil.ScaledTimeout(shortAccessTTL + loginTimeSpread + safetyBuffer)
+ 
+ 	t.Logf("Waiting %v for OIDC tokens to expire (TTL: %v, spread: %v, buffer: %v)",
+ 		totalWaitTime, shortAccessTTL, loginTimeSpread, safetyBuffer)
+@@ -528,7 +529,7 @@ func TestOIDCReloginSameNodeNewUser(t *testing.T) {
+ 		if diff := cmp.Diff(wantUsers, listUsers, cmpopts.IgnoreUnexported(v1.User{}), cmpopts.IgnoreFields(v1.User{}, "CreatedAt")); diff != "" {
+ 			ct.Errorf("User validation failed after first login - unexpected users: %s", diff)
+ 		}
+-	}, 30*time.Second, 1*time.Second, "validating user1 creation after initial OIDC login")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "validating user1 creation after initial OIDC login")
+ 
+ 	t.Logf("Validating initial node creation at %s", time.Now().Format(TimestampFormat))
+ 
+@@ -540,7 +541,7 @@ func TestOIDCReloginSameNodeNewUser(t *testing.T) {
+ 		listNodes, err = headscale.ListNodes()
+ 		assert.NoError(ct, err, "Failed to list nodes during initial validation")
+ 		assert.Len(ct, listNodes, 1, "Expected exactly 1 node after first login, got %d", len(listNodes))
+-	}, 30*time.Second, 1*time.Second, "validating initial node creation for user1 after OIDC login")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "validating initial node creation for user1 after OIDC login")
+ 
+ 	// Collect expected node IDs for validation after user1 initial login
+ 	expectedNodes := make([]types.NodeID, 0, 1)
+@@ -555,7 +556,7 @@ func TestOIDCReloginSameNodeNewUser(t *testing.T) {
+ 
+ 		nodeID, err = strconv.ParseUint(string(status.Self.ID), 10, 64)
+ 		assert.NoError(ct, err, "Failed to parse node ID from status")
+-	}, 30*time.Second, 1*time.Second, "waiting for node ID to be populated in status after initial login")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "waiting for node ID to be populated in status after initial login")
+ 
+ 	expectedNodes = append(expectedNodes, types.NodeID(nodeID))
+ 
+@@ -581,7 +582,7 @@ func TestOIDCReloginSameNodeNewUser(t *testing.T) {
+ 		status, err := ts.Status()
+ 		assert.NoError(ct, err, "Failed to get client status during logout validation")
+ 		assert.Equal(ct, "NeedsLogin", status.BackendState, "Expected NeedsLogin state after logout, got %s", status.BackendState)
+-	}, 30*time.Second, 1*time.Second, "waiting for user1 logout to complete before user2 login")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "waiting for user1 logout to complete before user2 login")
+ 
+ 	u, err = ts.LoginWithURL(headscale.GetEndpoint())
+ 	require.NoError(t, err)
+@@ -619,7 +620,7 @@ func TestOIDCReloginSameNodeNewUser(t *testing.T) {
+ 		if diff := cmp.Diff(wantUsers, listUsers, cmpopts.IgnoreUnexported(v1.User{}), cmpopts.IgnoreFields(v1.User{}, "CreatedAt")); diff != "" {
+ 			ct.Errorf("User validation failed after user2 login - expected both user1 and user2: %s", diff)
+ 		}
+-	}, 30*time.Second, 1*time.Second, "validating both user1 and user2 exist after second OIDC login")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "validating both user1 and user2 exist after second OIDC login")
+ 
+ 	var listNodesAfterNewUserLogin []*v1.Node
+ 	// First, wait for the new node to be created
+@@ -629,7 +630,7 @@ func TestOIDCReloginSameNodeNewUser(t *testing.T) {
+ 		assert.NoError(ct, err, "Failed to list nodes after user2 login")
+ 		// We might temporarily have more than 2 nodes during cleanup, so check for at least 2
+ 		assert.GreaterOrEqual(ct, len(listNodesAfterNewUserLogin), 2, "Should have at least 2 nodes after user2 login, got %d (may include temporary nodes during cleanup)", len(listNodesAfterNewUserLogin))
+-	}, 30*time.Second, 1*time.Second, "waiting for user2 node creation (allowing temporary extra nodes during cleanup)")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "waiting for user2 node creation (allowing temporary extra nodes during cleanup)")
+ 
+ 	// Then wait for cleanup to stabilize at exactly 2 nodes
+ 	t.Logf("Waiting for node cleanup stabilization at %s", time.Now().Format(TimestampFormat))
+@@ -646,7 +647,7 @@ func TestOIDCReloginSameNodeNewUser(t *testing.T) {
+ 			assert.Equal(ct, listNodesAfterNewUserLogin[0].GetMachineKey(), listNodesAfterNewUserLogin[1].GetMachineKey(), "Both nodes should share the same machine key")
+ 			assert.NotEqual(ct, listNodesAfterNewUserLogin[0].GetNodeKey(), listNodesAfterNewUserLogin[1].GetNodeKey(), "Node keys should be different between user1 and user2 nodes")
+ 		}
+-	}, 90*time.Second, 2*time.Second, "waiting for node count stabilization at exactly 2 nodes after user2 login")
++	}, integrationutil.ScaledTimeout(90*time.Second), 2*time.Second, "waiting for node count stabilization at exactly 2 nodes after user2 login")
+ 
+ 	// Security validation: Only user2's node should be active after user switch
+ 	var activeUser2NodeID types.NodeID
+@@ -676,7 +677,7 @@ func TestOIDCReloginSameNodeNewUser(t *testing.T) {
+ 		} else {
+ 			assert.Fail(c, "User2 node not found in nodestore")
+ 		}
+-	}, 60*time.Second, 2*time.Second, "validating only user2 node is online after user switch")
++	}, integrationutil.ScaledTimeout(60*time.Second), 2*time.Second, "validating only user2 node is online after user switch")
+ 
+ 	// Before logging out user2, validate we have exactly 2 nodes and both are stable
+ 	t.Logf("Pre-logout validation: checking node stability at %s", time.Now().Format(TimestampFormat))
+@@ -691,7 +692,7 @@ func TestOIDCReloginSameNodeNewUser(t *testing.T) {
+ 			assert.NotEmpty(ct, node.GetMachineKey(), "Node %d should have a valid machine key before logout", i)
+ 			t.Logf("Pre-logout node %d: User=%s, MachineKey=%s", i, node.GetUser().GetName(), node.GetMachineKey()[:16]+"...")
+ 		}
+-	}, 60*time.Second, 2*time.Second, "validating stable node count and integrity before user2 logout")
++	}, integrationutil.ScaledTimeout(60*time.Second), 2*time.Second, "validating stable node count and integrity before user2 logout")
+ 
+ 	// Log out user2, and log into user1, no new node should be created,
+ 	// the node should now "become" node1 again
+@@ -717,7 +718,7 @@ func TestOIDCReloginSameNodeNewUser(t *testing.T) {
+ 		status, err := ts.Status()
+ 		assert.NoError(ct, err, "Failed to get client status during user2 logout validation")
+ 		assert.Equal(ct, "NeedsLogin", status.BackendState, "Expected NeedsLogin state after user2 logout, got %s", status.BackendState)
+-	}, 30*time.Second, 1*time.Second, "waiting for user2 logout to complete before user1 relogin")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "waiting for user2 logout to complete before user1 relogin")
+ 
+ 	// Before logging back in, ensure we still have exactly 2 nodes
+ 	// Note: We skip validateLogoutComplete here since it expects all nodes to be offline,
+@@ -736,7 +737,7 @@ func TestOIDCReloginSameNodeNewUser(t *testing.T) {
+ 			assert.NotEmpty(ct, node.GetMachineKey(), "Node %d should still have a valid machine key after user2 logout", i)
+ 			t.Logf("Post-logout node %d: User=%s, MachineKey=%s", i, node.GetUser().GetName(), node.GetMachineKey()[:16]+"...")
+ 		}
+-	}, 60*time.Second, 2*time.Second, "validating node persistence and integrity after user2 logout")
++	}, integrationutil.ScaledTimeout(60*time.Second), 2*time.Second, "validating node persistence and integrity after user2 logout")
+ 
+ 	// We do not actually "change" the user here, it is done by logging in again
+ 	// as the OIDC mock server is kind of like a stack, and the next user is
+@@ -752,7 +753,7 @@ func TestOIDCReloginSameNodeNewUser(t *testing.T) {
+ 		status, err := ts.Status()
+ 		assert.NoError(ct, err, "Failed to get client status during user1 relogin validation")
+ 		assert.Equal(ct, "Running", status.BackendState, "Expected Running state after user1 relogin, got %s", status.BackendState)
+-	}, 30*time.Second, 1*time.Second, "waiting for user1 relogin to complete (final login)")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "waiting for user1 relogin to complete (final login)")
+ 
+ 	t.Logf("Logged back in")
+ 	t.Log("timestamp: " + time.Now().Format(TimestampFormat) + "\n")
+@@ -787,7 +788,7 @@ func TestOIDCReloginSameNodeNewUser(t *testing.T) {
+ 		if diff := cmp.Diff(wantUsers, listUsers, cmpopts.IgnoreUnexported(v1.User{}), cmpopts.IgnoreFields(v1.User{}, "CreatedAt")); diff != "" {
+ 			ct.Errorf("Final user validation failed - both users should persist after relogin cycle: %s", diff)
+ 		}
+-	}, 30*time.Second, 1*time.Second, "validating user persistence after complete relogin cycle (user1->user2->user1)")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "validating user persistence after complete relogin cycle (user1->user2->user1)")
+ 
+ 	var listNodesAfterLoggingBackIn []*v1.Node
+ 	// Wait for login to complete and nodes to stabilize
+@@ -828,7 +829,7 @@ func TestOIDCReloginSameNodeNewUser(t *testing.T) {
+ 		assert.NotEqual(ct, listNodesAfterLoggingBackIn[0].GetNodeKey(), listNodesAfterLoggingBackIn[1].GetNodeKey(), "Final nodes should have different node keys for different users")
+ 
+ 		t.Logf("Final validation complete - node counts and key relationships verified at %s", time.Now().Format(TimestampFormat))
+-	}, 60*time.Second, 2*time.Second, "validating final node state after complete user1->user2->user1 relogin cycle with detailed key validation")
++	}, integrationutil.ScaledTimeout(60*time.Second), 2*time.Second, "validating final node state after complete user1->user2->user1 relogin cycle with detailed key validation")
+ 
+ 	// Security validation: Only user1's node should be active after relogin
+ 	var activeUser1NodeID types.NodeID
+@@ -858,7 +859,7 @@ func TestOIDCReloginSameNodeNewUser(t *testing.T) {
+ 		} else {
+ 			assert.Fail(c, "User1 node not found in nodestore after relogin")
+ 		}
+-	}, 60*time.Second, 2*time.Second, "validating only user1 node is online after final relogin")
++	}, integrationutil.ScaledTimeout(60*time.Second), 2*time.Second, "validating only user1 node is online after final relogin")
+ }
+ 
+ // TestOIDCFollowUpUrl validates the follow-up login flow
+@@ -935,7 +936,7 @@ func TestOIDCFollowUpUrl(t *testing.T) {
+ 		assert.NoError(c, err)
+ 
+ 		assert.NotEqual(c, u.String(), st.AuthURL, "AuthURL should change")
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for registration cache to expire and status to reflect NeedsLogin")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for registration cache to expire and status to reflect NeedsLogin")
+ 
+ 	_, err = doLoginURL(ts.Hostname(), newUrl)
+ 	require.NoError(t, err)
+@@ -973,7 +974,7 @@ func TestOIDCFollowUpUrl(t *testing.T) {
+ 		listNodes, err := headscale.ListNodes()
+ 		assert.NoError(c, err)
+ 		assert.Len(c, listNodes, 1)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for expected node list after OIDC login")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for expected node list after OIDC login")
+ }
+ 
+ // TestOIDCMultipleOpenedLoginUrls tests the scenario:
+@@ -1083,7 +1084,7 @@ func TestOIDCMultipleOpenedLoginUrls(t *testing.T) {
+ 			listNodes, err := headscale.ListNodes()
+ 			assert.NoError(c, err)
+ 			assert.Len(c, listNodes, 1)
+-		}, 10*time.Second, 200*time.Millisecond, "Waiting for expected node list after OIDC login",
++		}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for expected node list after OIDC login",
+ 	)
+ }
+ 
+@@ -1178,7 +1179,7 @@ func TestOIDCReloginSameNodeSameUser(t *testing.T) {
+ 		if diff := cmp.Diff(wantUsers, listUsers, cmpopts.IgnoreUnexported(v1.User{}), cmpopts.IgnoreFields(v1.User{}, "CreatedAt")); diff != "" {
+ 			ct.Errorf("User validation failed after first login - unexpected users: %s", diff)
+ 		}
+-	}, 30*time.Second, 1*time.Second, "validating user1 creation after initial OIDC login")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "validating user1 creation after initial OIDC login")
+ 
+ 	t.Logf("Validating initial node creation at %s", time.Now().Format(TimestampFormat))
+ 
+@@ -1190,7 +1191,7 @@ func TestOIDCReloginSameNodeSameUser(t *testing.T) {
+ 		initialNodes, err = headscale.ListNodes()
+ 		assert.NoError(ct, err, "Failed to list nodes during initial validation")
+ 		assert.Len(ct, initialNodes, 1, "Expected exactly 1 node after first login, got %d", len(initialNodes))
+-	}, 30*time.Second, 1*time.Second, "validating initial node creation for user1 after OIDC login")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "validating initial node creation for user1 after OIDC login")
+ 
+ 	// Collect expected node IDs for validation after user1 initial login
+ 	expectedNodes := make([]types.NodeID, 0, 1)
+@@ -1205,7 +1206,7 @@ func TestOIDCReloginSameNodeSameUser(t *testing.T) {
+ 
+ 		nodeID, err = strconv.ParseUint(string(status.Self.ID), 10, 64)
+ 		assert.NoError(ct, err, "Failed to parse node ID from status")
+-	}, 30*time.Second, 1*time.Second, "waiting for node ID to be populated in status after initial login")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "waiting for node ID to be populated in status after initial login")
+ 
+ 	expectedNodes = append(expectedNodes, types.NodeID(nodeID))
+ 
+@@ -1234,7 +1235,7 @@ func TestOIDCReloginSameNodeSameUser(t *testing.T) {
+ 		status, err := ts.Status()
+ 		assert.NoError(ct, err, "Failed to get client status during logout validation")
+ 		assert.Equal(ct, "NeedsLogin", status.BackendState, "Expected NeedsLogin state after logout, got %s", status.BackendState)
+-	}, 30*time.Second, 1*time.Second, "waiting for user1 logout to complete before same-user relogin")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "waiting for user1 logout to complete before same-user relogin")
+ 
+ 	// Validate node persistence during logout (node should remain in DB)
+ 	t.Logf("Validating node persistence during logout at %s", time.Now().Format(TimestampFormat))
+@@ -1242,7 +1243,7 @@ func TestOIDCReloginSameNodeSameUser(t *testing.T) {
+ 		listNodes, err := headscale.ListNodes()
+ 		assert.NoError(ct, err, "Failed to list nodes during logout validation")
+ 		assert.Len(ct, listNodes, 1, "Should still have exactly 1 node during logout (node should persist in DB), got %d", len(listNodes))
+-	}, 30*time.Second, 1*time.Second, "validating node persistence in database during same-user logout")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "validating node persistence in database during same-user logout")
+ 
+ 	// Login again as the same user (user1)
+ 	u, err = ts.LoginWithURL(headscale.GetEndpoint())
+@@ -1256,7 +1257,7 @@ func TestOIDCReloginSameNodeSameUser(t *testing.T) {
+ 		status, err := ts.Status()
+ 		assert.NoError(ct, err, "Failed to get client status during relogin validation")
+ 		assert.Equal(ct, "Running", status.BackendState, "Expected Running state after user1 relogin, got %s", status.BackendState)
+-	}, 30*time.Second, 1*time.Second, "waiting for user1 relogin to complete (same user)")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "waiting for user1 relogin to complete (same user)")
+ 
+ 	t.Logf("Final validation: checking user persistence after same-user relogin at %s", time.Now().Format(TimestampFormat))
+ 	assert.EventuallyWithT(t, func(ct *assert.CollectT) {
+@@ -1281,7 +1282,7 @@ func TestOIDCReloginSameNodeSameUser(t *testing.T) {
+ 		if diff := cmp.Diff(wantUsers, listUsers, cmpopts.IgnoreUnexported(v1.User{}), cmpopts.IgnoreFields(v1.User{}, "CreatedAt")); diff != "" {
+ 			ct.Errorf("Final user validation failed - user1 should persist after same-user relogin: %s", diff)
+ 		}
+-	}, 30*time.Second, 1*time.Second, "validating user1 persistence after same-user OIDC relogin cycle")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "validating user1 persistence after same-user OIDC relogin cycle")
+ 
+ 	var finalNodes []*v1.Node
+ 
+@@ -1304,7 +1305,7 @@ func TestOIDCReloginSameNodeSameUser(t *testing.T) {
+ 		assert.NotEqual(ct, initialNodeKey, finalNode.GetNodeKey(), "Node key should be regenerated after logout/relogin even for same user")
+ 
+ 		t.Logf("Final validation complete - same user relogin key relationships verified at %s", time.Now().Format(TimestampFormat))
+-	}, 60*time.Second, 2*time.Second, "validating final node state after same-user OIDC relogin cycle with key preservation validation")
++	}, integrationutil.ScaledTimeout(60*time.Second), 2*time.Second, "validating final node state after same-user OIDC relogin cycle with key preservation validation")
+ 
+ 	// Security validation: user1's node should be active after relogin
+ 	activeUser1NodeID := types.NodeID(finalNodes[0].GetId())
+@@ -1324,7 +1325,7 @@ func TestOIDCReloginSameNodeSameUser(t *testing.T) {
+ 		} else {
+ 			assert.Fail(c, "User1 node not found in nodestore after same-user relogin")
+ 		}
+-	}, 60*time.Second, 2*time.Second, "validating user1 node is online after same-user OIDC relogin")
++	}, integrationutil.ScaledTimeout(60*time.Second), 2*time.Second, "validating user1 node is online after same-user OIDC relogin")
+ }
+ 
+ // TestOIDCExpiryAfterRestart validates that node expiry is preserved
+@@ -1400,7 +1401,7 @@ func TestOIDCExpiryAfterRestart(t *testing.T) {
+ 			initialExpiry = expiryTime
+ 			t.Logf("Initial expiry set to: %v (expires in %v)", expiryTime, time.Until(expiryTime))
+ 		}
+-	}, 30*time.Second, 1*time.Second, "validating initial expiry after OIDC login")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "validating initial expiry after OIDC login")
+ 
+ 	// Now restart the tailscaled container
+ 	t.Logf("Restarting tailscaled container at %s", time.Now().Format(TimestampFormat))
+@@ -1422,7 +1423,7 @@ func TestOIDCExpiryAfterRestart(t *testing.T) {
+ 		}
+ 
+ 		assert.Equal(ct, "Running", status.BackendState)
+-	}, 60*time.Second, 2*time.Second, "waiting for tailscale to reconnect after restart")
++	}, integrationutil.ScaledTimeout(60*time.Second), 2*time.Second, "waiting for tailscale to reconnect after restart")
+ 
+ 	// THE CRITICAL TEST: Verify expiry is still set correctly after restart
+ 	t.Logf("Validating expiry preservation after restart at %s", time.Now().Format(TimestampFormat))
+@@ -1450,7 +1451,7 @@ func TestOIDCExpiryAfterRestart(t *testing.T) {
+ 			t.Logf("SUCCESS: Expiry preserved after restart: %v (expires in %v)",
+ 				expiryTime, time.Until(expiryTime))
+ 		}
+-	}, 30*time.Second, 1*time.Second, "validating expiry preservation after restart")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "validating expiry preservation after restart")
+ }
+ 
+ // TestOIDCACLPolicyOnJoin validates that ACL policies are correctly applied
+@@ -1572,7 +1573,7 @@ func TestOIDCACLPolicyOnJoin(t *testing.T) {
+ 		gatewayNodeID = gatewayNode.GetId()
+ 		assert.Len(ct, gatewayNode.GetAvailableRoutes(), 1)
+ 		assert.Contains(ct, gatewayNode.GetAvailableRoutes(), advertiseRoute)
+-	}, 10*time.Second, 500*time.Millisecond, "route advertisement should propagate to headscale")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "route advertisement should propagate to headscale")
+ 
+ 	// Approve the advertised route
+ 	_, err = headscale.ApproveRoutes(
+@@ -1590,7 +1591,7 @@ func TestOIDCACLPolicyOnJoin(t *testing.T) {
+ 		gatewayNode := nodes[0]
+ 		assert.Len(ct, gatewayNode.GetApprovedRoutes(), 1)
+ 		assert.Contains(ct, gatewayNode.GetApprovedRoutes(), advertiseRoute)
+-	}, 10*time.Second, 500*time.Millisecond, "route approval should propagate to headscale")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "route approval should propagate to headscale")
+ 
+ 	// NOW create the OIDC user by having them join
+ 	// This is where issue #2888 manifests - the new OIDC node should immediately
+@@ -1660,7 +1661,7 @@ func TestOIDCACLPolicyOnJoin(t *testing.T) {
+ 				t.Logf("Gateway peer AllowedIPs: %v", allowedIPs)
+ 			}
+ 		}
+-	}, 15*time.Second, 500*time.Millisecond,
++	}, integrationutil.ScaledTimeout(15*time.Second), 500*time.Millisecond,
+ 		"OIDC user should immediately see gateway's advertised route without client restart (issue #2888)")
+ 
+ 	// Verify that the Gateway node sees the OIDC node's advertised route (AutoApproveRoutes check)
+@@ -1692,7 +1693,7 @@ func TestOIDCACLPolicyOnJoin(t *testing.T) {
+ 					"Gateway user should immediately see OIDC's advertised route %s in PrimaryRoutes", oidcAdvertiseRoute)
+ 			}
+ 		}
+-	}, 15*time.Second, 500*time.Millisecond,
++	}, integrationutil.ScaledTimeout(15*time.Second), 500*time.Millisecond,
+ 		"Gateway user should immediately see OIDC's advertised route (AutoApproveRoutes check)")
+ 
+ 	// Additional validation: Verify nodes in headscale match expectations
+@@ -1740,7 +1741,7 @@ func TestOIDCACLPolicyOnJoin(t *testing.T) {
+ 			assert.Equal(ct, "oidcuser", oidcUserFound.GetName())
+ 			assert.Equal(ct, "oidcuser@headscale.net", oidcUserFound.GetEmail())
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "headscale should have correct users and nodes")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "headscale should have correct users and nodes")
+ 
+ 	t.Logf("Test completed successfully - issue #2888 fix validated")
+ }
+@@ -1831,7 +1832,7 @@ func TestOIDCReloginSameUserRoutesPreserved(t *testing.T) {
+ 		status, err := ts.Status()
+ 		assert.NoError(ct, err)
+ 		assert.Equal(ct, "Running", status.BackendState)
+-	}, 30*time.Second, 1*time.Second, "waiting for initial login to complete")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "waiting for initial login to complete")
+ 
+ 	// Step 1: Verify initial route is advertised, approved, and SERVING
+ 	t.Logf("Step 1: Verifying initial route is advertised, approved, and SERVING at %s", time.Now().Format(TimestampFormat))
+@@ -1855,7 +1856,7 @@ func TestOIDCReloginSameUserRoutesPreserved(t *testing.T) {
+ 			assert.Contains(c, initialNode.GetSubnetRoutes(), advertiseRoute,
+ 				"Subnet routes should contain %s", advertiseRoute)
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "initial route should be serving")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "initial route should be serving")
+ 
+ 	require.NotNil(t, initialNode, "Initial node should be found")
+ 	initialNodeID := initialNode.GetId()
+@@ -1873,7 +1874,7 @@ func TestOIDCReloginSameUserRoutesPreserved(t *testing.T) {
+ 		status, err := ts.Status()
+ 		assert.NoError(ct, err)
+ 		assert.Equal(ct, "NeedsLogin", status.BackendState, "Expected NeedsLogin state after logout")
+-	}, 30*time.Second, 1*time.Second, "waiting for logout to complete")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "waiting for logout to complete")
+ 
+ 	t.Logf("Logout completed, node should still exist in database")
+ 
+@@ -1882,7 +1883,7 @@ func TestOIDCReloginSameUserRoutesPreserved(t *testing.T) {
+ 		nodes, err := headscale.ListNodes()
+ 		assert.NoError(c, err)
+ 		assert.Len(c, nodes, 1, "Node should persist in database after logout")
+-	}, 10*time.Second, 500*time.Millisecond, "node should persist after logout")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "node should persist after logout")
+ 
+ 	// Step 3: Re-authenticate via OIDC as the same user
+ 	t.Logf("Step 3: Re-authenticating with same user via OIDC at %s", time.Now().Format(TimestampFormat))
+@@ -1898,7 +1899,7 @@ func TestOIDCReloginSameUserRoutesPreserved(t *testing.T) {
+ 		status, err := ts.Status()
+ 		assert.NoError(ct, err)
+ 		assert.Equal(ct, "Running", status.BackendState, "Expected Running state after relogin")
+-	}, 30*time.Second, 1*time.Second, "waiting for relogin to complete")
++	}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second, "waiting for relogin to complete")
+ 
+ 	t.Logf("Re-authentication completed at %s", time.Now().Format(TimestampFormat))
+ 
+@@ -1932,7 +1933,7 @@ func TestOIDCReloginSameUserRoutesPreserved(t *testing.T) {
+ 			assert.Equal(c, initialNodeID, node.GetId(),
+ 				"Node ID should be preserved after same-user relogin")
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond,
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond,
+ 		"BUG #2896: routes should remain SERVING after OIDC logout/relogin with same user")
+ 
+ 	t.Logf("Test completed - verifying issue #2896 fix for OIDC")
+diff --git a/integration/auth_web_flow_test.go b/integration/auth_web_flow_test.go
+index 06d7ca96..f836c3e4 100644
+--- a/integration/auth_web_flow_test.go
++++ b/integration/auth_web_flow_test.go
+@@ -109,7 +109,7 @@ func TestAuthWebFlowLogoutAndReloginSameUser(t *testing.T) {
+ 		listNodes, err = headscale.ListNodes()
+ 		assert.NoError(ct, err, "Failed to list nodes after web authentication")
+ 		assert.Len(ct, listNodes, len(allClients), "Expected %d nodes after web auth, got %d", len(allClients), len(listNodes))
+-	}, 30*time.Second, 2*time.Second, "validating node count matches client count after web authentication")
++	}, integrationutil.ScaledTimeout(30*time.Second), 2*time.Second, "validating node count matches client count after web authentication")
+ 
+ 	nodeCountBeforeLogout := len(listNodes)
+ 	t.Logf("node count before logout: %d", nodeCountBeforeLogout)
+@@ -156,7 +156,7 @@ func TestAuthWebFlowLogoutAndReloginSameUser(t *testing.T) {
+ 		listNodes, err = headscale.ListNodes()
+ 		assert.NoError(ct, err, "Failed to list nodes after web flow logout")
+ 		assert.Len(ct, listNodes, nodeCountBeforeLogout, "Node count should remain unchanged after logout - expected %d nodes, got %d", nodeCountBeforeLogout, len(listNodes))
+-	}, 60*time.Second, 2*time.Second, "validating node persistence in database after web flow logout")
++	}, integrationutil.ScaledTimeout(60*time.Second), 2*time.Second, "validating node persistence in database after web flow logout")
+ 	t.Logf("node count first login: %d, after relogin: %d", nodeCountBeforeLogout, len(listNodes))
+ 
+ 	// Validate connection state after relogin
+@@ -268,7 +268,7 @@ func TestAuthWebFlowLogoutAndReloginNewUser(t *testing.T) {
+ 		listNodes, err = headscale.ListNodes()
+ 		assert.NoError(ct, err, "Failed to list nodes after initial web authentication")
+ 		assert.Len(ct, listNodes, len(allClients), "Expected %d nodes after web auth, got %d", len(allClients), len(listNodes))
+-	}, 30*time.Second, 2*time.Second, "validating node count matches client count after initial web authentication")
++	}, integrationutil.ScaledTimeout(30*time.Second), 2*time.Second, "validating node count matches client count after initial web authentication")
+ 
+ 	nodeCountBeforeLogout := len(listNodes)
+ 	t.Logf("node count before logout: %d", nodeCountBeforeLogout)
+@@ -328,7 +328,7 @@ func TestAuthWebFlowLogoutAndReloginNewUser(t *testing.T) {
+ 		user1Nodes, err = headscale.ListNodes("user1")
+ 		assert.NoError(ct, err, "Failed to list nodes for user1 after web flow relogin")
+ 		assert.Len(ct, user1Nodes, len(allClients), "User1 should have all %d clients after web flow relogin, got %d nodes", len(allClients), len(user1Nodes))
+-	}, 60*time.Second, 2*time.Second, "validating user1 has all client nodes after web flow user switch relogin")
++	}, integrationutil.ScaledTimeout(60*time.Second), 2*time.Second, "validating user1 has all client nodes after web flow user switch relogin")
+ 
+ 	// Collect expected node IDs for user1 after relogin
+ 	expectedUser1Nodes := make([]types.NodeID, 0, len(user1Nodes))
+@@ -350,7 +350,7 @@ func TestAuthWebFlowLogoutAndReloginNewUser(t *testing.T) {
+ 		user2Nodes, err = headscale.ListNodes("user2")
+ 		assert.NoError(ct, err, "Failed to list nodes for user2 after CLI registration to user1")
+ 		assert.Len(ct, user2Nodes, len(allClients)/2, "User2 should still have %d old nodes (likely expired) after CLI registration to user1, got %d nodes", len(allClients)/2, len(user2Nodes))
+-	}, 30*time.Second, 2*time.Second, "validating user2 old nodes remain in database after CLI registration to user1")
++	}, integrationutil.ScaledTimeout(30*time.Second), 2*time.Second, "validating user2 old nodes remain in database after CLI registration to user1")
+ 
+ 	t.Logf("Validating client login states after web flow user switch at %s", time.Now().Format(TimestampFormat))
+ 
+@@ -359,7 +359,7 @@ func TestAuthWebFlowLogoutAndReloginNewUser(t *testing.T) {
+ 			status, err := client.Status()
+ 			assert.NoError(ct, err, "Failed to get status for client %s", client.Hostname())
+ 			assert.Equal(ct, "user1@test.no", status.User[status.Self.UserID].LoginName, "Client %s should be logged in as user1 after web flow user switch, got %s", client.Hostname(), status.User[status.Self.UserID].LoginName)
+-		}, 30*time.Second, 2*time.Second, "validating %s is logged in as user1 after web flow user switch", client.Hostname())
++		}, integrationutil.ScaledTimeout(30*time.Second), 2*time.Second, "validating %s is logged in as user1 after web flow user switch", client.Hostname())
+ 	}
+ 
+ 	// Test connectivity after user switch
+diff --git a/integration/cli_test.go b/integration/cli_test.go
+index 1ceeb3ae..bb4bf6e9 100644
+--- a/integration/cli_test.go
++++ b/integration/cli_test.go
+@@ -16,6 +16,7 @@ import (
+ 	policyv2 "github.com/juanfont/headscale/hscontrol/policy/v2"
+ 	"github.com/juanfont/headscale/hscontrol/types"
+ 	"github.com/juanfont/headscale/integration/hsic"
++	"github.com/juanfont/headscale/integration/integrationutil"
+ 	"github.com/juanfont/headscale/integration/tsic"
+ 	"github.com/stretchr/testify/assert"
+ 	"github.com/stretchr/testify/require"
+@@ -91,7 +92,7 @@ func TestUserCommand(t *testing.T) {
+ 			result,
+ 			"Should have user1 and user2 in users list",
+ 		)
+-	}, 20*time.Second, 1*time.Second)
++	}, integrationutil.ScaledTimeout(20*time.Second), 1*time.Second)
+ 
+ 	_, err = headscale.Execute(
+ 		[]string{
+@@ -129,7 +130,7 @@ func TestUserCommand(t *testing.T) {
+ 			result,
+ 			"Should have user1 and newname after rename operation",
+ 		)
+-	}, 20*time.Second, 1*time.Second)
++	}, integrationutil.ScaledTimeout(20*time.Second), 1*time.Second)
+ 
+ 	var listByUsername []*v1.User
+ 
+@@ -146,7 +147,7 @@ func TestUserCommand(t *testing.T) {
+ 			&listByUsername,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for user list by username")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for user list by username")
+ 
+ 	slices.SortFunc(listByUsername, sortWithID)
+ 
+@@ -177,7 +178,7 @@ func TestUserCommand(t *testing.T) {
+ 			&listByID,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for user list by ID")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for user list by ID")
+ 
+ 	slices.SortFunc(listByID, sortWithID)
+ 
+@@ -234,7 +235,7 @@ func TestUserCommand(t *testing.T) {
+ 		if diff := tcmp.Diff(want, listAfterIDDelete, cmpopts.IgnoreUnexported(v1.User{}), cmpopts.IgnoreFields(v1.User{}, "CreatedAt")); diff != "" {
+ 			assert.Fail(ct, "unexpected users", "diff (-want +got):\n%s", diff)
+ 		}
+-	}, 20*time.Second, 1*time.Second)
++	}, integrationutil.ScaledTimeout(20*time.Second), 1*time.Second)
+ 
+ 	deleteResult, err = headscale.Execute(
+ 		[]string{
+@@ -263,7 +264,7 @@ func TestUserCommand(t *testing.T) {
+ 		)
+ 		assert.NoError(c, err)
+ 		assert.Empty(c, listAfterNameDelete)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for user list after name delete")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for user list after name delete")
+ }
+ 
+ func TestPreAuthKeyCommand(t *testing.T) {
+@@ -314,7 +315,7 @@ func TestPreAuthKeyCommand(t *testing.T) {
+ 				&preAuthKey,
+ 			)
+ 			assert.NoError(c, err)
+-		}, 10*time.Second, 200*time.Millisecond, "Waiting for preauth key creation")
++		}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for preauth key creation")
+ 
+ 		keys[index] = &preAuthKey
+ 	}
+@@ -336,7 +337,7 @@ func TestPreAuthKeyCommand(t *testing.T) {
+ 			&listedPreAuthKeys,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for preauth keys list")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for preauth keys list")
+ 
+ 	// There is one key created by "scenario.CreateHeadscaleEnv"
+ 	assert.Len(t, listedPreAuthKeys, 4)
+@@ -412,7 +413,7 @@ func TestPreAuthKeyCommand(t *testing.T) {
+ 			&listedPreAuthKeysAfterExpire,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for preauth keys list after expire")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for preauth keys list after expire")
+ 
+ 	assert.True(t, listedPreAuthKeysAfterExpire[1].GetExpiration().AsTime().Before(time.Now()))
+ 	assert.True(t, listedPreAuthKeysAfterExpire[2].GetExpiration().AsTime().After(time.Now()))
+@@ -456,7 +457,7 @@ func TestPreAuthKeyCommandWithoutExpiry(t *testing.T) {
+ 			&preAuthKey,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for preauth key creation without expiry")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for preauth key creation without expiry")
+ 
+ 	var listedPreAuthKeys []v1.PreAuthKey
+ 
+@@ -473,7 +474,7 @@ func TestPreAuthKeyCommandWithoutExpiry(t *testing.T) {
+ 			&listedPreAuthKeys,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for preauth keys list")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for preauth keys list")
+ 
+ 	// There is one key created by "scenario.CreateHeadscaleEnv"
+ 	assert.Len(t, listedPreAuthKeys, 2)
+@@ -522,7 +523,7 @@ func TestPreAuthKeyCommandReusableEphemeral(t *testing.T) {
+ 			&preAuthReusableKey,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for reusable preauth key creation")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for reusable preauth key creation")
+ 
+ 	var preAuthEphemeralKey v1.PreAuthKey
+ 
+@@ -542,7 +543,7 @@ func TestPreAuthKeyCommandReusableEphemeral(t *testing.T) {
+ 			&preAuthEphemeralKey,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for ephemeral preauth key creation")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for ephemeral preauth key creation")
+ 
+ 	assert.True(t, preAuthEphemeralKey.GetEphemeral())
+ 	assert.False(t, preAuthEphemeralKey.GetReusable())
+@@ -562,7 +563,7 @@ func TestPreAuthKeyCommandReusableEphemeral(t *testing.T) {
+ 			&listedPreAuthKeys,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for preauth keys list after reusable/ephemeral creation")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for preauth keys list after reusable/ephemeral creation")
+ 
+ 	// There is one key created by "scenario.CreateHeadscaleEnv"
+ 	assert.Len(t, listedPreAuthKeys, 3)
+@@ -620,7 +621,7 @@ func TestPreAuthKeyCorrectUserLoggedInCommand(t *testing.T) {
+ 			&user2Key,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for user2 preauth key creation")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for user2 preauth key creation")
+ 
+ 	var listNodes []*v1.Node
+ 
+@@ -631,7 +632,7 @@ func TestPreAuthKeyCorrectUserLoggedInCommand(t *testing.T) {
+ 		assert.NoError(ct, err)
+ 		assert.Len(ct, listNodes, 1, "Should have exactly 1 node for user1")
+ 		assert.Equal(ct, user1, listNodes[0].GetUser().GetName(), "Node should belong to user1")
+-	}, 15*time.Second, 1*time.Second)
++	}, integrationutil.ScaledTimeout(15*time.Second), 1*time.Second)
+ 
+ 	allClients, err := scenario.ListTailscaleClients()
+ 	requireNoErrListClients(t, err)
+@@ -652,7 +653,7 @@ func TestPreAuthKeyCorrectUserLoggedInCommand(t *testing.T) {
+ 		assert.NoError(ct, err)
+ 		assert.NotContains(ct, []string{"Starting", "Running"}, status.BackendState,
+ 			"Expected node to be logged out, backend state: %s", status.BackendState)
+-	}, 30*time.Second, 2*time.Second)
++	}, integrationutil.ScaledTimeout(30*time.Second), 2*time.Second)
+ 
+ 	err = client.Login(headscale.GetEndpoint(), user2Key.GetKey())
+ 	require.NoError(t, err)
+@@ -664,7 +665,7 @@ func TestPreAuthKeyCorrectUserLoggedInCommand(t *testing.T) {
+ 		// With tags-as-identity model, tagged nodes show as TaggedDevices user (2147455555)
+ 		// The PreAuthKey was created with tags, so the node is tagged
+ 		assert.Equal(ct, "userid:2147455555", status.Self.UserID.String(), "Expected node to be logged in as tagged-devices user")
+-	}, 30*time.Second, 2*time.Second)
++	}, integrationutil.ScaledTimeout(30*time.Second), 2*time.Second)
+ 
+ 	assert.EventuallyWithT(t, func(ct *assert.CollectT) {
+ 		var err error
+@@ -675,7 +676,7 @@ func TestPreAuthKeyCorrectUserLoggedInCommand(t *testing.T) {
+ 		assert.Equal(ct, user1, listNodes[0].GetUser().GetName(), "First node should belong to user1")
+ 		// Second node is tagged (created with tagged PreAuthKey), so it shows as "tagged-devices"
+ 		assert.Equal(ct, "tagged-devices", listNodes[1].GetUser().GetName(), "Second node should be tagged-devices")
+-	}, 20*time.Second, 1*time.Second)
++	}, integrationutil.ScaledTimeout(20*time.Second), 1*time.Second)
+ }
+ 
+ func TestTaggedNodesCLIOutput(t *testing.T) {
+@@ -729,7 +730,7 @@ func TestTaggedNodesCLIOutput(t *testing.T) {
+ 			&user2Key,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for user2 tagged preauth key creation")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for user2 tagged preauth key creation")
+ 
+ 	allClients, err := scenario.ListTailscaleClients()
+ 	requireNoErrListClients(t, err)
+@@ -750,7 +751,7 @@ func TestTaggedNodesCLIOutput(t *testing.T) {
+ 		assert.NoError(ct, err)
+ 		assert.NotContains(ct, []string{"Starting", "Running"}, status.BackendState,
+ 			"Expected node to be logged out, backend state: %s", status.BackendState)
+-	}, 30*time.Second, 2*time.Second)
++	}, integrationutil.ScaledTimeout(30*time.Second), 2*time.Second)
+ 
+ 	// Log in with the tagged PreAuthKey (from user2, with tags)
+ 	err = client.Login(headscale.GetEndpoint(), user2Key.GetKey())
+@@ -762,7 +763,7 @@ func TestTaggedNodesCLIOutput(t *testing.T) {
+ 		assert.Equal(ct, "Running", status.BackendState, "Expected node to be logged in, backend state: %s", status.BackendState)
+ 		// With tags-as-identity model, tagged nodes show as TaggedDevices user (2147455555)
+ 		assert.Equal(ct, "userid:2147455555", status.Self.UserID.String(), "Expected node to be logged in as tagged-devices user")
+-	}, 30*time.Second, 2*time.Second)
++	}, integrationutil.ScaledTimeout(30*time.Second), 2*time.Second)
+ 
+ 	// Wait for the second node to appear
+ 	var listNodes []*v1.Node
+@@ -775,7 +776,7 @@ func TestTaggedNodesCLIOutput(t *testing.T) {
+ 		assert.Len(ct, listNodes, 2, "Should have 2 nodes after re-login with tagged key")
+ 		assert.Equal(ct, user1, listNodes[0].GetUser().GetName(), "First node should belong to user1")
+ 		assert.Equal(ct, "tagged-devices", listNodes[1].GetUser().GetName(), "Second node should be tagged-devices")
+-	}, 20*time.Second, 1*time.Second)
++	}, integrationutil.ScaledTimeout(20*time.Second), 1*time.Second)
+ 
+ 	// Test: tailscale status output should show "tagged-devices" not "userid:2147455555"
+ 	// This is the fix for issue #2970 - the Tailscale client should display user-friendly names
+@@ -790,7 +791,7 @@ func TestTaggedNodesCLIOutput(t *testing.T) {
+ 
+ 		// The output should NOT show the raw numeric userid to the user
+ 		assert.NotContains(ct, stdout, "userid:2147455555", "Tailscale status should not show numeric userid for tagged nodes")
+-	}, 20*time.Second, 1*time.Second)
++	}, integrationutil.ScaledTimeout(20*time.Second), 1*time.Second)
+ }
+ 
+ func TestApiKeyCommand(t *testing.T) {
+@@ -849,7 +850,7 @@ func TestApiKeyCommand(t *testing.T) {
+ 			&listedAPIKeys,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for API keys list")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for API keys list")
+ 
+ 	assert.Len(t, listedAPIKeys, 5)
+ 
+@@ -924,7 +925,7 @@ func TestApiKeyCommand(t *testing.T) {
+ 			&listedAfterExpireAPIKeys,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for API keys list after expire")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for API keys list after expire")
+ 
+ 	for index := range listedAfterExpireAPIKeys {
+ 		if _, ok := expiredPrefixes[listedAfterExpireAPIKeys[index].GetPrefix()]; ok {
+@@ -966,7 +967,7 @@ func TestApiKeyCommand(t *testing.T) {
+ 			&listedAPIKeysAfterDelete,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for API keys list after delete")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for API keys list after delete")
+ 
+ 	assert.Len(t, listedAPIKeysAfterDelete, 4)
+ 
+@@ -995,7 +996,7 @@ func TestApiKeyCommand(t *testing.T) {
+ 			&listedAPIKeysAfterExpireByID,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for API keys list after expire by ID")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for API keys list after expire by ID")
+ 
+ 	// Verify the key was expired
+ 	for idx := range listedAPIKeysAfterExpireByID {
+@@ -1031,7 +1032,7 @@ func TestApiKeyCommand(t *testing.T) {
+ 			&listedAPIKeysAfterDeleteByID,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for API keys list after delete by ID")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for API keys list after delete by ID")
+ 
+ 	assert.Len(t, listedAPIKeysAfterDeleteByID, 3)
+ 
+@@ -1108,14 +1109,14 @@ func TestNodeCommand(t *testing.T) {
+ 				&node,
+ 			)
+ 			assert.NoError(c, err)
+-		}, 10*time.Second, 200*time.Millisecond, "Waiting for node registration")
++		}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for node registration")
+ 
+ 		nodes[index] = &node
+ 	}
+ 
+ 	assert.EventuallyWithT(t, func(ct *assert.CollectT) {
+ 		assert.Len(ct, nodes, len(regIDs), "Should have correct number of nodes after CLI operations")
+-	}, 15*time.Second, 1*time.Second)
++	}, integrationutil.ScaledTimeout(15*time.Second), 1*time.Second)
+ 
+ 	// Test list all nodes after added seconds
+ 	var listAll []v1.Node
+@@ -1134,7 +1135,7 @@ func TestNodeCommand(t *testing.T) {
+ 		)
+ 		assert.NoError(ct, err)
+ 		assert.Len(ct, listAll, len(regIDs), "Should list all nodes after CLI operations")
+-	}, 20*time.Second, 1*time.Second)
++	}, integrationutil.ScaledTimeout(20*time.Second), 1*time.Second)
+ 
+ 	assert.Equal(t, uint64(1), listAll[0].GetId())
+ 	assert.Equal(t, uint64(2), listAll[1].GetId())
+@@ -1193,14 +1194,14 @@ func TestNodeCommand(t *testing.T) {
+ 				&node,
+ 			)
+ 			assert.NoError(c, err)
+-		}, 10*time.Second, 200*time.Millisecond, "Waiting for other-user node registration")
++		}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for other-user node registration")
+ 
+ 		otherUserMachines[index] = &node
+ 	}
+ 
+ 	assert.EventuallyWithT(t, func(ct *assert.CollectT) {
+ 		assert.Len(ct, otherUserMachines, len(otherUserRegIDs), "Should have correct number of otherUser machines after CLI operations")
+-	}, 15*time.Second, 1*time.Second)
++	}, integrationutil.ScaledTimeout(15*time.Second), 1*time.Second)
+ 
+ 	// Test list all nodes after added otherUser
+ 	var listAllWithotherUser []v1.Node
+@@ -1218,7 +1219,7 @@ func TestNodeCommand(t *testing.T) {
+ 			&listAllWithotherUser,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for nodes list after adding other-user nodes")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for nodes list after adding other-user nodes")
+ 
+ 	// All nodes, nodes + otherUser
+ 	assert.Len(t, listAllWithotherUser, 7)
+@@ -1247,7 +1248,7 @@ func TestNodeCommand(t *testing.T) {
+ 			&listOnlyotherUserMachineUser,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for nodes list filtered by other-user")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for nodes list filtered by other-user")
+ 
+ 	assert.Len(t, listOnlyotherUserMachineUser, 2)
+ 
+@@ -1300,7 +1301,7 @@ func TestNodeCommand(t *testing.T) {
+ 		)
+ 		assert.NoError(ct, err)
+ 		assert.Len(ct, listOnlyMachineUserAfterDelete, 4, "Should have 4 nodes for node-user after deletion")
+-	}, 20*time.Second, 1*time.Second)
++	}, integrationutil.ScaledTimeout(20*time.Second), 1*time.Second)
+ }
+ 
+ func TestNodeExpireCommand(t *testing.T) {
+@@ -1367,7 +1368,7 @@ func TestNodeExpireCommand(t *testing.T) {
+ 				&node,
+ 			)
+ 			assert.NoError(c, err)
+-		}, 10*time.Second, 200*time.Millisecond, "Waiting for node-expire-user node registration")
++		}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for node-expire-user node registration")
+ 
+ 		nodes[index] = &node
+ 	}
+@@ -1389,7 +1390,7 @@ func TestNodeExpireCommand(t *testing.T) {
+ 			&listAll,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for nodes list in expire test")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for nodes list in expire test")
+ 
+ 	assert.Len(t, listAll, 5)
+ 
+@@ -1427,7 +1428,7 @@ func TestNodeExpireCommand(t *testing.T) {
+ 			&listAllAfterExpiry,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for nodes list after expiry")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for nodes list after expiry")
+ 
+ 	assert.Len(t, listAllAfterExpiry, 5)
+ 
+@@ -1504,7 +1505,7 @@ func TestNodeRenameCommand(t *testing.T) {
+ 				&node,
+ 			)
+ 			assert.NoError(c, err)
+-		}, 10*time.Second, 200*time.Millisecond, "Waiting for node-rename-command node registration")
++		}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for node-rename-command node registration")
+ 
+ 		nodes[index] = &node
+ 	}
+@@ -1526,7 +1527,7 @@ func TestNodeRenameCommand(t *testing.T) {
+ 			&listAll,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for nodes list in rename test")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for nodes list in rename test")
+ 
+ 	assert.Len(t, listAll, 5)
+ 
+@@ -1567,7 +1568,7 @@ func TestNodeRenameCommand(t *testing.T) {
+ 			&listAllAfterRename,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for nodes list after rename")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for nodes list after rename")
+ 
+ 	assert.Len(t, listAllAfterRename, 5)
+ 
+@@ -1605,7 +1606,7 @@ func TestNodeRenameCommand(t *testing.T) {
+ 			&listAllAfterRenameAttempt,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for nodes list after failed rename attempt")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for nodes list after failed rename attempt")
+ 
+ 	assert.Len(t, listAllAfterRenameAttempt, 5)
+ 
+@@ -1694,7 +1695,7 @@ func TestPolicyCommand(t *testing.T) {
+ 			&output,
+ 		)
+ 		assert.NoError(c, err)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for policy get command")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for policy get command")
+ 
+ 	assert.Len(t, output.TagOwners, 1)
+ 	assert.Len(t, output.ACLs, 1)
+diff --git a/integration/dns_test.go b/integration/dns_test.go
+index a0accc35..3841c7a1 100644
+--- a/integration/dns_test.go
++++ b/integration/dns_test.go
+@@ -8,6 +8,7 @@ import (
+ 	"time"
+ 
+ 	"github.com/juanfont/headscale/integration/hsic"
++	"github.com/juanfont/headscale/integration/integrationutil"
+ 	"github.com/juanfont/headscale/integration/tsic"
+ 	"github.com/stretchr/testify/assert"
+ 	"github.com/stretchr/testify/require"
+@@ -66,7 +67,7 @@ func TestResolveMagicDNS(t *testing.T) {
+ 				for _, ip := range ips {
+ 					assert.Contains(ct, result, ip.String(), "IP %s should be found in DNS resolution result from %s to %s", ip.String(), client.Hostname(), peer.Hostname())
+ 				}
+-			}, 30*time.Second, 2*time.Second)
++			}, integrationutil.ScaledTimeout(30*time.Second), 2*time.Second)
+ 		}
+ 	}
+ }
+@@ -210,7 +211,7 @@ func TestResolveMagicDNSExtraRecordsPath(t *testing.T) {
+ 			assert.NoError(ct, err)
+ 			assert.Contains(ct, result, "9.9.9.9")
+ 		}
+-	}, 10*time.Second, 1*time.Second)
++	}, integrationutil.ScaledTimeout(10*time.Second), 1*time.Second)
+ 
+ 	// Write a new file, the backoff mechanism should make the filewatcher pick it up
+ 	// again.
+diff --git a/integration/embedded_derp_test.go b/integration/embedded_derp_test.go
+index 97c68e49..406de323 100644
+--- a/integration/embedded_derp_test.go
++++ b/integration/embedded_derp_test.go
+@@ -5,6 +5,7 @@ import (
+ 	"time"
+ 
+ 	"github.com/juanfont/headscale/integration/hsic"
++	"github.com/juanfont/headscale/integration/integrationutil"
+ 	"github.com/juanfont/headscale/integration/tsic"
+ 	"github.com/stretchr/testify/assert"
+ 	"github.com/stretchr/testify/require"
+@@ -152,7 +153,7 @@ func derpServerScenario(
+ 				assert.NotContains(ct, health, "could not connect to the 'Headscale Embedded DERP' relay server.",
+ 					"Client %s should be connected to Headscale Embedded DERP", client.Hostname())
+ 			}
+-		}, 30*time.Second, 2*time.Second)
++		}, integrationutil.ScaledTimeout(30*time.Second), 2*time.Second)
+ 	}
+ 
+ 	success := pingDerpAllHelper(t, allClients, allHostnames)
+@@ -173,7 +174,7 @@ func derpServerScenario(
+ 				assert.NotContains(ct, health, "could not connect to the 'Headscale Embedded DERP' relay server.",
+ 					"Client %s should be connected to Headscale Embedded DERP after first run", client.Hostname())
+ 			}
+-		}, 30*time.Second, 2*time.Second)
++		}, integrationutil.ScaledTimeout(30*time.Second), 2*time.Second)
+ 	}
+ 
+ 	t.Logf("Run 1: %d successful pings out of %d", success, len(allClients)*len(allHostnames))
+@@ -199,7 +200,7 @@ func derpServerScenario(
+ 				assert.NotContains(ct, health, "could not connect to the 'Headscale Embedded DERP' relay server.",
+ 					"Client %s should be connected to Headscale Embedded DERP after second run", client.Hostname())
+ 			}
+-		}, 30*time.Second, 2*time.Second)
++		}, integrationutil.ScaledTimeout(30*time.Second), 2*time.Second)
+ 	}
+ 
+ 	t.Logf("Run2: %d successful pings out of %d", success, len(allClients)*len(allHostnames))
+diff --git a/integration/general_test.go b/integration/general_test.go
+index d3c03b0d..955e28dc 100644
+--- a/integration/general_test.go
++++ b/integration/general_test.go
+@@ -214,7 +214,7 @@ func testEphemeralWithOptions(t *testing.T, opts ...hsic.Option) {
+ 		nodes, err := headscale.ListNodes()
+ 		assert.NoError(ct, err)
+ 		assert.Len(ct, nodes, 0, "All ephemeral nodes should be cleaned up after logout")
+-	}, 30*time.Second, 2*time.Second)
++	}, integrationutil.ScaledTimeout(30*time.Second), 2*time.Second)
+ }
+ 
+ // TestEphemeral2006DeletedTooQuickly verifies that ephemeral nodes are not
+@@ -303,7 +303,7 @@ func TestEphemeral2006DeletedTooQuickly(t *testing.T) {
+ 
+ 		success = pingAllHelper(t, allClients, allAddrs)
+ 		assert.Greater(ct, success, 0, "Ephemeral nodes should be able to reconnect and ping")
+-	}, 60*time.Second, 2*time.Second)
++	}, integrationutil.ScaledTimeout(60*time.Second), 2*time.Second)
+ 	t.Logf("%d successful pings out of %d", success, len(allClients)*len(allIps))
+ 
+ 	// Take down all clients, this should start an expiry timer for each.
+@@ -322,7 +322,7 @@ func TestEphemeral2006DeletedTooQuickly(t *testing.T) {
+ 			assert.NoError(ct, err)
+ 			assert.Len(ct, nodes, 0, "Ephemeral nodes should be expired and removed for user %s", userName)
+ 		}
+-	}, 4*time.Minute, 10*time.Second)
++	}, integrationutil.ScaledTimeout(4*time.Minute), 10*time.Second)
+ 
+ 	for _, userName := range spec.Users {
+ 		nodes, err := headscale.ListNodes(userName)
+@@ -558,7 +558,7 @@ func TestTaildrop(t *testing.T) {
+ 				// Should NOT see tagged client
+ 				assert.False(ct, isInFileTargets(fts, taggedClient.Hostname()),
+ 					"user1 client %s should NOT see tagged client %s in FileTargets", client.Hostname(), taggedClient.Hostname())
+-			}, 10*time.Second, 1*time.Second)
++			}, integrationutil.ScaledTimeout(10*time.Second), 1*time.Second)
+ 		}
+ 	})
+ 
+@@ -587,7 +587,7 @@ func TestTaildrop(t *testing.T) {
+ 				// Should NOT see tagged client
+ 				assert.False(ct, isInFileTargets(fts, taggedClient.Hostname()),
+ 					"user2 client %s should NOT see tagged client %s in FileTargets", client.Hostname(), taggedClient.Hostname())
+-			}, 10*time.Second, 1*time.Second)
++			}, integrationutil.ScaledTimeout(10*time.Second), 1*time.Second)
+ 		}
+ 	})
+ 
+@@ -597,7 +597,7 @@ func TestTaildrop(t *testing.T) {
+ 			fts, err := getFileTargets(taggedClient)
+ 			assert.NoError(ct, err)
+ 			assert.Empty(ct, fts, "tagged client %s should have no FileTargets", taggedClient.Hostname())
+-		}, 10*time.Second, 1*time.Second)
++		}, integrationutil.ScaledTimeout(10*time.Second), 1*time.Second)
+ 	})
+ 
+ 	// Test 4: Same-user file transfer works (user1 -> user1) for all version combinations
+@@ -627,7 +627,7 @@ func TestTaildrop(t *testing.T) {
+ 						t.Logf("Sending file from %s to %s", sender.Hostname(), receiver.Hostname())
+ 						_, _, err := sender.Execute(sendCommand)
+ 						assert.NoError(ct, err)
+-					}, 10*time.Second, 1*time.Second)
++					}, integrationutil.ScaledTimeout(10*time.Second), 1*time.Second)
+ 				})
+ 			}
+ 		}
+@@ -838,7 +838,7 @@ func TestUpdateHostnameFromClient(t *testing.T) {
+ 			assert.NoError(ct, err)
+ 			assert.Equal(ct, normalised, node.GetGivenName(), "Given name should match FQDN rules")
+ 		}
+-	}, 20*time.Second, 1*time.Second)
++	}, integrationutil.ScaledTimeout(20*time.Second), 1*time.Second)
+ 
+ 	// Rename givenName in nodes
+ 	for _, node := range nodes {
+@@ -894,7 +894,7 @@ func TestUpdateHostnameFromClient(t *testing.T) {
+ 				}
+ 			}
+ 		}
+-	}, 60*time.Second, 2*time.Second)
++	}, integrationutil.ScaledTimeout(60*time.Second), 2*time.Second)
+ 
+ 	for _, client := range allClients {
+ 		status := client.MustStatus()
+@@ -982,7 +982,7 @@ func TestExpireNode(t *testing.T) {
+ 
+ 			// Assert that we have the original count - self
+ 			assert.Len(ct, status.Peers(), spec.NodesPerUser-1, "Client %s should see correct number of peers", client.Hostname())
+-		}, 30*time.Second, 1*time.Second)
++		}, integrationutil.ScaledTimeout(30*time.Second), 1*time.Second)
+ 	}
+ 
+ 	headscale, err := scenario.Headscale()
+@@ -1021,7 +1021,7 @@ func TestExpireNode(t *testing.T) {
+ 				}
+ 			}
+ 		}
+-	}, 3*time.Minute, 10*time.Second)
++	}, integrationutil.ScaledTimeout(3*time.Minute), 10*time.Second)
+ 
+ 	now := time.Now()
+ 
+@@ -1071,7 +1071,7 @@ func TestExpireNode(t *testing.T) {
+ 					)
+ 				}
+ 			}
+-		}, 10*time.Second, 200*time.Millisecond, "Waiting for expired node status to propagate")
++		}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for expired node status to propagate")
+ 	}
+ }
+ 
+@@ -1168,7 +1168,7 @@ func TestSetNodeExpiryInFuture(t *testing.T) {
+ 					"node %q should not be marked as expired",
+ 					peerStatus.HostName,
+ 				)
+-			}, 3*time.Minute, 5*time.Second, "Waiting for future expiry to propagate",
++			}, integrationutil.ScaledTimeout(3*time.Minute), 5*time.Second, "Waiting for future expiry to propagate",
+ 		)
+ 	}
+ }
+@@ -1265,7 +1265,7 @@ func TestDisableNodeExpiry(t *testing.T) {
+ 					"node %q should not be marked as expired after disabling expiry",
+ 					peerStatus.HostName,
+ 				)
+-			}, 3*time.Minute, 5*time.Second, "waiting for disabled expiry to propagate",
++			}, integrationutil.ScaledTimeout(3*time.Minute), 5*time.Second, "waiting for disabled expiry to propagate",
+ 		)
+ 	}
+ }
+@@ -1310,7 +1310,7 @@ func TestNodeOnlineStatus(t *testing.T) {
+ 
+ 			// Assert that we have the original count - self
+ 			assert.Len(c, status.Peers(), len(MustTestVersions)-1)
+-		}, 10*time.Second, 200*time.Millisecond, "Waiting for expected peer count")
++		}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for expected peer count")
+ 	}
+ 
+ 	headscale, err := scenario.Headscale()
+@@ -1351,7 +1351,7 @@ func TestNodeOnlineStatus(t *testing.T) {
+ 					time.Since(start),
+ 				)
+ 			}
+-		}, 15*time.Second, 1*time.Second)
++		}, integrationutil.ScaledTimeout(15*time.Second), 1*time.Second)
+ 
+ 		// Verify that all nodes report all nodes to be online
+ 		for _, client := range allClients {
+@@ -1384,7 +1384,7 @@ func TestNodeOnlineStatus(t *testing.T) {
+ 						time.Since(start),
+ 					)
+ 				}
+-			}, 15*time.Second, 1*time.Second)
++			}, integrationutil.ScaledTimeout(15*time.Second), 1*time.Second)
+ 		}
+ 
+ 		// Check maximum once per second
+@@ -1588,7 +1588,7 @@ func Test2118DeletingOnlineNodePanics(t *testing.T) {
+ 		)
+ 		assert.NoError(ct, err)
+ 		assert.Len(ct, nodeListAfter, 1, "Node should be deleted from list")
+-	}, 10*time.Second, 1*time.Second)
++	}, integrationutil.ScaledTimeout(10*time.Second), 1*time.Second)
+ 
+ 	err = executeAndUnmarshal(
+ 		headscale,
+diff --git a/integration/route_test.go b/integration/route_test.go
+index 6ce91057..ac1c35dc 100644
+--- a/integration/route_test.go
++++ b/integration/route_test.go
+@@ -101,7 +101,7 @@ func TestEnablingRoutes(t *testing.T) {
+ 			assert.Empty(ct, node.GetApprovedRoutes())
+ 			assert.Empty(ct, node.GetSubnetRoutes())
+ 		}
+-	}, 10*time.Second, 100*time.Millisecond, "route advertisements should propagate to all nodes")
++	}, integrationutil.ScaledTimeout(10*time.Second), 100*time.Millisecond, "route advertisements should propagate to all nodes")
+ 
+ 	// Verify that no routes has been sent to the client,
+ 	// they are not yet enabled.
+@@ -115,7 +115,7 @@ func TestEnablingRoutes(t *testing.T) {
+ 
+ 				assert.Nil(c, peerStatus.PrimaryRoutes)
+ 			}
+-		}, 5*time.Second, 200*time.Millisecond, "Verifying no routes are active before approval")
++		}, integrationutil.ScaledTimeout(5*time.Second), 200*time.Millisecond, "Verifying no routes are active before approval")
+ 	}
+ 
+ 	for _, node := range nodes {
+@@ -138,7 +138,7 @@ func TestEnablingRoutes(t *testing.T) {
+ 			assert.Len(ct, node.GetApprovedRoutes(), 1)
+ 			assert.Len(ct, node.GetSubnetRoutes(), 1)
+ 		}
+-	}, 10*time.Second, 100*time.Millisecond, "route approvals should propagate to all nodes")
++	}, integrationutil.ScaledTimeout(10*time.Second), 100*time.Millisecond, "route approvals should propagate to all nodes")
+ 
+ 	// Wait for route state changes to propagate to clients
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+@@ -160,7 +160,7 @@ func TestEnablingRoutes(t *testing.T) {
+ 				requirePeerSubnetRoutesWithCollect(c, peerStatus, []netip.Prefix{netip.MustParsePrefix(expectedRoutes[string(peerStatus.ID)])})
+ 			}
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "clients should see new routes")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "clients should see new routes")
+ 
+ 	_, err = headscale.ApproveRoutes(
+ 		1,
+@@ -196,7 +196,7 @@ func TestEnablingRoutes(t *testing.T) {
+ 				assert.Len(c, node.GetSubnetRoutes(), 1)    // 10.0.2.0/24
+ 			}
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "route state changes should propagate to nodes")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "route state changes should propagate to nodes")
+ 
+ 	// Verify that the clients can see the new routes
+ 	for _, client := range allClients {
+@@ -216,7 +216,7 @@ func TestEnablingRoutes(t *testing.T) {
+ 					requirePeerSubnetRoutesWithCollect(c, peerStatus, []netip.Prefix{netip.MustParsePrefix("10.0.2.0/24")})
+ 				}
+ 			}
+-		}, 5*time.Second, 200*time.Millisecond, "Verifying final route state visible to clients")
++		}, integrationutil.ScaledTimeout(5*time.Second), 200*time.Millisecond, "Verifying final route state visible to clients")
+ 	}
+ }
+ 
+@@ -224,7 +224,7 @@ func TestEnablingRoutes(t *testing.T) {
+ func TestHASubnetRouterFailover(t *testing.T) {
+ 	IntegrationSkip(t)
+ 
+-	propagationTime := 60 * time.Second
++	propagationTime := integrationutil.ScaledTimeout(60 * time.Second)
+ 
+ 	// Helper function to validate primary routes table state
+ 	validatePrimaryRoutes := func(t *testing.T, headscale ControlServer, expectedRoutes *routes.DebugRoutes, message string) {
+@@ -514,7 +514,7 @@ func TestHASubnetRouterFailover(t *testing.T) {
+ 			requireNodeRouteCountWithCollect(c, nodes[1], 1, 1, 0)
+ 			requireNodeRouteCountWithCollect(c, nodes[2], 1, 0, 0)
+ 		}
+-	}, 3*time.Second, 200*time.Millisecond, "HA setup verification: Router 2 approved as STANDBY (available=1, approved=1, subnet=0), Router 1 stays PRIMARY (subnet=1)")
++	}, integrationutil.ScaledTimeout(3*time.Second), 200*time.Millisecond, "HA setup verification: Router 2 approved as STANDBY (available=1, approved=1, subnet=0), Router 1 stays PRIMARY (subnet=1)")
+ 
+ 	// Verify that the client has routes from the primary machine
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+@@ -631,7 +631,7 @@ func TestHASubnetRouterFailover(t *testing.T) {
+ 		requireNodeRouteCountWithCollect(c, nodes[0], 1, 1, 1)
+ 		requireNodeRouteCountWithCollect(c, nodes[1], 1, 1, 0)
+ 		requireNodeRouteCountWithCollect(c, nodes[2], 1, 1, 0)
+-	}, 3*time.Second, 200*time.Millisecond, "Full HA verification: Router 3 approved as second STANDBY (available=1, approved=1, subnet=0), Router 1 PRIMARY, Router 2 first STANDBY")
++	}, integrationutil.ScaledTimeout(3*time.Second), 200*time.Millisecond, "Full HA verification: Router 3 approved as second STANDBY (available=1, approved=1, subnet=0), Router 1 PRIMARY, Router 2 first STANDBY")
+ 
+ 	// Verify that the client has routes from the primary machine
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+@@ -1001,7 +1001,7 @@ func TestHASubnetRouterFailover(t *testing.T) {
+ 				pref,
+ 			)
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "Full recovery verification: All 3 routers online, Router 3 remains PRIMARY (no flapping) with routes")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "Full recovery verification: All 3 routers online, Router 3 remains PRIMARY (no flapping) with routes")
+ 
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		result, err := client.Curl(weburl)
+@@ -1055,7 +1055,7 @@ func TestHASubnetRouterFailover(t *testing.T) {
+ 		requireNodeRouteCountWithCollect(c, MustFindNode(subRouter1.Hostname(), nodes), 1, 1, 1)
+ 		requireNodeRouteCountWithCollect(c, MustFindNode(subRouter2.Hostname(), nodes), 1, 1, 0)
+ 		requireNodeRouteCountWithCollect(c, MustFindNode(subRouter3.Hostname(), nodes), 1, 0, 0)
+-	}, 10*time.Second, 500*time.Millisecond, "Route disable verification: Router 3 route disabled, Router 1 should be new PRIMARY, Router 2 STANDBY")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "Route disable verification: Router 3 route disabled, Router 1 should be new PRIMARY, Router 2 STANDBY")
+ 
+ 	// Verify that the route is announced from subnet router 1
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+@@ -1143,7 +1143,7 @@ func TestHASubnetRouterFailover(t *testing.T) {
+ 		requireNodeRouteCountWithCollect(c, MustFindNode(subRouter1.Hostname(), nodes), 1, 0, 0)
+ 		requireNodeRouteCountWithCollect(c, MustFindNode(subRouter2.Hostname(), nodes), 1, 1, 1)
+ 		requireNodeRouteCountWithCollect(c, MustFindNode(subRouter3.Hostname(), nodes), 1, 0, 0)
+-	}, 10*time.Second, 500*time.Millisecond, "Second route disable verification: Router 1 route disabled, Router 2 should be new PRIMARY")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "Second route disable verification: Router 1 route disabled, Router 2 should be new PRIMARY")
+ 
+ 	// Verify that the route is announced from subnet router 1
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+@@ -1425,7 +1425,7 @@ func TestSubnetRouteACL(t *testing.T) {
+ 				_, _, err = client.Execute(command)
+ 				assert.NoErrorf(c, err, "failed to advertise route: %s", err)
+ 			}
+-		}, 5*time.Second, 200*time.Millisecond, "Configuring route advertisements")
++		}, integrationutil.ScaledTimeout(5*time.Second), 200*time.Millisecond, "Configuring route advertisements")
+ 	}
+ 
+ 	err = scenario.WaitForTailscaleSync()
+@@ -1464,7 +1464,7 @@ func TestSubnetRouteACL(t *testing.T) {
+ 		// announced=1, approved=0, subnet=0 (routes announced but not approved)
+ 		requireNodeRouteCountWithCollect(c, routeNode, 1, 0, 0)
+ 		requireNodeRouteCountWithCollect(c, otherNode, 0, 0, 0)
+-	}, 10*time.Second, 100*time.Millisecond, "route advertisements should propagate to server")
++	}, integrationutil.ScaledTimeout(10*time.Second), 100*time.Millisecond, "route advertisements should propagate to server")
+ 
+ 	// Verify that no routes has been sent to the client,
+ 	// they are not yet enabled.
+@@ -1479,7 +1479,7 @@ func TestSubnetRouteACL(t *testing.T) {
+ 				assert.Nil(c, peerStatus.PrimaryRoutes)
+ 				requirePeerSubnetRoutesWithCollect(c, peerStatus, nil)
+ 			}
+-		}, 5*time.Second, 200*time.Millisecond, "Verifying no routes are active before approval")
++		}, integrationutil.ScaledTimeout(5*time.Second), 200*time.Millisecond, "Verifying no routes are active before approval")
+ 	}
+ 
+ 	_, err = headscale.ApproveRoutes(
+@@ -1496,7 +1496,7 @@ func TestSubnetRouteACL(t *testing.T) {
+ 
+ 		requireNodeRouteCountWithCollect(c, nodes[0], 1, 1, 1)
+ 		requireNodeRouteCountWithCollect(c, nodes[1], 0, 0, 0)
+-	}, 10*time.Second, 500*time.Millisecond, "route state changes should propagate to nodes")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "route state changes should propagate to nodes")
+ 
+ 	// Verify that the client has routes from the primary machine
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+@@ -1515,7 +1515,7 @@ func TestSubnetRouteACL(t *testing.T) {
+ 		}
+ 
+ 		requirePeerSubnetRoutesWithCollect(c, srs1PeerStatus, []netip.Prefix{netip.MustParsePrefix(expectedRoutes["1"])})
+-	}, 5*time.Second, 200*time.Millisecond, "Verifying client can see subnet routes from router")
++	}, integrationutil.ScaledTimeout(5*time.Second), 200*time.Millisecond, "Verifying client can see subnet routes from router")
+ 
+ 	// Wait for packet filter updates to propagate to client netmap
+ 	wantClientFilter := []filter.Match{
+@@ -1550,7 +1550,7 @@ func TestSubnetRouteACL(t *testing.T) {
+ 		if diff := cmpdiff.Diff(wantClientFilter, clientNm.PacketFilter, util.ViewSliceIPProtoComparer, util.PrefixComparer); diff != "" {
+ 			assert.Fail(c, fmt.Sprintf("Client (%s) filter, unexpected result (-want +got):\n%s", client.Hostname(), diff))
+ 		}
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for client packet filter to update")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for client packet filter to update")
+ 
+ 	// Wait for packet filter updates to propagate to subnet router netmap
+ 	// The two ACL rules (group:admins -> group:admins:* and group:admins -> 10.33.0.0/16:*)
+@@ -1591,7 +1591,7 @@ func TestSubnetRouteACL(t *testing.T) {
+ 		if diff := cmpdiff.Diff(wantSubnetFilter, subnetNm.PacketFilter, util.ViewSliceIPProtoComparer, util.PrefixComparer); diff != "" {
+ 			assert.Fail(c, fmt.Sprintf("Subnet (%s) filter, unexpected result (-want +got):\n%s", subRouter1.Hostname(), diff))
+ 		}
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for subnet router packet filter to update")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for subnet router packet filter to update")
+ }
+ 
+ // TestEnablingExitRoutes tests enabling exit routes for clients.
+@@ -1640,7 +1640,7 @@ func TestEnablingExitRoutes(t *testing.T) {
+ 
+ 		requireNodeRouteCountWithCollect(c, nodes[0], 2, 0, 0)
+ 		requireNodeRouteCountWithCollect(c, nodes[1], 2, 0, 0)
+-	}, 10*time.Second, 200*time.Millisecond, "Waiting for route advertisements to propagate")
++	}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond, "Waiting for route advertisements to propagate")
+ 
+ 	// Verify that no routes has been sent to the client,
+ 	// they are not yet enabled.
+@@ -1654,7 +1654,7 @@ func TestEnablingExitRoutes(t *testing.T) {
+ 
+ 				assert.Nil(c, peerStatus.PrimaryRoutes)
+ 			}
+-		}, 5*time.Second, 200*time.Millisecond, "Verifying no exit routes are active before approval")
++		}, integrationutil.ScaledTimeout(5*time.Second), 200*time.Millisecond, "Verifying no exit routes are active before approval")
+ 	}
+ 
+ 	// Enable all routes, but do v4 on one and v6 on other to ensure they
+@@ -1678,7 +1678,7 @@ func TestEnablingExitRoutes(t *testing.T) {
+ 
+ 		requireNodeRouteCountWithCollect(c, nodes[0], 2, 2, 2)
+ 		requireNodeRouteCountWithCollect(c, nodes[1], 2, 2, 2)
+-	}, 10*time.Second, 500*time.Millisecond, "route state changes should propagate to both nodes")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "route state changes should propagate to both nodes")
+ 
+ 	// Wait for route state changes to propagate to clients
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+@@ -1699,7 +1699,7 @@ func TestEnablingExitRoutes(t *testing.T) {
+ 				}
+ 			}
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "clients should see new routes")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "clients should see new routes")
+ }
+ 
+ // TestSubnetRouterMultiNetwork is an evolution of the subnet router test.
+@@ -1778,7 +1778,7 @@ func TestSubnetRouterMultiNetwork(t *testing.T) {
+ 		assert.NoError(ct, err)
+ 		assert.Len(ct, nodes, 2)
+ 		requireNodeRouteCountWithCollect(ct, nodes[0], 1, 0, 0)
+-	}, 10*time.Second, 100*time.Millisecond, "route advertisements should propagate")
++	}, integrationutil.ScaledTimeout(10*time.Second), 100*time.Millisecond, "route advertisements should propagate")
+ 
+ 	// Verify that no routes has been sent to the client,
+ 	// they are not yet enabled.
+@@ -1792,7 +1792,7 @@ func TestSubnetRouterMultiNetwork(t *testing.T) {
+ 			assert.Nil(c, peerStatus.PrimaryRoutes)
+ 			requirePeerSubnetRoutesWithCollect(c, peerStatus, nil)
+ 		}
+-	}, 5*time.Second, 200*time.Millisecond, "Verifying no routes are active before approval")
++	}, integrationutil.ScaledTimeout(5*time.Second), 200*time.Millisecond, "Verifying no routes are active before approval")
+ 
+ 	// Enable route
+ 	_, err = headscale.ApproveRoutes(
+@@ -1809,7 +1809,7 @@ func TestSubnetRouterMultiNetwork(t *testing.T) {
+ 		assert.NoError(c, err)
+ 		assert.Len(c, nodes, 2)
+ 		requireNodeRouteCountWithCollect(c, nodes[0], 1, 1, 1)
+-	}, 10*time.Second, 500*time.Millisecond, "route state changes should propagate to nodes")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "route state changes should propagate to nodes")
+ 
+ 	// Verify that the routes have been sent to the client
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+@@ -1825,7 +1825,7 @@ func TestSubnetRouterMultiNetwork(t *testing.T) {
+ 
+ 			requirePeerSubnetRoutesWithCollect(c, peerStatus, []netip.Prefix{*pref})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "routes should be visible to client")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "routes should be visible to client")
+ 
+ 	usernet1, err := scenario.Network("usernet1")
+ 	require.NoError(t, err)
+@@ -1844,7 +1844,7 @@ func TestSubnetRouterMultiNetwork(t *testing.T) {
+ 		result, err := user2c.Curl(url)
+ 		assert.NoError(c, err)
+ 		assert.Len(c, result, 13)
+-	}, 5*time.Second, 200*time.Millisecond, "Verifying client can reach webservice through subnet route")
++	}, integrationutil.ScaledTimeout(5*time.Second), 200*time.Millisecond, "Verifying client can reach webservice through subnet route")
+ 
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		tr, err := user2c.Traceroute(webip)
+@@ -1856,7 +1856,7 @@ func TestSubnetRouterMultiNetwork(t *testing.T) {
+ 		}
+ 
+ 		assertTracerouteViaIPWithCollect(c, tr, ip)
+-	}, 5*time.Second, 200*time.Millisecond, "Verifying traceroute goes through subnet router")
++	}, integrationutil.ScaledTimeout(5*time.Second), 200*time.Millisecond, "Verifying traceroute goes through subnet router")
+ }
+ 
+ func TestSubnetRouterMultiNetworkExitNode(t *testing.T) {
+@@ -1928,7 +1928,7 @@ func TestSubnetRouterMultiNetworkExitNode(t *testing.T) {
+ 		assert.NoError(ct, err)
+ 		assert.Len(ct, nodes, 2)
+ 		requireNodeRouteCountWithCollect(ct, nodes[0], 2, 0, 0)
+-	}, 10*time.Second, 100*time.Millisecond, "route advertisements should propagate")
++	}, integrationutil.ScaledTimeout(10*time.Second), 100*time.Millisecond, "route advertisements should propagate")
+ 
+ 	// Verify that no routes has been sent to the client,
+ 	// they are not yet enabled.
+@@ -1942,7 +1942,7 @@ func TestSubnetRouterMultiNetworkExitNode(t *testing.T) {
+ 			assert.Nil(c, peerStatus.PrimaryRoutes)
+ 			requirePeerSubnetRoutesWithCollect(c, peerStatus, nil)
+ 		}
+-	}, 5*time.Second, 200*time.Millisecond, "Verifying no routes sent to client before approval")
++	}, integrationutil.ScaledTimeout(5*time.Second), 200*time.Millisecond, "Verifying no routes sent to client before approval")
+ 
+ 	// Enable route
+ 	_, err = headscale.ApproveRoutes(nodes[0].GetId(), []netip.Prefix{tsaddr.AllIPv4()})
+@@ -1954,7 +1954,7 @@ func TestSubnetRouterMultiNetworkExitNode(t *testing.T) {
+ 		assert.NoError(c, err)
+ 		assert.Len(c, nodes, 2)
+ 		requireNodeRouteCountWithCollect(c, nodes[0], 2, 2, 2)
+-	}, 10*time.Second, 500*time.Millisecond, "route state changes should propagate to nodes")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "route state changes should propagate to nodes")
+ 
+ 	// Verify that the routes have been sent to the client
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+@@ -1966,7 +1966,7 @@ func TestSubnetRouterMultiNetworkExitNode(t *testing.T) {
+ 
+ 			requirePeerSubnetRoutesWithCollect(c, peerStatus, []netip.Prefix{tsaddr.AllIPv4(), tsaddr.AllIPv6()})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "routes should be visible to client")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "routes should be visible to client")
+ 
+ 	// Tell user2c to use user1c as an exit node.
+ 	command = []string{
+@@ -2033,7 +2033,7 @@ func TestAutoApproveMultiNetwork(t *testing.T) {
+ 
+ 	// Timeout for EventuallyWithT assertions.
+ 	// Set generously to account for CI infrastructure variability.
+-	assertTimeout := 60 * time.Second
++	assertTimeout := integrationutil.ScaledTimeout(60 * time.Second)
+ 
+ 	bigRoute := netip.MustParsePrefix("10.42.0.0/16")
+ 	subRoute := netip.MustParsePrefix("10.42.7.0/24")
+@@ -3091,7 +3091,7 @@ func TestSubnetRouteACLFiltering(t *testing.T) {
+ 		// Check that the router has 3 routes available but not approved yet
+ 		requireNodeRouteCountWithCollect(ct, routerNode, 3, 0, 0)
+ 		requireNodeRouteCountWithCollect(ct, nodeNode, 0, 0, 0)
+-	}, 10*time.Second, 100*time.Millisecond, "route advertisements should propagate to router node")
++	}, integrationutil.ScaledTimeout(10*time.Second), 100*time.Millisecond, "route advertisements should propagate to router node")
+ 
+ 	// Approve all routes for the router
+ 	_, err = headscale.ApproveRoutes(
+@@ -3114,7 +3114,7 @@ func TestSubnetRouteACLFiltering(t *testing.T) {
+ 
+ 		// Check that the router has 3 routes now approved and available
+ 		requireNodeRouteCountWithCollect(c, routerNode, 3, 3, 3)
+-	}, 15*time.Second, 500*time.Millisecond, "route state changes should propagate")
++	}, integrationutil.ScaledTimeout(15*time.Second), 500*time.Millisecond, "route state changes should propagate")
+ 
+ 	// Now check the client node status
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+@@ -3129,13 +3129,13 @@ func TestSubnetRouteACLFiltering(t *testing.T) {
+ 
+ 		// The node should only have 1 subnet route
+ 		requirePeerSubnetRoutesWithCollect(c, routerPeerStatus, []netip.Prefix{*route})
+-	}, 5*time.Second, 200*time.Millisecond, "Verifying node sees filtered subnet routes")
++	}, integrationutil.ScaledTimeout(5*time.Second), 200*time.Millisecond, "Verifying node sees filtered subnet routes")
+ 
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		result, err := nodeClient.Curl(weburl)
+ 		assert.NoError(c, err)
+ 		assert.Len(c, result, 13)
+-	}, 60*time.Second, 200*time.Millisecond, "Verifying node can reach webservice through allowed route")
++	}, integrationutil.ScaledTimeout(60*time.Second), 200*time.Millisecond, "Verifying node can reach webservice through allowed route")
+ 
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		tr, err := nodeClient.Traceroute(webip)
+@@ -3147,5 +3147,5 @@ func TestSubnetRouteACLFiltering(t *testing.T) {
+ 		}
+ 
+ 		assertTracerouteViaIPWithCollect(c, tr, ip)
+-	}, 60*time.Second, 200*time.Millisecond, "Verifying traceroute goes through router")
++	}, integrationutil.ScaledTimeout(60*time.Second), 200*time.Millisecond, "Verifying traceroute goes through router")
+ }
+diff --git a/integration/ssh_test.go b/integration/ssh_test.go
+index 909a5ee4..544ca03a 100644
+--- a/integration/ssh_test.go
++++ b/integration/ssh_test.go
+@@ -11,6 +11,7 @@ import (
+ 	policyv2 "github.com/juanfont/headscale/hscontrol/policy/v2"
+ 	"github.com/juanfont/headscale/integration/dockertestutil"
+ 	"github.com/juanfont/headscale/integration/hsic"
++	"github.com/juanfont/headscale/integration/integrationutil"
+ 	"github.com/juanfont/headscale/integration/tsic"
+ 	"github.com/oauth2-proxy/mockoidc"
+ 	"github.com/stretchr/testify/assert"
+@@ -470,7 +471,7 @@ func doSSHWithRetryAsUser(
+ 
+ 			// For all other errors, assert no error to trigger retry
+ 			assert.NoError(ct, err)
+-		}, 10*time.Second, 200*time.Millisecond)
++		}, integrationutil.ScaledTimeout(10*time.Second), 200*time.Millisecond)
+ 	} else {
+ 		// For failure cases, just execute once
+ 		result, stderr, err = client.Execute(command)
+@@ -700,7 +701,7 @@ func findSSHCheckAuthID(t *testing.T, headscale ControlServer) string {
+ 		}
+ 
+ 		assert.NotEmpty(c, authID, "auth-id not found in headscale logs")
+-	}, 10*time.Second, 500*time.Millisecond, "waiting for SSH check auth-id in headscale logs")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "waiting for SSH check auth-id in headscale logs")
+ 
+ 	return authID
+ }
+@@ -809,7 +810,7 @@ func findNewSSHCheckAuthID(
+ 		}
+ 
+ 		assert.NotEmpty(c, authID, "new auth-id not found in headscale logs")
+-	}, 10*time.Second, 500*time.Millisecond, "waiting for new SSH check auth-id")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "waiting for new SSH check auth-id")
+ 
+ 	return authID
+ }
+diff --git a/integration/tags_test.go b/integration/tags_test.go
+index 265d7602..9ebc6cfa 100644
+--- a/integration/tags_test.go
++++ b/integration/tags_test.go
+@@ -9,6 +9,7 @@ import (
+ 	policyv2 "github.com/juanfont/headscale/hscontrol/policy/v2"
+ 	"github.com/juanfont/headscale/hscontrol/util"
+ 	"github.com/juanfont/headscale/integration/hsic"
++	"github.com/juanfont/headscale/integration/integrationutil"
+ 	"github.com/juanfont/headscale/integration/tsic"
+ 	"github.com/stretchr/testify/assert"
+ 	"github.com/stretchr/testify/require"
+@@ -181,7 +182,7 @@ func TestTagsAuthKeyWithTagRequestDifferentTag(t *testing.T) {
+ 			if len(nodes) == 1 {
+ 				t.Logf("Node registered with tags: %v (expected rejection)", nodes[0].GetTags())
+ 			}
+-		}, 10*time.Second, 500*time.Millisecond, "checking node state")
++		}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "checking node state")
+ 
+ 		t.Fail()
+ 	}
+@@ -251,7 +252,7 @@ func TestTagsAuthKeyWithTagNoAdvertiseFlag(t *testing.T) {
+ 			t.Logf("Node registered with tags: %v", node.GetTags())
+ 			assertNodeHasTagsWithCollect(c, node, []string{"tag:valid-owned"})
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "verifying node inherited tags from auth key")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "verifying node inherited tags from auth key")
+ 
+ 	t.Logf("Test 2.2 completed - node inherited tags from auth key")
+ }
+@@ -319,7 +320,7 @@ func TestTagsAuthKeyWithTagCannotAddViaCLI(t *testing.T) {
+ 		if len(nodes) == 1 {
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-owned"})
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "waiting for initial registration")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "waiting for initial registration")
+ 
+ 	t.Logf("Node registered with tag:valid-owned, now attempting to add tag:second via CLI")
+ 
+@@ -352,7 +353,7 @@ func TestTagsAuthKeyWithTagCannotAddViaCLI(t *testing.T) {
+ 					assert.Fail(c, "Tags should not have changed")
+ 				}
+ 			}
+-		}, 10*time.Second, 500*time.Millisecond, "verifying tags unchanged")
++		}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "verifying tags unchanged")
+ 	}
+ }
+ 
+@@ -415,7 +416,7 @@ func TestTagsAuthKeyWithTagCannotChangeViaCLI(t *testing.T) {
+ 		nodes, err := headscale.ListNodes()
+ 		assert.NoError(c, err)
+ 		assert.Len(c, nodes, 1)
+-	}, 30*time.Second, 500*time.Millisecond, "waiting for initial registration")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "waiting for initial registration")
+ 
+ 	t.Logf("Node registered, now attempting to change to different tag via CLI")
+ 
+@@ -447,7 +448,7 @@ func TestTagsAuthKeyWithTagCannotChangeViaCLI(t *testing.T) {
+ 					assert.Fail(c, "Tags should not have changed")
+ 				}
+ 			}
+-		}, 10*time.Second, 500*time.Millisecond, "verifying tags unchanged")
++		}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "verifying tags unchanged")
+ 	}
+ }
+ 
+@@ -518,7 +519,7 @@ func TestTagsAuthKeyWithTagAdminOverrideReauthPreserves(t *testing.T) {
+ 			nodeID = nodes[0].GetId()
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-owned"})
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "waiting for initial registration")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "waiting for initial registration")
+ 
+ 	t.Logf("Step 1 complete: Node %d registered with tag:valid-owned", nodeID)
+ 
+@@ -535,12 +536,12 @@ func TestTagsAuthKeyWithTagAdminOverrideReauthPreserves(t *testing.T) {
+ 			t.Logf("After admin assignment, server tags are: %v", nodes[0].GetTags())
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:second"})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "verifying admin tag assignment on server")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "verifying admin tag assignment on server")
+ 
+ 	// Verify admin assignment propagated to node's self view (issue #2978)
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNodeSelfHasTagsWithCollect(c, client, []string{"tag:second"})
+-	}, 30*time.Second, 500*time.Millisecond, "verifying admin tag assignment propagated to node self")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "verifying admin tag assignment propagated to node self")
+ 
+ 	t.Logf("Step 2 complete: Admin assigned tag:second (verified on both server and node self)")
+ 
+@@ -568,12 +569,12 @@ func TestTagsAuthKeyWithTagAdminOverrideReauthPreserves(t *testing.T) {
+ 			// Expected: admin-assigned tags are preserved through reauth
+ 			assertNodeHasTagsWithCollect(c, node, []string{"tag:second"})
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "admin tags should be preserved after reauth on server")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "admin tags should be preserved after reauth on server")
+ 
+ 	// Verify admin tags are preserved in node's self view after reauth (issue #2978)
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNodeSelfHasTagsWithCollect(c, client, []string{"tag:second"})
+-	}, 30*time.Second, 500*time.Millisecond, "admin tags should be preserved after reauth in node self")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "admin tags should be preserved after reauth in node self")
+ 
+ 	t.Logf("Test 2.5 PASS: Admin tags preserved through reauth (admin decisions are authoritative)")
+ }
+@@ -644,7 +645,7 @@ func TestTagsAuthKeyWithTagCLICannotModifyAdminTags(t *testing.T) {
+ 		if len(nodes) == 1 {
+ 			nodeID = nodes[0].GetId()
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "waiting for initial registration")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "waiting for initial registration")
+ 
+ 	// Step 2: Admin assigns multiple tags via headscale CLI
+ 	err = headscale.SetNodeTags(nodeID, []string{"tag:valid-owned", "tag:second"})
+@@ -658,12 +659,12 @@ func TestTagsAuthKeyWithTagCLICannotModifyAdminTags(t *testing.T) {
+ 		if len(nodes) == 1 {
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-owned", "tag:second"})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "verifying admin tag assignment on server")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "verifying admin tag assignment on server")
+ 
+ 	// Verify admin assignment propagated to node's self view (issue #2978)
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNodeSelfHasTagsWithCollect(c, client, []string{"tag:valid-owned", "tag:second"})
+-	}, 30*time.Second, 500*time.Millisecond, "verifying admin tag assignment propagated to node self")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "verifying admin tag assignment propagated to node self")
+ 
+ 	t.Logf("Admin assigned both tags, now attempting to reduce via CLI")
+ 
+@@ -690,12 +691,12 @@ func TestTagsAuthKeyWithTagCLICannotModifyAdminTags(t *testing.T) {
+ 			// Expected: tags should remain unchanged (admin wins)
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-owned", "tag:second"})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "admin tags should be preserved after CLI attempt on server")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "admin tags should be preserved after CLI attempt on server")
+ 
+ 	// Verify admin tags are preserved in node's self view (issue #2978)
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNodeSelfHasTagsWithCollect(c, client, []string{"tag:valid-owned", "tag:second"})
+-	}, 30*time.Second, 500*time.Millisecond, "admin tags should be preserved after CLI attempt in node self")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "admin tags should be preserved after CLI attempt in node self")
+ 
+ 	t.Logf("Test 2.6 PASS: Admin tags preserved - CLI cannot modify admin-assigned tags")
+ }
+@@ -769,7 +770,7 @@ func TestTagsAuthKeyWithoutTagCannotRequestTags(t *testing.T) {
+ 			if len(nodes) == 1 {
+ 				t.Logf("Node registered with tags: %v (expected rejection)", nodes[0].GetTags())
+ 			}
+-		}, 10*time.Second, 500*time.Millisecond, "checking node state")
++		}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "checking node state")
+ 
+ 		t.Fail()
+ 	}
+@@ -836,7 +837,7 @@ func TestTagsAuthKeyWithoutTagRegisterNoTags(t *testing.T) {
+ 			t.Logf("Node registered with tags: %v", nodes[0].GetTags())
+ 			assertNodeHasNoTagsWithCollect(c, nodes[0])
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "verifying node has no tags")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "verifying node has no tags")
+ 
+ 	t.Logf("Test 3.2 completed - node registered without tags")
+ }
+@@ -904,7 +905,7 @@ func TestTagsAuthKeyWithoutTagCannotAddViaCLI(t *testing.T) {
+ 		if len(nodes) == 1 {
+ 			assertNodeHasNoTagsWithCollect(c, nodes[0])
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "waiting for initial registration")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "waiting for initial registration")
+ 
+ 	t.Logf("Node registered without tags, attempting to add via CLI")
+ 
+@@ -935,7 +936,7 @@ func TestTagsAuthKeyWithoutTagCannotAddViaCLI(t *testing.T) {
+ 					assert.Fail(c, "Tags should not have changed")
+ 				}
+ 			}
+-		}, 10*time.Second, 500*time.Millisecond, "verifying tags unchanged")
++		}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "verifying tags unchanged")
+ 	}
+ }
+ 
+@@ -1006,7 +1007,7 @@ func TestTagsAuthKeyWithoutTagCLINoOpAfterAdminWithReset(t *testing.T) {
+ 			nodeID = nodes[0].GetId()
+ 			assertNodeHasNoTagsWithCollect(c, nodes[0])
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "waiting for initial registration")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "waiting for initial registration")
+ 
+ 	// Step 2: Admin assigns tags
+ 	err = headscale.SetNodeTags(nodeID, []string{"tag:valid-owned"})
+@@ -1020,12 +1021,12 @@ func TestTagsAuthKeyWithoutTagCLINoOpAfterAdminWithReset(t *testing.T) {
+ 		if len(nodes) == 1 {
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-owned"})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "verifying admin tag assignment on server")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "verifying admin tag assignment on server")
+ 
+ 	// Verify admin assignment propagated to node's self view (issue #2978)
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNodeSelfHasTagsWithCollect(c, client, []string{"tag:valid-owned"})
+-	}, 30*time.Second, 500*time.Millisecond, "verifying admin tag assignment propagated to node self")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "verifying admin tag assignment propagated to node self")
+ 
+ 	t.Logf("Admin assigned tag, now running CLI with --reset")
+ 
+@@ -1049,12 +1050,12 @@ func TestTagsAuthKeyWithoutTagCLINoOpAfterAdminWithReset(t *testing.T) {
+ 			t.Logf("After --reset, server tags are: %v", nodes[0].GetTags())
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-owned"})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "admin tags should be preserved after --reset on server")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "admin tags should be preserved after --reset on server")
+ 
+ 	// Verify admin tags are preserved in node's self view after --reset (issue #2978)
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNodeSelfHasTagsWithCollect(c, client, []string{"tag:valid-owned"})
+-	}, 30*time.Second, 500*time.Millisecond, "admin tags should be preserved after --reset in node self")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "admin tags should be preserved after --reset in node self")
+ 
+ 	t.Logf("Test 3.4 PASS: Admin tags preserved after --reset")
+ }
+@@ -1125,7 +1126,7 @@ func TestTagsAuthKeyWithoutTagCLINoOpAfterAdminWithEmptyAdvertise(t *testing.T)
+ 		if len(nodes) == 1 {
+ 			nodeID = nodes[0].GetId()
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "waiting for initial registration")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "waiting for initial registration")
+ 
+ 	// Step 2: Admin assigns tags
+ 	err = headscale.SetNodeTags(nodeID, []string{"tag:valid-owned"})
+@@ -1139,12 +1140,12 @@ func TestTagsAuthKeyWithoutTagCLINoOpAfterAdminWithEmptyAdvertise(t *testing.T)
+ 		if len(nodes) == 1 {
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-owned"})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "verifying admin tag assignment on server")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "verifying admin tag assignment on server")
+ 
+ 	// Verify admin assignment propagated to node's self view (issue #2978)
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNodeSelfHasTagsWithCollect(c, client, []string{"tag:valid-owned"})
+-	}, 30*time.Second, 500*time.Millisecond, "verifying admin tag assignment propagated to node self")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "verifying admin tag assignment propagated to node self")
+ 
+ 	t.Logf("Admin assigned tag, now running CLI with empty --advertise-tags")
+ 
+@@ -1168,12 +1169,12 @@ func TestTagsAuthKeyWithoutTagCLINoOpAfterAdminWithEmptyAdvertise(t *testing.T)
+ 			t.Logf("After empty --advertise-tags, server tags are: %v", nodes[0].GetTags())
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-owned"})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "admin tags should be preserved after empty --advertise-tags on server")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "admin tags should be preserved after empty --advertise-tags on server")
+ 
+ 	// Verify admin tags are preserved in node's self view after empty --advertise-tags (issue #2978)
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNodeSelfHasTagsWithCollect(c, client, []string{"tag:valid-owned"})
+-	}, 30*time.Second, 500*time.Millisecond, "admin tags should be preserved after empty --advertise-tags in node self")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "admin tags should be preserved after empty --advertise-tags in node self")
+ 
+ 	t.Logf("Test 3.5 PASS: Admin tags preserved after empty --advertise-tags")
+ }
+@@ -1244,7 +1245,7 @@ func TestTagsAuthKeyWithoutTagCLICannotReduceAdminMultiTag(t *testing.T) {
+ 		if len(nodes) == 1 {
+ 			nodeID = nodes[0].GetId()
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "waiting for initial registration")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "waiting for initial registration")
+ 
+ 	// Step 2: Admin assigns multiple tags
+ 	err = headscale.SetNodeTags(nodeID, []string{"tag:valid-owned", "tag:second"})
+@@ -1258,12 +1259,12 @@ func TestTagsAuthKeyWithoutTagCLICannotReduceAdminMultiTag(t *testing.T) {
+ 		if len(nodes) == 1 {
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-owned", "tag:second"})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "verifying admin tag assignment on server")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "verifying admin tag assignment on server")
+ 
+ 	// Verify admin assignment propagated to node's self view (issue #2978)
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNodeSelfHasTagsWithCollect(c, client, []string{"tag:valid-owned", "tag:second"})
+-	}, 30*time.Second, 500*time.Millisecond, "verifying admin tag assignment propagated to node self")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "verifying admin tag assignment propagated to node self")
+ 
+ 	t.Logf("Admin assigned both tags, now attempting to reduce via CLI")
+ 
+@@ -1287,12 +1288,12 @@ func TestTagsAuthKeyWithoutTagCLICannotReduceAdminMultiTag(t *testing.T) {
+ 			t.Logf("After CLI reduce attempt, server tags are: %v", nodes[0].GetTags())
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-owned", "tag:second"})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "admin tags should be preserved after CLI reduce attempt on server")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "admin tags should be preserved after CLI reduce attempt on server")
+ 
+ 	// Verify admin tags are preserved in node's self view after CLI reduce attempt (issue #2978)
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNodeSelfHasTagsWithCollect(c, client, []string{"tag:valid-owned", "tag:second"})
+-	}, 30*time.Second, 500*time.Millisecond, "admin tags should be preserved after CLI reduce attempt in node self")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "admin tags should be preserved after CLI reduce attempt in node self")
+ 
+ 	t.Logf("Test 3.6 PASS: Admin tags preserved - CLI cannot reduce admin-assigned multi-tag set")
+ }
+@@ -1368,7 +1369,7 @@ func TestTagsUserLoginOwnedTagAtRegistration(t *testing.T) {
+ 			t.Logf("Node registered with tags: %v", nodes[0].GetTags())
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-owned"})
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "verifying node has advertised tag")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "verifying node has advertised tag")
+ 
+ 	t.Logf("Test 1.1 completed - web auth with owned tag succeeded")
+ }
+@@ -1441,7 +1442,7 @@ func TestTagsUserLoginNonExistentTagAtRegistration(t *testing.T) {
+ 					"Non-existent tag should not be applied to node")
+ 				t.Logf("Test 1.2: Node registered with tags: %v (non-existent tag correctly rejected)", nodes[0].GetTags())
+ 			}
+-		}, 10*time.Second, 500*time.Millisecond, "checking node registration result")
++		}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "checking node registration result")
+ 	}
+ }
+ 
+@@ -1509,7 +1510,7 @@ func TestTagsUserLoginUnownedTagAtRegistration(t *testing.T) {
+ 				"Unowned tag should not be applied to node (tag:valid-unowned is owned by other-user)")
+ 			t.Logf("Test 1.3: Node registered with tags: %v (unowned tag correctly rejected)", nodes[0].GetTags())
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "checking node registration result")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "checking node registration result")
+ }
+ 
+ // TestTagsUserLoginAddTagViaCLIReauth tests that a user can add tags via CLI reauthentication.
+@@ -1573,7 +1574,7 @@ func TestTagsUserLoginAddTagViaCLIReauth(t *testing.T) {
+ 		if len(nodes) == 1 {
+ 			t.Logf("Initial tags: %v", nodes[0].GetTags())
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "checking initial tags")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "checking initial tags")
+ 
+ 	// Step 2: Try to add second tag via CLI
+ 	t.Logf("Attempting to add second tag via CLI reauth")
+@@ -1600,7 +1601,7 @@ func TestTagsUserLoginAddTagViaCLIReauth(t *testing.T) {
+ 				t.Logf("Test 1.4: Tags are %v (may require manual reauth completion)", nodes[0].GetTags())
+ 			}
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "checking tags after CLI")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "checking tags after CLI")
+ }
+ 
+ // TestTagsUserLoginRemoveTagViaCLIReauth tests that a user can remove tags via CLI reauthentication.
+@@ -1664,7 +1665,7 @@ func TestTagsUserLoginRemoveTagViaCLIReauth(t *testing.T) {
+ 		if len(nodes) == 1 {
+ 			t.Logf("Initial tags: %v", nodes[0].GetTags())
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "checking initial tags")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "checking initial tags")
+ 
+ 	// Step 2: Try to remove second tag via CLI
+ 	t.Logf("Attempting to remove tag via CLI reauth")
+@@ -1689,7 +1690,7 @@ func TestTagsUserLoginRemoveTagViaCLIReauth(t *testing.T) {
+ 				t.Logf("Test 1.5 PASS: Only one tag after removal")
+ 			}
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "checking tags after CLI")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "checking tags after CLI")
+ }
+ 
+ // TestTagsUserLoginCLINoOpAfterAdminAssignment tests that CLI advertise-tags becomes
+@@ -1759,7 +1760,7 @@ func TestTagsUserLoginCLINoOpAfterAdminAssignment(t *testing.T) {
+ 			nodeID = nodes[0].GetId()
+ 			t.Logf("Step 1: Node %d registered with tags: %v", nodeID, nodes[0].GetTags())
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "waiting for initial registration")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "waiting for initial registration")
+ 
+ 	// Step 2: Admin assigns different tag
+ 	err = headscale.SetNodeTags(nodeID, []string{"tag:second"})
+@@ -1774,12 +1775,12 @@ func TestTagsUserLoginCLINoOpAfterAdminAssignment(t *testing.T) {
+ 			t.Logf("Step 2: After admin assignment, server tags: %v", nodes[0].GetTags())
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:second"})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "verifying admin assignment on server")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "verifying admin assignment on server")
+ 
+ 	// Verify admin assignment propagated to node's self view (issue #2978)
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNodeSelfHasTagsWithCollect(c, client, []string{"tag:second"})
+-	}, 30*time.Second, 500*time.Millisecond, "verifying admin assignment propagated to node self")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "verifying admin assignment propagated to node self")
+ 
+ 	// Step 3: Try to change tags via CLI
+ 	command := []string{
+@@ -1800,12 +1801,12 @@ func TestTagsUserLoginCLINoOpAfterAdminAssignment(t *testing.T) {
+ 			t.Logf("Step 3: After CLI, server tags are: %v", nodes[0].GetTags())
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:second"})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "admin tags should be preserved - CLI advertise-tags should be no-op on server")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "admin tags should be preserved - CLI advertise-tags should be no-op on server")
+ 
+ 	// Verify admin tags are preserved in node's self view after CLI attempt (issue #2978)
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNodeSelfHasTagsWithCollect(c, client, []string{"tag:second"})
+-	}, 30*time.Second, 500*time.Millisecond, "admin tags should be preserved - CLI advertise-tags should be no-op in node self")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "admin tags should be preserved - CLI advertise-tags should be no-op in node self")
+ 
+ 	t.Logf("Test 1.6 PASS: Admin tags preserved (CLI was no-op)")
+ }
+@@ -1875,7 +1876,7 @@ func TestTagsUserLoginCLICannotRemoveAdminTags(t *testing.T) {
+ 		if len(nodes) == 1 {
+ 			nodeID = nodes[0].GetId()
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "waiting for initial registration")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "waiting for initial registration")
+ 
+ 	// Step 2: Admin assigns both tags
+ 	err = headscale.SetNodeTags(nodeID, []string{"tag:valid-owned", "tag:second"})
+@@ -1890,12 +1891,12 @@ func TestTagsUserLoginCLICannotRemoveAdminTags(t *testing.T) {
+ 			t.Logf("After admin assignment, server tags: %v", nodes[0].GetTags())
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-owned", "tag:second"})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "verifying admin assignment on server")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "verifying admin assignment on server")
+ 
+ 	// Verify admin assignment propagated to node's self view (issue #2978)
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNodeSelfHasTagsWithCollect(c, client, []string{"tag:valid-owned", "tag:second"})
+-	}, 30*time.Second, 500*time.Millisecond, "verifying admin assignment propagated to node self")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "verifying admin assignment propagated to node self")
+ 
+ 	// Step 3: Try to reduce tags via CLI
+ 	command := []string{
+@@ -1916,12 +1917,12 @@ func TestTagsUserLoginCLICannotRemoveAdminTags(t *testing.T) {
+ 			t.Logf("Test 1.7: After CLI, server tags are: %v", nodes[0].GetTags())
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-owned", "tag:second"})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "admin tags should be preserved - CLI cannot remove them on server")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "admin tags should be preserved - CLI cannot remove them on server")
+ 
+ 	// Verify admin tags are preserved in node's self view after CLI attempt (issue #2978)
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNodeSelfHasTagsWithCollect(c, client, []string{"tag:valid-owned", "tag:second"})
+-	}, 30*time.Second, 500*time.Millisecond, "admin tags should be preserved - CLI cannot remove them in node self")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "admin tags should be preserved - CLI cannot remove them in node self")
+ 
+ 	t.Logf("Test 1.7 PASS: Admin tags preserved (CLI cannot remove)")
+ }
+@@ -1994,7 +1995,7 @@ func TestTagsAuthKeyWithTagRequestNonExistentTag(t *testing.T) {
+ 			if len(nodes) == 1 {
+ 				t.Logf("Node registered with tags: %v (expected rejection)", nodes[0].GetTags())
+ 			}
+-		}, 10*time.Second, 500*time.Millisecond, "checking node state")
++		}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "checking node state")
+ 
+ 		t.Fail()
+ 	}
+@@ -2064,7 +2065,7 @@ func TestTagsAuthKeyWithTagRequestUnownedTag(t *testing.T) {
+ 			if len(nodes) == 1 {
+ 				t.Logf("Node registered with tags: %v (expected rejection)", nodes[0].GetTags())
+ 			}
+-		}, 10*time.Second, 500*time.Millisecond, "checking node state")
++		}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "checking node state")
+ 
+ 		t.Fail()
+ 	}
+@@ -2138,7 +2139,7 @@ func TestTagsAuthKeyWithoutTagRequestNonExistentTag(t *testing.T) {
+ 			if len(nodes) == 1 {
+ 				t.Logf("Node registered with tags: %v (expected rejection)", nodes[0].GetTags())
+ 			}
+-		}, 10*time.Second, 500*time.Millisecond, "checking node state")
++		}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "checking node state")
+ 
+ 		t.Fail()
+ 	}
+@@ -2208,7 +2209,7 @@ func TestTagsAuthKeyWithoutTagRequestUnownedTag(t *testing.T) {
+ 			if len(nodes) == 1 {
+ 				t.Logf("Node registered with tags: %v (expected rejection)", nodes[0].GetTags())
+ 			}
+-		}, 10*time.Second, 500*time.Millisecond, "checking node state")
++		}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "checking node state")
+ 
+ 		t.Fail()
+ 	}
+@@ -2280,7 +2281,7 @@ func TestTagsAdminAPICannotSetNonExistentTag(t *testing.T) {
+ 			nodeID = nodes[0].GetId()
+ 			t.Logf("Node %d registered with tags: %v", nodeID, nodes[0].GetTags())
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "waiting for registration")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "waiting for registration")
+ 
+ 	// Try to set a non-existent tag via admin API - should fail
+ 	err = headscale.SetNodeTags(nodeID, []string{"tag:nonexistent"})
+@@ -2352,7 +2353,7 @@ func TestTagsAdminAPICanSetUnownedTag(t *testing.T) {
+ 			nodeID = nodes[0].GetId()
+ 			t.Logf("Node %d registered with tags: %v", nodeID, nodes[0].GetTags())
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "waiting for registration")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "waiting for registration")
+ 
+ 	// Admin sets an "unowned" tag - should SUCCEED because admin has full authority
+ 	// (tag:valid-unowned is owned by other-user, but admin can assign it)
+@@ -2368,12 +2369,12 @@ func TestTagsAdminAPICanSetUnownedTag(t *testing.T) {
+ 		if len(nodes) == 1 {
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-unowned"})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "verifying unowned tag was applied on server")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "verifying unowned tag was applied on server")
+ 
+ 	// Verify the tag was propagated to node's self view (issue #2978)
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNodeSelfHasTagsWithCollect(c, client, []string{"tag:valid-unowned"})
+-	}, 30*time.Second, 500*time.Millisecond, "verifying unowned tag propagated to node self")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "verifying unowned tag propagated to node self")
+ 
+ 	t.Logf("Test 4.2 PASS: Admin API correctly allowed setting unowned tag")
+ }
+@@ -2440,7 +2441,7 @@ func TestTagsAdminAPICannotRemoveAllTags(t *testing.T) {
+ 			nodeID = nodes[0].GetId()
+ 			t.Logf("Node %d registered with tags: %v", nodeID, nodes[0].GetTags())
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "waiting for registration")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "waiting for registration")
+ 
+ 	// Try to remove all tags - should fail
+ 	err = headscale.SetNodeTags(nodeID, []string{})
+@@ -2457,7 +2458,7 @@ func TestTagsAdminAPICannotRemoveAllTags(t *testing.T) {
+ 		if len(nodes) == 1 {
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-owned"})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "verifying original tags preserved")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "verifying original tags preserved")
+ }
+ 
+ // assertNetmapSelfHasTagsWithCollect asserts that the client's netmap self node has expected tags.
+@@ -2562,12 +2563,12 @@ func TestTagsIssue2978ReproTagReplacement(t *testing.T) {
+ 			nodeID = nodes[0].GetId()
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-owned"})
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "waiting for initial registration")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "waiting for initial registration")
+ 
+ 	// Verify client initially sees tag:valid-owned
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNodeSelfHasTagsWithCollect(c, client, []string{"tag:valid-owned"})
+-	}, 30*time.Second, 500*time.Millisecond, "client should see initial tag")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "client should see initial tag")
+ 
+ 	t.Logf("Step 1: Node %d registered via web auth with --advertise-tags=tag:valid-owned, client sees it", nodeID)
+ 
+@@ -2587,7 +2588,7 @@ func TestTagsIssue2978ReproTagReplacement(t *testing.T) {
+ 		if len(nodes) == 1 {
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:second"})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "server should show tag:second after first call")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "server should show tag:second after first call")
+ 
+ 	t.Log("Step 2a: Server shows tag:second after first call")
+ 
+@@ -2637,11 +2638,11 @@ func TestTagsIssue2978ReproTagReplacement(t *testing.T) {
+ 	t.Log("Step 3a: Verifying client self view updates after SECOND call")
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNodeSelfHasTagsWithCollect(c, client, []string{"tag:second"})
+-	}, 10*time.Second, 500*time.Millisecond, "client status.Self should update to tag:second after SECOND call")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "client status.Self should update to tag:second after SECOND call")
+ 
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNetmapSelfHasTagsWithCollect(c, client, []string{"tag:second"})
+-	}, 10*time.Second, 500*time.Millisecond, "client netmap.SelfNode should update to tag:second after SECOND call")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "client netmap.SelfNode should update to tag:second after SECOND call")
+ 
+ 	t.Log("Step 3b: Client self view updated to tag:second after SECOND call")
+ 
+@@ -2659,7 +2660,7 @@ func TestTagsIssue2978ReproTagReplacement(t *testing.T) {
+ 		if len(nodes) == 1 {
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-unowned"})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "server should show tag:valid-unowned")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "server should show tag:valid-unowned")
+ 
+ 	t.Log("Step 4a: Server shows tag:valid-unowned after first call")
+ 
+@@ -2691,11 +2692,11 @@ func TestTagsIssue2978ReproTagReplacement(t *testing.T) {
+ 	t.Log("Step 5a: Verifying client self view updates after SECOND call")
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNodeSelfHasTagsWithCollect(c, client, []string{"tag:valid-unowned"})
+-	}, 10*time.Second, 500*time.Millisecond, "client status.Self should update to tag:valid-unowned after SECOND call")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "client status.Self should update to tag:valid-unowned after SECOND call")
+ 
+ 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+ 		assertNetmapSelfHasTagsWithCollect(c, client, []string{"tag:valid-unowned"})
+-	}, 10*time.Second, 500*time.Millisecond, "client netmap.SelfNode should update to tag:valid-unowned after SECOND call")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "client netmap.SelfNode should update to tag:valid-unowned after SECOND call")
+ 
+ 	t.Log("Test complete - see logs for bug reproduction details")
+ }
+@@ -2762,7 +2763,7 @@ func TestTagsAdminAPICannotSetInvalidFormat(t *testing.T) {
+ 			nodeID = nodes[0].GetId()
+ 			t.Logf("Node %d registered with tags: %v", nodeID, nodes[0].GetTags())
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "waiting for registration")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "waiting for registration")
+ 
+ 	// Try to set a tag without the "tag:" prefix - should fail
+ 	err = headscale.SetNodeTags(nodeID, []string{"invalid-no-prefix"})
+@@ -2779,7 +2780,7 @@ func TestTagsAdminAPICannotSetInvalidFormat(t *testing.T) {
+ 		if len(nodes) == 1 {
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-owned"})
+ 		}
+-	}, 10*time.Second, 500*time.Millisecond, "verifying original tags preserved")
++	}, integrationutil.ScaledTimeout(10*time.Second), 500*time.Millisecond, "verifying original tags preserved")
+ }
+ 
+ // =============================================================================
+@@ -2870,7 +2871,7 @@ func TestTagsUserLoginReauthWithEmptyTagsRemovesAllTags(t *testing.T) {
+ 				// Verify node has the expected tags
+ 				assertNodeHasTagsWithCollect(c, node, []string{"tag:valid-owned", "tag:second"})
+ 			}
+-		}, 30*time.Second, 500*time.Millisecond, "checking initial tags")
++		}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "checking initial tags")
+ 
+ 		// Step 2: Reauth with empty tags to remove all tags
+ 		t.Logf("Step 2: Reauthenticating with empty tag list to untag device (%s)", tc.name)
+@@ -2946,7 +2947,7 @@ func TestTagsUserLoginReauthWithEmptyTagsRemovesAllTags(t *testing.T) {
+ 						tc.name, tagTestUser, node.GetTags(), node.GetUser().GetName())
+ 				}
+ 			}
+-		}, 60*time.Second, 1*time.Second, "verifying tags removed and ownership returned")
++		}, integrationutil.ScaledTimeout(60*time.Second), 1*time.Second, "verifying tags removed and ownership returned")
+ 	})
+ }
+ 
+@@ -3019,7 +3020,7 @@ func TestTagsAuthKeyWithoutUserInheritsTags(t *testing.T) {
+ 			t.Logf("Node registered with tags: %v", node.GetTags())
+ 			assertNodeHasTagsWithCollect(c, node, []string{"tag:valid-owned"})
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "verifying node inherited tags from auth key")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "verifying node inherited tags from auth key")
+ 
+ 	t.Logf("Test 5.1 PASS: Node inherited tags from tags-only auth key")
+ }
+@@ -3157,7 +3158,7 @@ func TestTagsAuthKeyConvertToUserViaCLIRegister(t *testing.T) {
+ 			assertNodeHasTagsWithCollect(c, nodes[0], []string{"tag:valid-owned"})
+ 			t.Logf("Initial state - Node ID: %d, Tags: %v", nodes[0].GetId(), nodes[0].GetTags())
+ 		}
+-	}, 30*time.Second, 500*time.Millisecond, "node should be tagged initially")
++	}, integrationutil.ScaledTimeout(30*time.Second), 500*time.Millisecond, "node should be tagged initially")
+ 
+ 	// Step 2: Force reauth with empty tags (triggers web auth flow)
+ 	command := []string{
+@@ -3200,5 +3201,5 @@ func TestTagsAuthKeyConvertToUserViaCLIRegister(t *testing.T) {
+ 			t.Logf("After conversion - Node ID: %d, Tags: %v, User: %s",
+ 				nodes[0].GetId(), nodes[0].GetTags(), nodes[0].GetUser().GetName())
+ 		}
+-	}, 60*time.Second, 1*time.Second, "node should be user-owned after conversion via CLI register")
++	}, integrationutil.ScaledTimeout(60*time.Second), 1*time.Second, "node should be user-owned after conversion via CLI register")
+ }

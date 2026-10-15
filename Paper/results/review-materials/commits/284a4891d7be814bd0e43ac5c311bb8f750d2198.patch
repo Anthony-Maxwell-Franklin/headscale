@@ -1,0 +1,192 @@
+commit 284a4891d7be814bd0e43ac5c311bb8f750d2198
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Thu Apr 30 08:18:50 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Wed Sep 23 15:18:34 2026 +0200
+
+    types: validate listener address collisions
+    
+    Reject configurations where two configured TCP listeners would bind
+    the same kernel socket. Covers every pair of listen_addr,
+    grpc_listen_addr, metrics_listen_addr, and tls_letsencrypt_listen
+    (when HTTP-01 ACME is in use). Each violation renders as a structured
+    ConfigError naming both YAML keys, the values the operator wrote, and
+    a hint pointing at the canonical setup.
+    
+    Closes the symptom in #3227: the misconfiguration is now rejected at
+    config-load time with a self-explaining error, instead of failing at
+    runtime with a misleading "address already in use" log because the
+    ACME challenge listener and the main HTTP listener competed for the
+    same port inside the same process.
+    
+    Fixes #3227
+---
+ hscontrol/types/config.go      |  7 +++--
+ hscontrol/types/config_test.go | 49 +++++++++++++++++++++++++++++++++
+ hscontrol/types/listener.go    | 62 ++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 116 insertions(+), 2 deletions(-)
+
+diff --git a/hscontrol/types/config.go b/hscontrol/types/config.go
+index 46991846..cf0c5471 100644
+--- a/hscontrol/types/config.go
++++ b/hscontrol/types/config.go
+@@ -631,6 +631,9 @@ func validateServerConfig() error {
+ 			Msg("Warning: when using tls_letsencrypt_hostname with TLS-ALPN-01 as challenge type, headscale must be reachable on port 443, i.e. listen_addr should probably end in :443")
+ 	}
+ 
++	v := &configValidator{}
++	validateListenerCollisions(v)
++
+ 	if (viper.GetString("tls_letsencrypt_challenge_type") != HTTP01ChallengeType) &&
+ 		(viper.GetString("tls_letsencrypt_challenge_type") != TLSALPN01ChallengeType) {
+ 		errorText += "Fatal config error: the only supported values for tls_letsencrypt_challenge_type are HTTP-01 and TLS-ALPN-01\n"
+@@ -705,10 +708,10 @@ func validateServerConfig() error {
+ 
+ 	if errorText != "" {
+ 		// nolint
+-		return errors.New(strings.TrimSuffix(errorText, "\n"))
++		v.AddErr(errors.New(strings.TrimSuffix(errorText, "\n")))
+ 	}
+ 
+-	return nil
++	return v.Err()
+ }
+ 
+ func tlsConfig() TLSConfig {
+diff --git a/hscontrol/types/config_test.go b/hscontrol/types/config_test.go
+index c8dd1b0b..b7fe5777 100644
+--- a/hscontrol/types/config_test.go
++++ b/hscontrol/types/config_test.go
+@@ -511,6 +511,55 @@ oidc:` + tt.oidcBlock + "\n")
+ 	}
+ }
+ 
++func TestTLSLetsEncryptListenAddrCollision(t *testing.T) {
++	tests := []struct {
++		name          string
++		listenAddr    string
++		leListen      string
++		hostname      string
++		challengeType string
++		wantErr       string // empty = expect no error
++	}{
++		{"collision-numeric", ":80", ":80", "example.com", "HTTP-01", "would bind the same TCP socket"},
++		{"collision-named-vs-numeric", "0.0.0.0:80", ":http", "example.com", "HTTP-01", "would bind the same TCP socket"},
++		{"collision-https-named", ":443", ":https", "example.com", "HTTP-01", "would bind the same TCP socket"},
++		{"canonical", "0.0.0.0:443", ":http", "example.com", "HTTP-01", ""},
++		{"no-hostname-skipped", "0.0.0.0:80", ":http", "", "HTTP-01", ""},
++		{"tls-alpn-01-skipped", "0.0.0.0:80", ":http", "example.com", "TLS-ALPN-01", ""},
++		{"different-numeric", ":8080", ":8081", "example.com", "HTTP-01", ""},
++	}
++	for _, tt := range tests {
++		t.Run(tt.name, func(t *testing.T) {
++			viper.Reset()
++
++			tmpDir := t.TempDir()
++			cfg := fmt.Sprintf(`---
++server_url: https://example.com
++listen_addr: %q
++tls_letsencrypt_hostname: %q
++tls_letsencrypt_challenge_type: %q
++tls_letsencrypt_listen: %q
++noise:
++  private_key_path: noise_private.key
++dns:
++  override_local_dns: false
++`, tt.listenAddr, tt.hostname, tt.challengeType, tt.leListen)
++			require.NoError(t, os.WriteFile(
++				filepath.Join(tmpDir, "config.yaml"), []byte(cfg), 0o600))
++			require.NoError(t, LoadConfig(tmpDir, false))
++
++			err := validateServerConfig()
++			if tt.wantErr == "" {
++				require.NoError(t, err)
++				return
++			}
++
++			require.Error(t, err)
++			assert.Contains(t, err.Error(), tt.wantErr)
++		})
++	}
++}
++
+ // OK
+ // server_url: headscale.com, base: clients.headscale.com
+ // server_url: headscale.com, base: headscale.net
+diff --git a/hscontrol/types/listener.go b/hscontrol/types/listener.go
+index 2aeb8314..6972a128 100644
+--- a/hscontrol/types/listener.go
++++ b/hscontrol/types/listener.go
+@@ -5,6 +5,8 @@ import (
+ 	"fmt"
+ 	"net"
+ 	"strconv"
++
++	"github.com/spf13/viper"
+ )
+ 
+ var errEmptyListenAddr = errors.New("address is empty")
+@@ -78,3 +80,63 @@ func isWildcardHost(h string) bool {
+ 
+ 	return false
+ }
++
++// validateListenerCollisions records a *ConfigError for each pair of
++// configured TCP listeners that would bind the same kernel socket. The
++// ACME HTTP-01 challenge listener is only considered when a hostname is
++// set and the HTTP-01 challenge is selected.
++func validateListenerCollisions(v *configValidator) {
++	type spec struct {
++		key, addr string
++		active    bool
++	}
++
++	listenAddr := viper.GetString("listen_addr")
++	grpcAddr := viper.GetString("grpc_listen_addr")
++	metricsAddr := viper.GetString("metrics_listen_addr")
++	acmeAddr := viper.GetString("tls_letsencrypt_listen")
++
++	listeners := []spec{
++		{"listen_addr", listenAddr, listenAddr != ""},
++		{"grpc_listen_addr", grpcAddr, grpcAddr != ""},
++		{"metrics_listen_addr", metricsAddr, metricsAddr != ""},
++		{
++			key:  "tls_letsencrypt_listen",
++			addr: acmeAddr,
++			active: acmeAddr != "" &&
++				viper.GetString("tls_letsencrypt_hostname") != "" &&
++				viper.GetString("tls_letsencrypt_challenge_type") == HTTP01ChallengeType,
++		},
++	}
++
++	for i := range listeners {
++		for j := i + 1; j < len(listeners); j++ {
++			a, b := listeners[i], listeners[j]
++			if !a.active || !b.active {
++				continue
++			}
++
++			overlap, err := listenersOverlap(a.addr, b.addr)
++			if err != nil {
++				v.Add(&ConfigError{
++					Reason:  "cannot parse " + a.key,
++					Current: []KV{{a.key, a.addr}},
++					Detail:  err.Error(),
++					Hint:    `use host:port form, e.g. "0.0.0.0:8080"`,
++				})
++
++				continue
++			}
++
++			if overlap {
++				v.Add(&ConfigError{
++					Reason:        fmt.Sprintf("%s and %s would bind the same TCP socket", a.key, b.key),
++					Current:       []KV{{a.key, a.addr}},
++					ConflictsWith: []KV{{b.key, b.addr}},
++					Hint:          "give each listener a distinct port, or bind them to different non-wildcard hosts",
++					See:           "https://headscale.net/stable/ref/tls/",
++				})
++			}
++		}
++	}
++}

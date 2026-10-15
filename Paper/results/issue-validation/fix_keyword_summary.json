@@ -1,0 +1,10 @@
+{
+  "explicit_closing_commit_cases": 5,
+  "locally_available": 5,
+  "keyword_matches": 2,
+  "keyword_misses": 3,
+  "limitations": [
+    "Small selected evidence subset, not representative of all repairs.",
+    "Commit linkage and keyword identification do not independently validate defect repair correctness."
+  ]
+}

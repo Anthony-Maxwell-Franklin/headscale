@@ -1,0 +1,324 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0">
+  <diagram name="Headscale Context View" id="headscale-context-view">
+    <mxGraphModel dx="1647" dy="1107" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" background="light-dark(#FFFFFF,#333333)" math="0" shadow="1">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="sXNWJ58cptntLcnnYRKC-2" edge="1" parent="1" source="headscale" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.25;entryDx=0;entryDy=0;strokeWidth=2;curved=0;shadow=1;exitX=0.803;exitY=0.112;exitDx=0;exitDy=0;exitPerimeter=0;" target="tailscale_client">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="852" y="797" />
+              <mxPoint x="927" y="797" />
+              <mxPoint x="927" y="627" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sXNWJ58cptntLcnnYRKC-4" connectable="0" parent="sXNWJ58cptntLcnnYRKC-2" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;control plane for&lt;/b&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.5381" y="3" as="geometry">
+            <mxPoint x="-20" y="-4" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="headscale" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=light-dark(#6C8EBF,#FFFFFF);fontSize=11;fontStyle=1;align=center;verticalAlign=middle;shadow=1;backgroundOutline=0;strokeWidth=4;" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b style=&quot;&quot;&gt;HEADSCALE&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;&quot;&gt;Open-Source Tailscale-compatible&lt;br&gt;Self-hosted Control Server&lt;br&gt;&lt;hr style=&quot;&quot;&gt;• Uses WireGuard as data plane&lt;br&gt;• Node key exchange&lt;br&gt;• ACL / policy enforcement&lt;br&gt;• REST API + gRPC&lt;br&gt;• Written in Go (BSD-3 licence)&lt;/font&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="200" width="280" x="627" y="1094" as="geometry" />
+        </mxCell>
+        <mxCell id="tailscale_inc" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#F8CECC,#0000FF);strokeColor=light-dark(#D6B656,#FFFFFF);fontSize=10;shadow=1;strokeWidth=2;backgroundOutline=0;" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b style=&quot;&quot;&gt;Tailscale Inc.&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;&quot;&gt;&lt;font style=&quot;&quot;&gt;[Suppliers]&lt;/font&gt;&lt;br&gt;&lt;hr style=&quot;&quot;&gt;&lt;font style=&quot;&quot;&gt;&lt;font style=&quot;&quot;&gt;• Funds 50% of lead maintainer&lt;br&gt;&lt;/font&gt;• Donates dev time&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;&quot;&gt;• VC-backed commercial entity&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;&quot;&gt;• Strategic: funnel + escape hatch&lt;/font&gt;&lt;/font&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="126" width="190" x="178" y="784" as="geometry" />
+        </mxCell>
+        <mxCell id="bfNFDUC-idKNecKVyoYE-2" edge="1" parent="1" source="lead_maintainer" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;shadow=1;curved=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;exitX=0;exitY=0.75;exitDx=0;exitDy=0;" target="discord">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="213" y="1035" />
+              <mxPoint x="213" y="1558" />
+            </Array>
+            <mxPoint x="150" y="1148" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bfNFDUC-idKNecKVyoYE-9" connectable="0" parent="bfNFDUC-idKNecKVyoYE-2" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&lt;b&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;manage and operate the channel&lt;/font&gt;&lt;/b&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.6379" y="-4" as="geometry">
+            <mxPoint x="52" y="53" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lead_maintainer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#D5E8D4,#FF0000);strokeColor=light-dark(#82B366,#FFFFFF);fontSize=10;shadow=1;strokeWidth=2;backgroundOutline=0;arcSize=13;" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b style=&quot;&quot;&gt;Kristoffer Dalby&amp;nbsp;(Lead Maintainer)&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;&quot;&gt;[Developer / Maintainer]&lt;br&gt;&lt;hr style=&quot;&quot;&gt;• 50% time paid by Tailscale&lt;br&gt;• Owns roadmap &amp;amp; release decisions&lt;br&gt;• PR review gatekeeper&lt;br&gt;• Norwegian software engineer&lt;/font&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="117" width="200" x="360" y="947" as="geometry" />
+        </mxCell>
+        <mxCell id="bfNFDUC-idKNecKVyoYE-3" edge="1" parent="1" source="juanfont" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.25;entryDx=0;entryDy=0;strokeWidth=2;shadow=1;curved=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" target="discord">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="279" y="1251" />
+              <mxPoint x="279" y="1498" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bfNFDUC-idKNecKVyoYE-10" connectable="0" parent="bfNFDUC-idKNecKVyoYE-3" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&lt;b&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;participates in&lt;/font&gt;&lt;/b&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.8195" y="-4" as="geometry">
+            <mxPoint x="-22" y="15" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="juanfont" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#D5E8D4,#FF0000);strokeColor=light-dark(#82B366,#FFFFFF);fontSize=10;shadow=1;strokeWidth=2;backgroundOutline=0;" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b style=&quot;&quot;&gt;Juan Font (Founder)&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;&quot;&gt;[Developer / Maintainer]&lt;br&gt;&lt;hr style=&quot;&quot;&gt;• Original creator (2020)&lt;br&gt;• Repo owner on GitHub&lt;br&gt;• Co-maintainer&lt;/font&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="100" width="180" x="341" y="1201" as="geometry" />
+        </mxCell>
+        <mxCell id="doc_tester" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#D5E8D4,#003366);strokeColor=light-dark(#82B366,#FFFFFF);fontSize=10;strokeWidth=2;shadow=1;backgroundOutline=0;" value="&lt;font style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;Florian Preinstorfer&lt;/b&gt;&lt;/span&gt;&lt;br&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;[Communicator / Tester]&lt;br&gt;&lt;hr style=&quot;&quot;&gt;• Documentation writer&lt;br&gt;• Testing assistance&lt;br&gt;• Community volunteer&lt;/font&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="100" width="180" x="1058" y="1144" as="geometry" />
+        </mxCell>
+        <mxCell id="oss_contributors" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#D5E8D4,#FF0000);strokeColor=light-dark(#82B366,#FFFFFF);fontSize=10;shadow=1;strokeWidth=2;backgroundOutline=0;" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b style=&quot;&quot;&gt;Open-Source Contributors&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;&quot;&gt;[Developers]&lt;br&gt;&lt;hr style=&quot;&quot;&gt;• Drive-by PRs (3rd-party)&lt;br&gt;• Community UI builders&lt;br&gt;• Must align with roadmap&lt;br&gt;• 37k+ GitHub stars / 6k Discord&lt;/font&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="110" width="190" x="1300" y="1142" as="geometry" />
+        </mxCell>
+        <mxCell id="homelabbers" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#E1D5E7,#333300);strokeColor=light-dark(#9673A6,#FFFFFF);fontSize=10;shadow=1;strokeWidth=2;backgroundOutline=0;" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b style=&quot;&quot;&gt;Home-lab / Self-hosters&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;&quot;&gt;[Users / Testers / System Administrators / Production Engineers]&lt;br&gt;&lt;hr style=&quot;&quot;&gt;• Privacy-focused individuals&lt;br&gt;• Vendor-lock-in avoiders&lt;br&gt;• Self-host the control plane&lt;br&gt;• 3,000+ known installations&lt;/font&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="159" width="190" x="672" y="1449.25" as="geometry" />
+        </mxCell>
+        <mxCell id="enterprise_users" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#E1D5E7,#333300);strokeColor=light-dark(#9673A6,#FFFFFF);fontSize=10;strokeWidth=2;shadow=1;backgroundOutline=0;" value="&lt;font style=&quot;&quot;&gt;&lt;b style=&quot;font-size: 12px;&quot;&gt;Enterprise / Corporate Users&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 12px;&quot;&gt;[Users / System Administrators /&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;font-size: 12px;&quot;&gt;Production Engineers&lt;/span&gt;&lt;span style=&quot;font-size: 12px;&quot;&gt;]&lt;/span&gt;&lt;br&gt;&lt;hr style=&quot;font-size: 12px;&quot;&gt;&lt;span style=&quot;font-size: 12px;&quot;&gt;• Request SCIM v2 / SSO&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size: 12px;&quot;&gt;• &lt;/span&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;Potential Tailscale conversion funnel&lt;/font&gt;&lt;/font&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="115" width="190" x="1343" y="1481" as="geometry" />
+        </mxCell>
+        <mxCell id="oss_project_adopters" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#999900,#1A1A1A);strokeColor=light-dark(#9673A6,#FFFFFF);fontSize=10;strokeWidth=2;shadow=1;backgroundOutline=0;" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b style=&quot;&quot;&gt;OSS Project Adopters&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;&quot;&gt;[External Entity]&lt;br&gt;&lt;hr style=&quot;&quot;&gt;• e.g. Incus OS, other distros&lt;br&gt;• Integrate Tailscale client&lt;br&gt;• Headscale as ethical fallback&lt;br&gt;• Bridges commercial &amp;amp; OSS worlds&lt;/font&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="135" width="209" x="331" y="1315" as="geometry" />
+        </mxCell>
+        <mxCell id="skeptics" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#E1D5E7,#1A1A1A);strokeColor=light-dark(#9673A6,#FFFFFF);fontSize=10;shadow=1;strokeWidth=2;backgroundOutline=0;arcSize=15;" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b style=&quot;&quot;&gt;Skeptical Community Members&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;&quot;&gt;[External Entity]&lt;br&gt;&lt;hr style=&quot;&quot;&gt;• Fear of Tailscale vendor capture&lt;br&gt;• Monitor issue-tracker for bias&lt;br&gt;• &quot;Embrace-extend-extinguish&quot; concern&lt;br&gt;• Vocal on Hacker News, Reddit, Discord&lt;/font&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="146" width="200" x="1338" y="1315" as="geometry" />
+        </mxCell>
+        <mxCell id="github" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=10;strokeColor=light-dark(#000000,#FFFFFF);fillColor=light-dark(#FFFFFF,#1A1A1A);shadow=1;strokeWidth=2;backgroundOutline=0;" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b style=&quot;&quot;&gt;GitHub (juanfont/headscale)&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;&quot;&gt;[External Entity]&lt;br&gt;&lt;hr style=&quot;&quot;&gt;• Issue tracker &amp;amp; roadmap&lt;br&gt;• PR workflow&lt;br&gt;• CI/CD (GitHub Actions)&lt;br&gt;&lt;/font&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="118.5" width="190" x="1053" y="1469.5" as="geometry" />
+        </mxCell>
+        <mxCell id="discord" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#F0F0F0,#00CC00);strokeColor=light-dark(#999999,#FFFFFF);fontSize=10;shadow=1;strokeWidth=2;backgroundOutline=0;" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b style=&quot;&quot;&gt;Discord Server Members&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;&quot;&gt;[Support Staff]&lt;br&gt;&lt;hr style=&quot;&quot;&gt;• 6,000+ members&lt;br&gt;• Community moderation&lt;br&gt;• User support channel&lt;br&gt;• Feature discussion forum&lt;/font&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="120" width="190" x="331" y="1468" as="geometry" />
+        </mxCell>
+        <mxCell id="tailscale_client" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#F8CECC,#0000FF);strokeColor=light-dark(#B85450,#FFFFFF);fontSize=10;strokeWidth=2;shadow=1;backgroundOutline=0;arcSize=21;" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b style=&quot;&quot;&gt;Tailscale Client (OSS)&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;&quot;&gt;[Suppliers]&lt;br&gt;&lt;hr style=&quot;&quot;&gt;• WireGuard-based mesh client&lt;br&gt;• Allows overriding the control plane&lt;br&gt;• Compatible with headscale API&lt;br&gt;• BSD-3 licenced (forkable)&lt;/font&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="122.5" width="190" x="502" y="596.75" as="geometry" />
+        </mxCell>
+        <mxCell id="bfNFDUC-idKNecKVyoYE-1" edge="1" parent="1" source="tailscale_saas" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.975;entryY=0.322;entryDx=0;entryDy=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;shadow=1;strokeWidth=2;curved=0;startArrow=classic;startFill=1;entryPerimeter=0;" target="headscale">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="274" y="547" />
+              <mxPoint x="974" y="547" />
+              <mxPoint x="974" y="849" />
+              <mxPoint x="900" y="849" />
+            </Array>
+            <mxPoint x="272" y="523.585205078125" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bfNFDUC-idKNecKVyoYE-7" connectable="0" parent="bfNFDUC-idKNecKVyoYE-1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&lt;b&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;mutually reinforcing and complementary&lt;/font&gt;&lt;/b&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.1851" y="1" as="geometry">
+            <mxPoint x="-43" y="-1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sXNWJ58cptntLcnnYRKC-5" edge="1" parent="1" source="tailscale_client" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;curved=0;shadow=1;startArrow=classic;startFill=1;endArrow=none;endFill=0;" target="ironscale">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="404" y="689" />
+              <mxPoint x="404" y="829" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sXNWJ58cptntLcnnYRKC-7" connectable="0" parent="sXNWJ58cptntLcnnYRKC-5" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&lt;b style=&quot;font-size: 12px;&quot;&gt;control plane for&lt;/b&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.567" y="-3" as="geometry">
+            <mxPoint x="-7" y="22" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="tailscale_saas" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#FFE6CC,#1A1A1A);strokeColor=light-dark(#D79B00,#FFFFFF);fontSize=10;strokeWidth=2;shadow=1;backgroundOutline=0;" value="&lt;b style=&quot;font-size: 12px; background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Tailscale SaaS&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size: 12px; background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;[External Entity / Alternative]&lt;/span&gt;&lt;br&gt;&lt;hr style=&quot;font-size: 12px; background-color: transparent;&quot;&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); font-size: 12px;&quot;&gt;• Proprietary hosted service&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); font-size: 12px;&quot;&gt;• Headscale aims for feature parity&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size: 12px;&quot;&gt;•&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); font-size: 12px;&quot;&gt;Reference Implementation&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); font-size: 12px;&quot;&gt;• Shares protocol &amp;amp; client&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); font-size: 12px;&quot;&gt;• 15+ engineers vs 0.5 FTE&lt;/span&gt;" vertex="1">
+          <mxGeometry height="124" width="200" x="174" y="596" as="geometry" />
+        </mxCell>
+        <mxCell id="ironscale" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#FFE6CC,#1A1A1A);strokeColor=light-dark(#D79B00,#FFFFFF);fontSize=10;strokeWidth=2;backgroundOutline=0;shadow=1;" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b style=&quot;&quot;&gt;IonScale / WireFire&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;&quot;&gt;[External Entity]&lt;br&gt;&lt;hr style=&quot;&quot;&gt;• Protocol-compatible experimental reimplementations&lt;br&gt;• lightweight protocol reproduction&lt;br&gt;• Validates open protocol&#39;s viability&lt;/font&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="125" width="220" x="431" y="766" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="lead_maintainer" style="edgeStyle=orthogonalEdgeStyle;html=1;entryX=0;entryY=0;entryDx=0;entryDy=0;strokeColor=light-dark(#82B366,#FFFFFF);fontColor=#82b366;fontSize=9;exitX=1;exitY=0.5;exitDx=0;exitDy=0;strokeWidth=2;shadow=1;backgroundOutline=0;" target="headscale" value="&lt;font style=&quot;font-size: 12px; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b&gt;owns &amp;amp; commits&lt;/b&gt;&lt;/font&gt;">
+          <mxGeometry relative="1" x="-0.4067" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="668" y="1005" />
+            </Array>
+            <mxPoint x="607" y="1007" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="juanfont" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=light-dark(#82B366,#FFFFFF);fontColor=#82b366;fontSize=9;entryX=0.099;entryY=0.791;entryDx=0;entryDy=0;strokeWidth=2;shadow=1;backgroundOutline=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryPerimeter=0;" target="headscale" value="&lt;font style=&quot;font-size: 12px; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b&gt;founded &amp;amp; co-maintains&lt;/b&gt;&lt;/font&gt;">
+          <mxGeometry relative="1" x="0.1117" y="-28" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="628" y="1251" />
+              <mxPoint x="628" y="1252" />
+            </Array>
+            <mxPoint x="423" y="1194" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="oss_contributors" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=light-dark(#82B366,#FFFFFF);fontColor=#82b366;fontSize=9;exitX=0.5;exitY=1;exitDx=0;exitDy=0;strokeWidth=2;shadow=1;backgroundOutline=0;entryX=0.971;entryY=0.708;entryDx=0;entryDy=0;entryPerimeter=0;" target="headscale" value="&lt;font style=&quot;font-size: 12px; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b&gt;PRs / contributions&lt;/b&gt;&lt;/font&gt;">
+          <mxGeometry relative="1" x="0.31" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="1395" y="1287" />
+              <mxPoint x="899" y="1287" />
+            </Array>
+            <mxPoint x="1046" y="947" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="doc_tester" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=light-dark(#82B366,#FFFFFF);fontColor=#82b366;fontSize=9;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;shadow=1;backgroundOutline=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" target="headscale" value="&lt;font style=&quot;font-size: 12px; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b style=&quot;&quot;&gt;docs &amp;amp; tests&lt;/b&gt;&lt;/font&gt;">
+          <mxGeometry relative="1" x="-0.1391" y="-6" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points" />
+            <mxPoint x="1042" y="1175" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="tailscale_inc" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=light-dark(#D6B656,#FFFFFF);fontColor=#d6b656;fontSize=9;fontStyle=1;entryX=0;entryY=0.25;entryDx=0;entryDy=0;strokeWidth=2;shadow=1;backgroundOutline=0;exitX=0.25;exitY=1;exitDx=0;exitDy=0;" target="lead_maintainer" value="&lt;font style=&quot;font-size: 12px; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;funds 50% time&lt;/font&gt;">
+          <mxGeometry relative="1" x="0.1329" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="tailscale_inc" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=default;fontColor=#d6b656;fontSize=9;fontStyle=2;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.257;entryY=0.07;entryDx=0;entryDy=0;entryPerimeter=0;strokeWidth=2;shadow=1;backgroundOutline=0;" target="headscale" value="&lt;font style=&quot;color: light-dark(rgb(255, 255, 255), rgb(255, 255, 255));&quot;&gt;&lt;span style=&quot;font-size: 12px;&quot;&gt;&lt;b style=&quot;&quot;&gt;indirect support&lt;/b&gt;&lt;/span&gt;&lt;/font&gt;">
+          <mxGeometry relative="1" x="-0.0476" y="3" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="320" y="928" />
+              <mxPoint x="698" y="928" />
+              <mxPoint x="698" y="1108" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="homelabbers" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=light-dark(#9673A6,#FFFFFF);fontColor=#9673a6;fontSize=9;exitX=0.5;exitY=0;exitDx=0;exitDy=0;strokeWidth=2;shadow=1;backgroundOutline=0;" target="headscale" value="&lt;font style=&quot;font-size: 12px; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b&gt;self-host &amp;amp; operate&lt;/b&gt;&lt;/font&gt;">
+          <mxGeometry relative="1" x="-0.6618" y="26" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="enterprise_users" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=light-dark(#9673A6,#FFFFFF);fontColor=#9673a6;fontSize=9;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.77;entryY=0.945;entryDx=0;entryDy=0;entryPerimeter=0;strokeWidth=2;shadow=1;backgroundOutline=0;" target="headscale" value="&lt;font style=&quot;font-size: 12px; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b&gt;deploy internally&lt;/b&gt;&lt;/font&gt;">
+          <mxGeometry relative="1" x="-0.1842" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="1264" y="1539" />
+              <mxPoint x="1264" y="1376" />
+              <mxPoint x="843" y="1376" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e12" edge="1" parent="1" source="oss_project_adopters" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=light-dark(#9673A6,#FFFFFF);fontColor=#9673a6;fontSize=9;entryX=0.333;entryY=0.977;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryPerimeter=0;shadow=1;strokeWidth=2;backgroundOutline=0;" target="headscale" value="&lt;font style=&quot;font-size: 12px; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b&gt;integrate as escape hatch&lt;/b&gt;&lt;/font&gt;">
+          <mxGeometry relative="1" x="-0.2842" y="15" as="geometry">
+            <mxPoint y="1" as="offset" />
+            <Array as="points">
+              <mxPoint x="642" y="1383" />
+              <mxPoint x="720" y="1382" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e13" edge="1" parent="1" source="skeptics" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=light-dark(#9673A6,#FFFFFF);fontColor=#9673a6;fontSize=9;strokeWidth=2;backgroundOutline=0;entryX=1;entryY=1;entryDx=0;entryDy=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" target="headscale" value="&lt;font style=&quot;font-size: 12px; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b&gt;scrutinise / challenge decisions&lt;/b&gt;&lt;/font&gt;">
+          <mxGeometry relative="1" x="-0.0275" y="3" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="1282" y="1385" />
+              <mxPoint x="1282" y="1334" />
+              <mxPoint x="866" y="1334" />
+            </Array>
+            <mxPoint x="1333" y="1385" as="sourcePoint" />
+            <mxPoint x="912" y="1176" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e14" edge="1" parent="1" source="github" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=light-dark(#999999,#FFFFFF);fontColor=#999999;fontSize=9;strokeWidth=2;shadow=1;backgroundOutline=0;entryX=0.656;entryY=0.983;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" target="headscale" value="&lt;b&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;hosts repo / CI /&amp;nbsp;&lt;/font&gt;&lt;span style=&quot;font-size: 12px; background-color: light-dark(#ffffff, var(--ge-dark-color, #121212));&quot;&gt;CD / releases&lt;/span&gt;&lt;/font&gt;&lt;/b&gt;">
+          <mxGeometry relative="1" x="-0.1728" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="1148" y="1404" />
+              <mxPoint x="811" y="1404" />
+            </Array>
+            <mxPoint x="1010" y="1439" as="sourcePoint" />
+            <mxPoint x="859" y="1275" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e15" edge="1" parent="1" source="discord" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=light-dark(#999999,#FFFFFF);fontColor=#999999;fontSize=9;strokeWidth=2;backgroundOutline=0;" target="homelabbers" value="&lt;font style=&quot;font-size: 12px; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b&gt;community support&lt;/b&gt;&lt;/font&gt;">
+          <mxGeometry relative="1" x="-0.0303" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e16" edge="1" parent="1" source="ironscale" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=light-dark(#D79B00,#FFFFFF);fontColor=#d79b00;fontSize=9;entryX=0.381;entryY=0.008;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;strokeWidth=2;shadow=1;backgroundOutline=0;endArrow=classic;endFill=1;startArrow=classic;startFill=1;" target="headscale" value="&lt;span style=&quot;font-size: 12px;&quot;&gt;&lt;b style=&quot;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Parallel Tailscale control&lt;/font&gt;&lt;/b&gt;&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;font-size: 12px;&quot;&gt;&lt;b style=&quot;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;-plane implementations&lt;/font&gt;&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;">
+          <mxGeometry relative="1" x="-0.2156" y="-4" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="734" y="829" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e17" edge="1" parent="1" source="tailscale_inc" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=light-dark(#D6B656,#FFFFFF);fontColor=#d6b656;fontSize=9;strokeWidth=2;shadow=1;backgroundOutline=0;" target="tailscale_saas" value="&lt;font style=&quot;font-size: 12px; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b&gt;develops &amp;amp; operates&lt;/b&gt;&lt;/font&gt;">
+          <mxGeometry relative="1" x="-0.009" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e18" edge="1" parent="1" source="tailscale_saas" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=light-dark(#D79B00,#FFFFFF);fontColor=#d79b00;fontSize=9;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;strokeWidth=2;shadow=1;backgroundOutline=0;" target="tailscale_client" value="&lt;font style=&quot;font-size: 12px; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;b&gt;control plane for&lt;/b&gt;&lt;/font&gt;">
+          <mxGeometry relative="1" x="-0.0244" y="11" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="6lAxe-l4GUkLze0EN_Bh-1" edge="1" parent="1" source="tailscale_client" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=light-dark(#B85450,#FFFFFF);fontColor=#b85450;fontSize=9;fontStyle=1;entryX=0.709;entryY=0.056;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1;exitY=0.75;exitDx=0;exitDy=0;shadow=1;strokeWidth=2;backgroundOutline=0;" target="headscale" value="">
+          <mxGeometry relative="1" x="-0.208" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="692" y="686" />
+              <mxPoint x="825" y="686" />
+              <mxPoint x="825" y="1096" />
+              <mxPoint x="826" y="1096" />
+              <mxPoint x="826" y="1105" />
+            </Array>
+            <mxPoint x="557" y="559" as="sourcePoint" />
+            <mxPoint x="870" y="1061" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wNE9AM_cGg_td9zDmewy-1" connectable="0" parent="6lAxe-l4GUkLze0EN_Bh-1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];backgroundOutline=0;" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;Exposes debug mechanisms&lt;/b&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.1498" y="1" as="geometry">
+            <mxPoint x="-37" y="-80" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wNE9AM_cGg_td9zDmewy-5" edge="1" parent="1" source="github" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=light-dark(#999999,#FFFFFF);fontColor=#999999;fontSize=9;entryX=1;entryY=0.5;entryDx=0;entryDy=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;strokeWidth=2;shadow=1;backgroundOutline=0;" target="homelabbers" value="&lt;font style=&quot;color: light-dark(rgb(255, 255, 255), rgb(255, 255, 255));&quot;&gt;&lt;span style=&quot;font-size: 12px;&quot;&gt;&lt;b style=&quot;&quot;&gt;release distribution&lt;/b&gt;&lt;/span&gt;&lt;/font&gt;">
+          <mxGeometry relative="1" x="-0.0802" y="10" as="geometry">
+            <mxPoint as="offset" />
+            <mxPoint x="530" y="1707" as="sourcePoint" />
+            <mxPoint x="530" y="1632" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sXNWJ58cptntLcnnYRKC-10" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="489" width="573" x="1009" y="584" as="geometry" />
+        </mxCell>
+        <mxCell id="Zz6JtVLQJixWpv_Z2Wpj-4" connectable="0" parent="sXNWJ58cptntLcnnYRKC-10" style="group;fillColor=none;shadow=1;rounded=1;strokeColor=light-dark(#000000,#FFFFFF);backgroundOutline=0;arcSize=21;strokeWidth=5;container=0;" value="" vertex="1">
+          <mxGeometry height="489" width="573" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_title" parent="sXNWJ58cptntLcnnYRKC-10" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontStyle=1;fontSize=11;fontColor=#333333;backgroundOutline=0;" value="&lt;font style=&quot;color: light-dark(rgb(255, 255, 255), rgb(255, 255, 255)); font-size: 26px;&quot;&gt;LEGEND&lt;/font&gt;" vertex="1">
+          <mxGeometry height="35.07153771357131" width="505.4747474747477" x="33.76108013937278" y="50.3053864716353" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1" parent="sXNWJ58cptntLcnnYRKC-10" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=light-dark(#6C8EBF,#FFFFFF);shadow=1;backgroundOutline=0;" value="" vertex="1">
+          <mxGeometry height="35.07153771357131" width="56.16386083052751" x="28.08193041526374" y="98.48150329110854" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1t" parent="sXNWJ58cptntLcnnYRKC-10" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;backgroundOutline=0;" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;&lt;b&gt;Core System&lt;/b&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="35.07153771357131" width="365.06509539842887" x="106.71133557800226" y="98.48150329110854" as="geometry" />
+        </mxCell>
+        <mxCell id="leg2" parent="sXNWJ58cptntLcnnYRKC-10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#D5E8D4,#FF0000);strokeColor=light-dark(#82B366,#FFFFFF);shadow=1;backgroundOutline=0;" value="" vertex="1">
+          <mxGeometry height="35.07153771357131" width="56.16386083052751" x="28.08193041526374" y="147.58165609010848" as="geometry" />
+        </mxCell>
+        <mxCell id="leg2t" parent="sXNWJ58cptntLcnnYRKC-10" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;backgroundOutline=0;" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;&lt;b&gt;Developers / Maintainers&lt;/b&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="35.07153771357131" width="365.06509539842887" x="106.71133557800226" y="147.58165609010848" as="geometry" />
+        </mxCell>
+        <mxCell id="leg3" parent="sXNWJ58cptntLcnnYRKC-10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#FFFFFF,#0000FF);strokeColor=light-dark(#D6B656,#FFFFFF);shadow=1;backgroundOutline=0;" value="" vertex="1">
+          <mxGeometry height="35.07153771357131" width="56.16386083052751" x="28.08193041526374" y="196.6818088891083" as="geometry" />
+        </mxCell>
+        <mxCell id="leg3t" parent="sXNWJ58cptntLcnnYRKC-10" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;backgroundOutline=0;" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;&lt;b&gt;Suppliers&lt;/b&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="35.07153771357131" width="365.06509539842887" x="106.71133557800226" y="196.6818088891083" as="geometry" />
+        </mxCell>
+        <mxCell id="leg4" parent="sXNWJ58cptntLcnnYRKC-10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#F0F0F0,#1A1A1A);strokeColor=light-dark(#B85450,#FFFFFF);shadow=1;backgroundOutline=0;" value="" vertex="1">
+          <mxGeometry height="35.07153771357131" width="56.16386083052751" x="28.08193041526374" y="245.78196168810803" as="geometry" />
+        </mxCell>
+        <mxCell id="leg4t" parent="sXNWJ58cptntLcnnYRKC-10" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;backgroundOutline=0;" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;&lt;b&gt;External Entity&lt;/b&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="35.07153771357131" width="365.06509539842887" x="106.71133557800226" y="245.78196168810803" as="geometry" />
+        </mxCell>
+        <mxCell id="leg5" parent="sXNWJ58cptntLcnnYRKC-10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#F0F0F0,#333300);strokeColor=light-dark(#F0F0F0,#FFFFFF);shadow=1;backgroundOutline=0;" value="" vertex="1">
+          <mxGeometry height="35.07153771357131" width="56.16386083052751" x="28.08193041526374" y="294.88211448710786" as="geometry" />
+        </mxCell>
+        <mxCell id="leg5t" parent="sXNWJ58cptntLcnnYRKC-10" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;backgroundOutline=0;" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;&lt;b&gt;Users / Testers / System&amp;nbsp;&lt;/b&gt;&lt;/font&gt;&lt;b style=&quot;font-size: 16px; background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Administrators&amp;nbsp;&lt;/b&gt;&lt;div&gt;&lt;b style=&quot;font-size: 16px; background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;/ Production Engineers&lt;/b&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="35.06856554935829" width="452.57868525896413" x="106.7241035856573" y="294.87963768359725" as="geometry" />
+        </mxCell>
+        <mxCell id="leg6" parent="sXNWJ58cptntLcnnYRKC-10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#00CC00;strokeColor=light-dark(#999999,#FFFFFF);shadow=1;backgroundOutline=0;" value="" vertex="1">
+          <mxGeometry height="35.07153771357131" width="56.16386083052751" x="28.08193041526374" y="343.982267286108" as="geometry" />
+        </mxCell>
+        <mxCell id="leg6t" parent="sXNWJ58cptntLcnnYRKC-10" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;backgroundOutline=0;" value="&lt;font style=&quot;font-size: 16px;&quot;&gt;&lt;b&gt;Support Staff&lt;/b&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="35.07153771357131" width="365.06509539842887" x="106.71133557800226" y="343.982267286108" as="geometry" />
+        </mxCell>
+        <mxCell id="leg7t" parent="sXNWJ58cptntLcnnYRKC-10" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=10;backgroundOutline=0;" value="&lt;span style=&quot;font-size: 16px;&quot;&gt;&lt;b&gt;Communicators&lt;/b&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="35.07153771357131" width="365.06509539842887" x="106.71133557800226" y="393.08242008510763" as="geometry" />
+        </mxCell>
+        <mxCell id="sXNWJ58cptntLcnnYRKC-9" parent="sXNWJ58cptntLcnnYRKC-10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#999900,#003366);strokeColor=light-dark(#D79B00,#FFFFFF);shadow=1;backgroundOutline=0;" value="" vertex="1">
+          <mxGeometry height="35.07153771357131" width="56.16386083052751" x="28.080993031358958" y="393.08249169435203" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

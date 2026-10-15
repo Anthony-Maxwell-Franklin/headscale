@@ -1,0 +1,43 @@
+commit 6ae182696f33b77bd6cff96efd37f6e63976cea3
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Wed Mar 11 08:09:08 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Wed Apr 8 14:32:08 2026 +0100
+
+    state: fix policy change race in UpdateNodeFromMapRequest
+    
+    When UpdateNodeFromMapRequest and SetNodeTags race on persistNodeToDB,
+    the first caller to run updatePolicyManagerNodes detects the tag change
+    and returns a PolicyChange. The second caller finds no change and falls
+    back to NodeAdded.
+    
+    If UpdateNodeFromMapRequest wins the race, it checked
+    policyChange.IsFull() which is always false for PolicyChange (only sets
+    IncludePolicy and RequiresRuntimePeerComputation). This caused the
+    PolicyChange to be dropped, so affected clients never received
+    PeersRemoved and the stale peer remained in their NetMap indefinitely.
+    
+    Fix: check !policyChange.IsEmpty() instead, which correctly detects
+    any non-trivial policy change including PolicyChange().
+    
+    This fixes the root cause of TestACLTagPropagation/multiple-tags-partial-
+    removal flaking at ~20% on CI.
+    
+    Updates #3125
+---
+ hscontrol/state/state.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/hscontrol/state/state.go b/hscontrol/state/state.go
+index d5f43b18..6ba80b21 100644
+--- a/hscontrol/state/state.go
++++ b/hscontrol/state/state.go
+@@ -2493,7 +2493,7 @@ func (s *State) UpdateNodeFromMapRequest(id types.NodeID, req tailcfg.MapRequest
+ 		return change.Change{}, fmt.Errorf("saving to database: %w", err)
+ 	}
+ 
+-	if policyChange.IsFull() {
++	if !policyChange.IsEmpty() {
+ 		return policyChange, nil
+ 	}
+ 

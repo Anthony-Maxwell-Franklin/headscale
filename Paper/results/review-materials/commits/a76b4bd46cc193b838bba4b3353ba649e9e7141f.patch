@@ -1,0 +1,57 @@
+commit a76b4bd46cc193b838bba4b3353ba649e9e7141f
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Tue Mar 31 17:50:14 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Tue Mar 31 22:06:25 2026 +0200
+
+    ci: switch integration tests to ARM runners
+    
+    Switch all integration test jobs (build, build-postgres, test
+    template) from ubuntu-latest (x86_64) to ubuntu-24.04-arm (aarch64).
+    
+    ARM runners on GitHub Actions are free for public repos and tend
+    to have more consistent performance characteristics than the
+    shared x86_64 pool. This should reduce flakiness caused by
+    resource contention on congested runners.
+    
+    Updates #3125
+---
+ .github/workflows/integration-test-template.yml | 2 +-
+ .github/workflows/test-integration.yaml         | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/.github/workflows/integration-test-template.yml b/.github/workflows/integration-test-template.yml
+index 5ed2fca6..75a1d275 100644
+--- a/.github/workflows/integration-test-template.yml
++++ b/.github/workflows/integration-test-template.yml
+@@ -16,7 +16,7 @@ on:
+ 
+ jobs:
+   test:
+-    runs-on: ubuntu-latest
++    runs-on: ubuntu-24.04-arm
+     env:
+       # Github does not allow us to access secrets in pull requests,
+       # so this env var is used to check if we have the secret or not.
+diff --git a/.github/workflows/test-integration.yaml b/.github/workflows/test-integration.yaml
+index e1c3dabd..3d8a843e 100644
+--- a/.github/workflows/test-integration.yaml
++++ b/.github/workflows/test-integration.yaml
+@@ -12,7 +12,7 @@ jobs:
+   # sqlite: Runs all integration tests with SQLite backend.
+   # postgres: Runs a subset of tests with PostgreSQL to verify database compatibility.
+   build:
+-    runs-on: ubuntu-latest
++    runs-on: ubuntu-24.04-arm
+     outputs:
+       files-changed: ${{ steps.changed-files.outputs.files }}
+     steps:
+@@ -119,7 +119,7 @@ jobs:
+           path: tailscale-head-image.tar.gz
+           retention-days: 10
+   build-postgres:
+-    runs-on: ubuntu-latest
++    runs-on: ubuntu-24.04-arm
+     needs: build
+     if: needs.build.outputs.files-changed == 'true'
+     steps:

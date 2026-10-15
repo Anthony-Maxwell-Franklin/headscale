@@ -1,0 +1,102 @@
+commit acb8cfc7eed520ed0e98f2e71d7d906bd06aa47b
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Tue Mar 31 07:15:47 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Tue Mar 31 22:06:25 2026 +0200
+
+    integration: make docker execute and ping timeouts CI-aware
+    
+    The default docker execute timeout (10s) is the root cause of
+    "dockertest command timed out" errors across many integration tests
+    on CI. On congested GitHub Actions runners, docker exec latency
+    alone can consume 2-5 seconds of this budget before the command
+    even starts inside the container.
+    
+    Replace the hardcoded 10s constant with a function that returns
+    20s on CI, doubling the budget for all container commands
+    (tailscale status, headscale CLI, curl, etc.).
+    
+    Similarly, scale the default tailscale ping timeout from 200ms to
+    400ms on CI. This doubles the per-attempt budget and the docker
+    exec timeout for pings (from 200ms*5=1s to 400ms*5=2s), giving
+    more headroom for docker exec overhead.
+    
+    Updates #3125
+---
+ integration/dockertestutil/execute.go | 14 ++++++++++++--
+ integration/tsic/tsic.go              | 14 ++++++++++++--
+ 2 files changed, 24 insertions(+), 4 deletions(-)
+
+diff --git a/integration/dockertestutil/execute.go b/integration/dockertestutil/execute.go
+index 7f1d0efb..da5b7c06 100644
+--- a/integration/dockertestutil/execute.go
++++ b/integration/dockertestutil/execute.go
+@@ -7,10 +7,20 @@ import (
+ 	"sync"
+ 	"time"
+ 
++	"github.com/juanfont/headscale/hscontrol/util"
+ 	"github.com/ory/dockertest/v3"
+ )
+ 
+-const dockerExecuteTimeout = time.Second * 10
++// defaultExecuteTimeout returns the timeout for docker exec commands.
++// On CI runners, docker exec latency is higher due to resource
++// contention, so the timeout is doubled.
++func defaultExecuteTimeout() time.Duration {
++	if util.IsCI() {
++		return 20 * time.Second
++	}
++
++	return 10 * time.Second
++}
+ 
+ var (
+ 	ErrDockertestCommandFailed  = errors.New("dockertest command failed")
+@@ -64,7 +74,7 @@ func ExecuteCommand(
+ 	stderr := buffer{}
+ 
+ 	execConfig := ExecuteCommandConfig{
+-		timeout: dockerExecuteTimeout,
++		timeout: defaultExecuteTimeout(),
+ 	}
+ 
+ 	for _, opt := range options {
+diff --git a/integration/tsic/tsic.go b/integration/tsic/tsic.go
+index 879949d5..29f276e2 100644
+--- a/integration/tsic/tsic.go
++++ b/integration/tsic/tsic.go
+@@ -39,13 +39,23 @@ import (
+ 
+ const (
+ 	tsicHashLength       = 6
+-	defaultPingTimeout   = 200 * time.Millisecond
+ 	defaultPingCount     = 5
+ 	dockerContextPath    = "../."
+ 	caCertRoot           = "/usr/local/share/ca-certificates"
+ 	dockerExecuteTimeout = 60 * time.Second
+ )
+ 
++// defaultPingTimeoutVal returns the per-attempt timeout for tailscale ping.
++// On CI, the docker exec overhead is higher so the timeout is doubled,
++// which also doubles the docker exec timeout (timeout * count).
++func defaultPingTimeoutVal() time.Duration {
++	if util.IsCI() {
++		return 400 * time.Millisecond
++	}
++
++	return 200 * time.Millisecond
++}
++
+ var (
+ 	errTailscalePingFailed             = errors.New("ping failed")
+ 	errTailscalePingNotDERP            = errors.New("ping not via DERP")
+@@ -1348,7 +1358,7 @@ func WithPingUntilDirect(direct bool) PingOption {
+ // TODO(kradalby): Make multiping, go routine magic.
+ func (t *TailscaleInContainer) Ping(hostnameOrIP string, opts ...PingOption) error {
+ 	args := pingArgs{
+-		timeout: defaultPingTimeout,
++		timeout: defaultPingTimeoutVal(),
+ 		count:   defaultPingCount,
+ 		direct:  true,
+ 	}

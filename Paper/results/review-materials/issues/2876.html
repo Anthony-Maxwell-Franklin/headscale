@@ -1,0 +1,312 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #2876: [Bug] After upgrading to 0.27 pfSense cannot keep the login state when rebooting or restarting the Tailscale service</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #2876: [Bug] After upgrading to 0.27 pfSense cannot keep the login state when rebooting or restarting the Tailscale service</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/2876">Original issue #2876</a></p><p>Created: 2025-11-11T15:58:58Z; updated: 2025-11-11T16:27:09Z; observed state: closed; reason: duplicate</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+Upgraded from 0.26.1 to 0.27 today. After the upgrade I noticed some strange behaviour from nodes that use preauthkeys. The biggest problem though was, that pfSense cannot keep the login state any longer after upgrading. If I reboot the firewall or restart the Tailscale service on it, Tailscale gets logged out with either &quot;cannot reuse preauthkey&quot; or &quot;preauthkey expired&quot;, dending on how long I gave it until testing. I tested this restarting the service directly after logging out and in with a newly created key and also tried to wait for 2h then restarted the service. 
+
+I am not sure what is causing this. However I do not want to create reusable and non-expiring keys. This has not been a problem until 0.27
+
+Reverted back to 0.26.1 and its working fine, but that&#x27;s not really a long term solution.
+
+Thx in advance.
+
+### Expected Behavior
+
+I can reboot the firewall or restart Tailscale service on pfSense and I will login again without issues. This has been the behaviour up until 0.26.1 and I had zero issues so far. 
+
+### Steps To Reproduce
+
+1. Setup Tailscale on pfSense or logout and clean credentials/state (button in the UI)
+2. Create a new preauthkey on 0.27
+3. login on pfSense Tailscale client
+4. click the button to restart the Tailscale service or reboot firewall
+5. Tailscale does not log back in. Instead gives error on reusing the key or key expired, depending on time passed since creating the key
+
+
+### Environment
+
+```markdown
+- OS:pfSense Plus 25.07.1-RELEASE (FreeBSD 15.0-CURRENT)
+- Headscale version: 0.27.0
+- Tailscale version: 1.82.5 (latest in pfSense)
+```
+
+### Runtime environment
+
+- [x] Headscale is behind a (reverse) proxy
+- [x] Headscale runs in a container
+
+### Debug information
+
+pfSense GUI doesn&#x27;t allow much debugging. Just got the error messages that either key was reused or key expired. 
+
+It took me a while to revert back to 0.26.1 and I didn&#x27;t enable any debugging on 0.27 before reverting back. If I find time I can turn on debugging and try it again, but it might take some time.</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/2876#issuecomment-3517633093">nblock</a></h3><p>Created: 2025-11-11T16:05:26Z; updated: 2025-11-11T16:05:51Z</p><pre>pfSense probably unconditionally submits the preauthkey (similar do tailscale in a container), fixed in main. Will be part of 0.27.1. See #2830 </pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2876#issuecomment-3517748981">achtnullzwei</a></h3><p>Created: 2025-11-11T16:27:09Z; updated: 2025-11-11T16:27:09Z</p><pre>@nblock oh sorry this one slipped through when I skimmed the issues for existing occurrences of this. Thx a lot! Looking forward to 0.27.1</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2025-11-11T15:59:00Z · labeled · achtnullzwei</summary><pre>{
+  &quot;id&quot;: 20866299842,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz887XWLUZzwAAAATbunfC&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/20866299842&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;achtnullzwei&quot;,
+    &quot;id&quot;: 29045396,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI5MDQ1Mzk2&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/29045396?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/achtnullzwei&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/achtnullzwei&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/achtnullzwei/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/achtnullzwei/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/achtnullzwei/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/achtnullzwei/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/achtnullzwei/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/achtnullzwei/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/achtnullzwei/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/achtnullzwei/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/achtnullzwei/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-11-11T15:59:00Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-11-11T16:05:26Z · commented · nblock</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3517633093&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2876#issuecomment-3517633093&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2876&quot;,
+  &quot;id&quot;: 3517633093,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz887RqtJF&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-11-11T16:05:26Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-11-11T16:05:51Z&quot;,
+  &quot;body&quot;: &quot;pfSense probably unconditionally submits the preauthkey (similar do tailscale in a container), fixed in main. Will be part of 0.27.1. See #2830 &quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3517633093/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-11-11T16:05:26Z · closed · nblock</summary><pre>{
+  &quot;id&quot;: 20866434192,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz887XWLUZzwAAAATbvISQ&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/20866434192&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-11-11T16:05:26Z&quot;,
+  &quot;state_reason&quot;: &quot;duplicate&quot;,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-11-11T16:27:09Z · commented · achtnullzwei</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3517748981&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2876#issuecomment-3517748981&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2876&quot;,
+  &quot;id&quot;: 3517748981,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz887RrJb1&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;achtnullzwei&quot;,
+    &quot;id&quot;: 29045396,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI5MDQ1Mzk2&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/29045396?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/achtnullzwei&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/achtnullzwei&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/achtnullzwei/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/achtnullzwei/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/achtnullzwei/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/achtnullzwei/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/achtnullzwei/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/achtnullzwei/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/achtnullzwei/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/achtnullzwei/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/achtnullzwei/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-11-11T16:27:09Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-11-11T16:27:09Z&quot;,
+  &quot;body&quot;: &quot;@nblock oh sorry this one slipped through when I skimmed the issues for existing occurrences of this. Thx a lot! Looking forward to 0.27.1&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3517748981/reactions&quot;,
+    &quot;total_count&quot;: 1,
+    &quot;+1&quot;: 1,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;achtnullzwei&quot;,
+    &quot;id&quot;: 29045396,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI5MDQ1Mzk2&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/29045396?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/achtnullzwei&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/achtnullzwei&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/achtnullzwei/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/achtnullzwei/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/achtnullzwei/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/achtnullzwei/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/achtnullzwei/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/achtnullzwei/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/achtnullzwei/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/achtnullzwei/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/achtnullzwei/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-11-11T16:27:10Z · mentioned · nblock</summary><pre>{
+  &quot;id&quot;: 20866881380,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz887XWLUZzwAAAATbw1dk&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/20866881380&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-11-11T16:27:10Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-11-11T16:27:10Z · subscribed · nblock</summary><pre>{
+  &quot;id&quot;: 20866881403,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz887XWLUZzwAAAATbw1d7&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/20866881403&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-11-11T16:27:10Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

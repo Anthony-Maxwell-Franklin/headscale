@@ -1,0 +1,103 @@
+Headscale issue evidence: human coding instructions
+
+Purpose
+Evaluate what bug labels and observed closure actually support. The 100 cases
+are a fixed stratified sample of issues carrying a bug label at the snapshot.
+They do not represent all defects or all user reports. Human coding is currently
+unperformed and deferred by the author; no agreement or repair rate is reported.
+
+Materials and reviewer design
+1. Under the two-reviewer design, reviewers separately fill rater_1.csv and
+   rater_2.csv. Membership is identical but order differs. Before completing
+   initial independent coding, do not inspect the other reviewer's labels or
+   assistant case suggestions. The explicitly declared single-reviewer design
+   does not report inter-rater agreement.
+2. Definitions are in ../data/issue_coding_codebook.json, version 2.
+3. Cached evidence is in ../results/issue-validation/review_packets.json and the
+   raw comments/timeline pages in ../data/issue-evidence-2026-10-13. Online links
+   may show later content; distinguish it from the pinned snapshot in the notes.
+4. Do not change number, url, title, stratum or inclusion_probability in the
+   forms. Save UTF-8 CSV. Preparation reruns preserve existing human fields.
+5. Offline entry points are ../results/review-materials/rater_1.html and
+   rater_2.html. They follow the corresponding form's case order and expose report
+   text, comments, all cached timeline events, locally readable commit patches
+   and PR contexts matched by full merged-commit SHA. No assistant classifications
+   or reviewer labels are shown. A reference/match is not a repair finding.
+   Missing local objects do not prove no repair. PR context was retrieved later:
+   inspect event and edit times before interpreting historical states.
+
+Fields to complete
+responsibility: use the codebook's defect_eligibility values for the reported
+  component boundary. Use mixed_or_shared_responsibility when evidence supports
+  multiple components; use insufficient_evidence when it does not settle the
+  boundary. This is not a runtime-confirmed defect adjudication.
+outcome: use closure_outcome values for the observed processing outcome.
+  Supported server repair requires explicit commit/merged-PR evidence and
+  inspection that the change or maintainer explanation addresses the behavior.
+administrative_closure: yes / no / uncertain, independently recording explicit
+  inactivity, missing-information or cleanup closure. Supported repair and
+  administrative closure may coexist; do not force them to be mutually exclusive.
+evidence_url: specific comments, PRs or commits supporting the judgment; separate
+  multiple URLs with semicolons.
+evidence_notes: explain supporting and contrary evidence, reopening, post-closure
+  discussion and evidence strength. Separate supported repair evidence from
+  actual runtime reproduction; do not claim reproduction if none was performed.
+reviewed_at_utc: the actual UTC review completion time, distinct from the snapshot.
+
+Interpretation rules
+- The API completed reason, closure time, fix keywords and bot identity are not
+  independent proof of repair.
+- Configuration guidance plus reporter confirmation can support
+  configuration_resolution_supported.
+- External links support upstream repair only when explicitly tied to the
+  client/protocol responsibility and the relevant treatment.
+- A later fix does not automatically explain an earlier closure. Record order.
+- Missing commit linkage is missing evidence, not proof of no repair. Preserve
+  unknown_closed when evidence does not identify a supported outcome.
+- Preserve original judgments before any disagreement discussion/adjudication.
+
+Practice examples: synthetic, not part of the 100 actual cases
+A. DNS guidance followed by reporter confirmation, without server code change:
+   configuration responsibility and supported configuration resolution.
+B. An explicitly linked server PR alters the relevant check and has targeted
+   tests: supports server-repair evidence, without implying local reproduction.
+C. A plausible server report closes for inactivity without treatment evidence:
+   record responsibility separately from administrative closure; do not infer
+   either repaired or persistently faulty behavior from closure alone.
+
+Completion declarations
+Complete metadata.json with the actual reviewer identifier (a pseudonym is
+acceptable), review-completion statement, whether the other labels or assistant
+suggestions were consulted, and actual completion time. Declarations alone are
+self-reports, not independent proof of identity or annotation correctness.
+Only actual paired coding supports an inter-rater agreement statement.
+Oversampled categories require inclusion-probability weighting for population
+estimates. The population is limited to snapshot bug-labelled issues.
+
+Analysis entry point: run from the workspace root
+  bash run-research.sh python Paper/scripts/analyze_human_validation.py
+For one actual reviewer, explicitly use --mode single-rater and disclose that
+design. Do not create fictitious reviewer names or completion declarations.
+
+The state is ../results/human-validation/validation_status.json. Empty fields,
+undeclared completion, missing evidence or mismatched versions return exit code 2
+and stop statistical analysis. Valid paired inputs produce original sample
+agreement and Cohen's kappa before adjudication. Bootstrap intervals describe
+agreement in this stratified study sample, not population annotation reliability
+or proof that the judgments are correct.
+
+For disagreements, the state's analysis_directory contains
+adjudication_template.csv. Copy it to validation/adjudication.csv, then enter the
+final responsibility/outcome/administrative-closure labels, adjudicator and
+evidence. Preserve the original-label and source-hash columns and both original
+coding forms. Changed source labels invalidate stale adjudication.
+
+Population estimates require complete consensus/adjudicated results and the
+fixed sampling probabilities. Conservative marginal 95% category intervals invert
+finite-population hypergeometric tails with adjustment across strata. They are not
+simultaneous intervals over all categories and do not include classification
+error. A category absent from the sample is not automatically absent in the
+population.
+
+Each input/code version has a separate run_* output directory. Read the current
+status pointer; do not mix versions. The analysis does not modify human forms.

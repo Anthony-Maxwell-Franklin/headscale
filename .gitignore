@@ -1,0 +1,40 @@
+# Credentials and local agent configuration
+.secrets/
+.aws/
+.codex/
+.agents/
+.env
+.env.*
+!.env.example
+
+# Downloaded tools, environments and independent source repositories
+.cache/
+.tools/
+headscale/
+tmp/
+Paper/.venv/
+Paper/data/headscale.git/
+Paper/reproductions/
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# Typesetting intermediates; retain the verified PDF and build log
+*.aux
+*.bcf
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+Report/*.log
+Paper/build/extracted_text.txt
+Paper/build/*preview*.png
+Paper/build/page-*.png
+
+# External coursework specification and presentation transcript
+/CSU33D06_2026_project.pdf
+/KYQ3LL-headscale-the-complementary-open-source-clone.vtt

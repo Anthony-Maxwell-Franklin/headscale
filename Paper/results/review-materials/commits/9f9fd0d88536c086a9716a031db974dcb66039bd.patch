@@ -1,0 +1,409 @@
+commit 9f9fd0d88536c086a9716a031db974dcb66039bd
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Thu Apr 30 08:14:02 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Wed Sep 23 15:18:34 2026 +0200
+
+    types: add structured ConfigError and validator
+    
+    Foundation for restructuring config validation feedback. Typed error
+    with errors.Is/As/Join hooks, structured fields rendered as a
+    multi-line operator-facing block (current, conflicts with, allowed,
+    minimum, maximum, why, hint, see), and a configValidator that joins
+    violations via errors.Join. ConfigErrors walks the tree to collect
+    every *ConfigError, and Cause keeps existing sentinel identities
+    reachable through errors.Is.
+    
+    Updates #3227
+---
+ hscontrol/types/config_errors.go      | 201 ++++++++++++++++++++++++++++++++++
+ hscontrol/types/config_errors_test.go | 174 +++++++++++++++++++++++++++++
+ 2 files changed, 375 insertions(+)
+
+diff --git a/hscontrol/types/config_errors.go b/hscontrol/types/config_errors.go
+new file mode 100644
+index 00000000..c8b82ee0
+--- /dev/null
++++ b/hscontrol/types/config_errors.go
+@@ -0,0 +1,201 @@
++package types
++
++import (
++	"errors"
++	"fmt"
++	"strings"
++)
++
++// ErrConfig is a sentinel matching any *ConfigError. Callers can do
++// errors.Is(err, types.ErrConfig) to detect "this came from config
++// validation" without caring which rule triggered.
++var ErrConfig = errors.New("headscale: config validation")
++
++// ConfigError is a structured config-validation error. Pointer receivers
++// throughout, following the stdlib convention (*net.OpError,
++// *os.PathError, *url.Error). Implements error, Unwrap, Is. errors.As
++// works automatically via type assertion against the Unwrap chain.
++type ConfigError struct {
++	Reason        string
++	Current       []KV
++	ConflictsWith []KV
++	Allowed       []string
++	Minimum       string
++	Maximum       string
++	Detail        string
++	Hint          string
++	See           string
++
++	// Cause is an optional underlying error included in the chain so
++	// errors.Is(cfgErr, sentinel) returns true when a rule was wired
++	// to a sentinel (e.g. errInvalidPKCEMethod). It is NOT rendered
++	// into Error() — the structured fields are the operator-facing
++	// representation.
++	Cause error
++}
++
++// KV is a config key paired with the value the operator supplied.
++// Strings render with %q; everything else with %v.
++type KV struct {
++	Key   string
++	Value any
++}
++
++// Error renders a structured operator-facing block. See
++// TestConfigError_Render for the canonical wire format.
++func (e *ConfigError) Error() string {
++	var b strings.Builder
++	b.WriteString("Fatal config error: ")
++	b.WriteString(e.Reason)
++	b.WriteString("\n")
++	writeConfigErrLine(&b, "current", joinKVs(e.Current))
++	writeConfigErrLine(&b, "conflicts with", joinKVs(e.ConflictsWith))
++	writeConfigErrLine(&b, "allowed", joinQuoted(e.Allowed))
++	writeConfigErrLine(&b, "minimum", e.Minimum)
++	writeConfigErrLine(&b, "maximum", e.Maximum)
++	writeConfigErrLine(&b, "why", e.Detail)
++	writeConfigErrLine(&b, "hint", e.Hint)
++	writeConfigErrLine(&b, "see", e.See)
++
++	return b.String()
++}
++
++// Unwrap returns Cause so errors.Is walks through it.
++func (e *ConfigError) Unwrap() error { return e.Cause }
++
++// Is matches the ErrConfig sentinel. errors.Is recurses through Unwrap
++// for everything else, so this is the only custom case needed.
++func (e *ConfigError) Is(target error) bool {
++	return target == ErrConfig
++}
++
++func writeConfigErrLine(b *strings.Builder, label, value string) {
++	if value == "" {
++		return
++	}
++
++	b.WriteString("  ")
++	b.WriteString(label)
++	b.WriteString(": ")
++	b.WriteString(value)
++	b.WriteString("\n")
++}
++
++func joinKVs(kvs []KV) string {
++	if len(kvs) == 0 {
++		return ""
++	}
++
++	parts := make([]string, len(kvs))
++	for i, kv := range kvs {
++		parts[i] = fmt.Sprintf("%s: %s", kv.Key, formatKVValue(kv.Value))
++	}
++
++	return strings.Join(parts, ", ")
++}
++
++func joinQuoted(ss []string) string {
++	if len(ss) == 0 {
++		return ""
++	}
++
++	parts := make([]string, len(ss))
++	for i, s := range ss {
++		parts[i] = fmt.Sprintf("%q", s)
++	}
++
++	return strings.Join(parts, ", ")
++}
++
++func formatKVValue(v any) string {
++	switch x := v.(type) {
++	case nil:
++		return `""`
++	case string:
++		return fmt.Sprintf("%q", x)
++	default:
++		return fmt.Sprintf("%v", x)
++	}
++}
++
++// configValidator collects ConfigError values so an operator sees every
++// problem at once instead of fixing them one startup attempt at a time.
++// Zero value is ready to use.
++type configValidator struct {
++	errs []error
++}
++
++// Add records a structured rule violation.
++func (v *configValidator) Add(e *ConfigError) {
++	v.errs = append(v.errs, e)
++}
++
++// AddErr records any error (e.g. one returned by a sub-builder helper).
++// Useful when wrapping fmt.Errorf("..."): %w results that already carry
++// their own wrap.
++func (v *configValidator) AddErr(err error) {
++	if err == nil {
++		return
++	}
++
++	v.errs = append(v.errs, err)
++}
++
++// HasErrors reports whether any rule has triggered.
++func (v *configValidator) HasErrors() bool { return len(v.errs) > 0 }
++
++// Err returns nil if no rules triggered, otherwise the joined error.
++// errors.Join's wrapper exposes Unwrap() []error, so errors.Is and
++// errors.As walk every branch — sentinel matching and type extraction
++// work uniformly across single and joined results.
++func (v *configValidator) Err() error {
++	if len(v.errs) == 0 {
++		return nil
++	}
++
++	return errors.Join(v.errs...)
++}
++
++// ConfigErrors walks an error tree (single Unwrap and multi-Unwrap) and
++// returns every *ConfigError found. Used by callers that need to
++// inspect every rule violation, not just the first.
++//
++// Uses a direct type assertion rather than errors.As so a wrapped
++// ConfigError isn't counted twice (once at the wrapper, once at the
++// inner ConfigError). Each node in the tree is reported by its concrete
++// type.
++func ConfigErrors(err error) []*ConfigError {
++	var out []*ConfigError
++
++	walkErrTree(err, func(e error) {
++		// Direct type assertion is intentional: errors.As walks the
++		// Unwrap chain, which would double-count a *ConfigError once at
++		// the wrapper and again at the wrapped node we recurse into.
++		if ce, ok := e.(*ConfigError); ok { //nolint:errorlint // see comment above
++			out = append(out, ce)
++		}
++	})
++
++	return out
++}
++
++func walkErrTree(err error, fn func(error)) {
++	if err == nil {
++		return
++	}
++
++	fn(err)
++
++	// Type-switch on err itself, not the chain: we want to know whether
++	// THIS error exposes Unwrap() error or Unwrap() []error so we can
++	// pick the right traversal. errors.As would jump past the head and
++	// confuse the walk (e.g. a join inside a single-Unwrap chain).
++	switch x := err.(type) { //nolint:errorlint // see comment above
++	case interface{ Unwrap() error }:
++		walkErrTree(x.Unwrap(), fn)
++	case interface{ Unwrap() []error }:
++		for _, b := range x.Unwrap() {
++			walkErrTree(b, fn)
++		}
++	}
++}
+diff --git a/hscontrol/types/config_errors_test.go b/hscontrol/types/config_errors_test.go
+new file mode 100644
+index 00000000..f7a11ecc
+--- /dev/null
++++ b/hscontrol/types/config_errors_test.go
+@@ -0,0 +1,174 @@
++package types
++
++import (
++	"errors"
++	"fmt"
++	"testing"
++
++	"github.com/stretchr/testify/assert"
++	"github.com/stretchr/testify/require"
++)
++
++var (
++	errTestCustomSentinel = errors.New("custom-sentinel")
++	errTestSentinel       = errors.New("sentinel")
++)
++
++func TestConfigError_Render(t *testing.T) {
++	tests := []struct {
++		name string
++		in   ConfigError
++		want string
++	}{
++		{
++			name: "minimal",
++			in:   ConfigError{Reason: "x is required"},
++			want: "Fatal config error: x is required\n",
++		},
++		{
++			name: "scalar with hint",
++			in: ConfigError{
++				Reason:  "server_url is missing a scheme",
++				Current: []KV{{"server_url", "headscale.example.com"}},
++				Hint:    "prefix the URL with https:// (recommended) or http://",
++			},
++			want: "Fatal config error: server_url is missing a scheme\n" +
++				`  current: server_url: "headscale.example.com"` + "\n" +
++				"  hint: prefix the URL with https:// (recommended) or http://\n",
++		},
++		{
++			name: "pair conflict with see",
++			in: ConfigError{
++				Reason:        "A and B are mutually exclusive",
++				Current:       []KV{{"A", "a"}},
++				ConflictsWith: []KV{{"B", "b"}, {"C", "c"}},
++				Hint:          "pick one",
++				See:           "https://example.com/docs",
++			},
++			want: "Fatal config error: A and B are mutually exclusive\n" +
++				`  current: A: "a"` + "\n" +
++				`  conflicts with: B: "b", C: "c"` + "\n" +
++				"  hint: pick one\n" +
++				"  see: https://example.com/docs\n",
++		},
++		{
++			name: "value-set check",
++			in: ConfigError{
++				Reason:  "tls_letsencrypt_challenge_type has an unsupported value",
++				Current: []KV{{"tls_letsencrypt_challenge_type", "dns-01"}},
++				Allowed: []string{"HTTP-01", "TLS-ALPN-01"},
++				Hint:    "pick one of the allowed values",
++			},
++			want: "Fatal config error: tls_letsencrypt_challenge_type has an unsupported value\n" +
++				`  current: tls_letsencrypt_challenge_type: "dns-01"` + "\n" +
++				`  allowed: "HTTP-01", "TLS-ALPN-01"` + "\n" +
++				"  hint: pick one of the allowed values\n",
++		},
++		{
++			name: "numeric bound",
++			in: ConfigError{
++				Reason:  "x is below the minimum",
++				Current: []KV{{"x", "1s"}},
++				Minimum: "2s",
++				Hint:    "raise the value",
++			},
++			want: "Fatal config error: x is below the minimum\n" +
++				`  current: x: "1s"` + "\n" +
++				"  minimum: 2s\n" +
++				"  hint: raise the value\n",
++		},
++		{
++			name: "non-string values",
++			in: ConfigError{
++				Reason:  "test",
++				Current: []KV{{"a_string", "x"}, {"a_bool", true}, {"a_int", 42}, {"empty", ""}},
++			},
++			want: "Fatal config error: test\n" +
++				`  current: a_string: "x", a_bool: true, a_int: 42, empty: ""` + "\n",
++		},
++	}
++	for _, tt := range tests {
++		t.Run(tt.name, func(t *testing.T) {
++			assert.Equal(t, tt.want, tt.in.Error())
++		})
++	}
++}
++
++func TestConfigError_IsErrConfig(t *testing.T) {
++	e := &ConfigError{Reason: "test"}
++	require.ErrorIs(t, e, ErrConfig)
++	require.ErrorIs(t, fmt.Errorf("wrapped: %w", e), ErrConfig)
++}
++
++func TestConfigError_IsCauseSentinel(t *testing.T) {
++	e := &ConfigError{Reason: "test", Cause: errTestCustomSentinel}
++	require.ErrorIs(t, e, errTestCustomSentinel)
++	require.ErrorIs(t, e, ErrConfig)
++}
++
++func TestConfigError_As(t *testing.T) {
++	e := &ConfigError{Reason: "test"}
++	wrapped := fmt.Errorf("startup: %w", e)
++
++	var got *ConfigError
++	require.ErrorAs(t, wrapped, &got)
++	assert.Equal(t, "test", got.Reason)
++}
++
++func TestConfigValidator_NilWhenEmpty(t *testing.T) {
++	v := &configValidator{}
++	assert.False(t, v.HasErrors())
++	assert.NoError(t, v.Err())
++}
++
++func TestConfigValidator_JoinsWithBlankLine(t *testing.T) {
++	v := &configValidator{}
++	v.Add(&ConfigError{Reason: "first"})
++	v.Add(&ConfigError{Reason: "second"})
++
++	want := "Fatal config error: first\n" +
++		"\n" +
++		"Fatal config error: second\n"
++	assert.Equal(t, want, v.Err().Error())
++}
++
++func TestConfigValidator_JoinedErrorsIs(t *testing.T) {
++	v := &configValidator{}
++	v.Add(&ConfigError{Reason: "first"})
++	v.Add(&ConfigError{Reason: "second", Cause: errTestSentinel})
++	err := v.Err()
++
++	require.ErrorIs(t, err, ErrConfig)
++	require.ErrorIs(t, err, errTestSentinel)
++}
++
++func TestConfigValidator_JoinedErrorsAs(t *testing.T) {
++	v := &configValidator{}
++	v.Add(&ConfigError{Reason: "first"})
++	v.Add(&ConfigError{Reason: "second"})
++	err := v.Err()
++
++	var got *ConfigError
++	require.ErrorAs(t, err, &got)
++	assert.Equal(t, "first", got.Reason)
++}
++
++func TestConfigValidator_AddErrSkipsNil(t *testing.T) {
++	v := &configValidator{}
++	v.AddErr(nil)
++	assert.False(t, v.HasErrors())
++	assert.NoError(t, v.Err())
++}
++
++func TestConfigErrors_WalkAllBranches(t *testing.T) {
++	v := &configValidator{}
++	v.Add(&ConfigError{Reason: "first"})
++	v.Add(&ConfigError{Reason: "second"})
++	v.AddErr(fmt.Errorf("non-config: %w", &ConfigError{Reason: "third"}))
++
++	got := ConfigErrors(v.Err())
++	require.Len(t, got, 3)
++	assert.Equal(t, "first", got[0].Reason)
++	assert.Equal(t, "second", got[1].Reason)
++	assert.Equal(t, "third", got[2].Reason)
++}

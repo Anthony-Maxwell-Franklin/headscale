@@ -1,0 +1,2446 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #2355: [BUG] Linux Clients Frequently Disconnect v1.78.1</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #2355: [BUG] Linux Clients Frequently Disconnect v1.78.1</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/2355">Original issue #2355</a></p><p>Created: 2025-01-20T05:18:13Z; updated: 2025-06-18T06:07:01Z; observed state: closed; reason: not_planned</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+I have 23 clients connected to a Headscale server. Some of the clients have no issues but many of the clients will disconnect and go offline after some time. Some clients it happens immediately after connecting and others is happens after some time. The issue seems to be 1.78.1 on Linux.
+
+Ubuntu 22.04.5: 4 clients (1.78.1), disconnect after medium to long time
+Debian 12: 5 clients (1.78.1), disconnect after medium to long time
+Debian 11/Pi 4: 1 client (1.78.1), disconnect after medium to long time
+
+Android: 2 clients (1.78.3), maybe issue but hard to tell with sleep and wake
+Docker (on above Ubuntu): 4 clients (1.78.3), no issue
+Windows 11 24H2: 1 client (1.78.1), no issue
+Synology: 2 clients (1.58.2), no issue
+
+I tried running `tailscale bugreport` on my broken nodes but I got back `BUG-NO-LOGS-NO-SUPPORT-this-node-has-had-its-logging-disabled` and I&#x27;m unsure how to change it. I also noticed that re-running tailscale login would reconnect the client for a time but running down &amp;&amp; up did not.
+
+### Expected Behavior
+
+Clients should connect and, as long as they stay online, stay connected to Headscale.
+
+### Steps To Reproduce
+
+I followed the [Tailscale install guides](https://tailscale.com/kb/1031/install-linux) for each client then ran `tailscale login --login-server https://hs.example.com`
+
+### Environment
+
+```markdown
+- OS: Ubuntu 22.04.5, Debian 11/12
+- Headscale version: 0.4.1
+- Tailscale version: 1.78.1
+```
+
+### Runtime environment
+
+- [x] Headscale is behind a (reverse) proxy
+- [x] Headscale runs in a container
+
+### Anything else?
+
+[config.yaml.txt](https://github.com/user-attachments/files/18472537/config.yaml.txt)
+[Debian11.json](https://github.com/user-attachments/files/18472530/Debian11.json)
+[Debian12.json](https://github.com/user-attachments/files/18472529/Debian12.json)
+[Ubuntu.json](https://github.com/user-attachments/files/18472528/Ubuntu.json)</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/2355#issuecomment-2601392019">MeCJay12</a></h3><p>Created: 2025-01-20T05:18:59Z; updated: 2025-01-20T05:18:59Z</p><pre>[Tailscale Bug](https://github.com/tailscale/tailscale/issues/14692)</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2355#issuecomment-2601921293">kradalby</a></h3><p>Created: 2025-01-20T09:49:01Z; updated: 2025-01-20T09:49:01Z</p><pre>@MeCJay12 Have you tried using Tailscale SaaS and still have this problem? If not, please do not file issues with Tailscale, there is no point for us to put work on them if it is a problem with Headscale.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2355#issuecomment-2605121337">MeCJay12</a></h3><p>Created: 2025-01-21T15:57:56Z; updated: 2025-01-21T15:57:56Z</p><pre>@kradalby While I have not used Tailscale SaaS, I opened a bug with both because it seems like a bug in the Linux Tailscale client.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2355#issuecomment-2609685240">kradalby</a></h3><p>Created: 2025-01-23T12:28:04Z; updated: 2025-01-23T12:28:04Z</p><pre>&gt; I opened a bug with both because it seems like a bug in the Linux Tailscale client.
+
+If you have not tested it with Tailscale, it might only be a Headscale until you have tested that, and we try to maintain a good relationship with them by not driving more work than needed towards them. 
+
+The bare minimum would be to first establish if it happens with both, and then you can escalate it to Tailscale. 
+
+Generating noise in their issue tracker that they cannot debug because it is not connected to their infra is putting us in a bad light.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2355#issuecomment-2644528662">thagoat</a></h3><p>Created: 2025-02-08T06:05:01Z; updated: 2025-02-08T06:05:01Z</p><pre>Also started to see this issue with 1.78 and with 1.80 it is much worse. All linux clients offine everydat unless I set a cron job to restart the headscale.service multiple times per day.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2355#issuecomment-2644555240">nblock</a></h3><p>Created: 2025-02-08T07:08:33Z; updated: 2025-02-08T07:22:26Z</p><pre>&gt; Also started to see this issue with 1.78 and with 1.80 it is much worse. All linux clients offine everydat unless I set a cron job to restart the headscale.service multiple times per day.
+
+Please provide logs from headscale and more information for tailscale clients where you experience this, e.g.:
+
+* Service logs `sudo journalctl -u tailscaled`
+* Netcheck: `tailscale netcheck`
+* Any health issues in: `tailscale status` ?
+* DNS status: `sudo tailscale dns status`
+* Which OS?
+
+Can you test with Tailscale SaaS? Can you reproduce it there, too?
+
+Please use proper markdown formatting or use attachments.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2355#issuecomment-2644557818">thagoat</a></h3><p>Created: 2025-02-08T07:16:05Z; updated: 2025-02-08T07:16:05Z</p><pre>&lt;code&gt;Feb 08 02:03:29 tc tailscaled[416]: control: lite map update error after 10.001s: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:03:44 tc tailscaled[416]: Received error: PollNetMap: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:03:44 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:03:54 tc tailscaled[416]: control: lite map update error after 8.659s: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:04:21 tc tailscaled[416]: Received error: PollNetMap: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:04:21 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:04:31 tc tailscaled[416]: control: lite map update error after 8.658s: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:04:50 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:04:51 tc tailscaled[416]: Received error: PollNetMap: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:05:00 tc tailscaled[416]: control: lite map update error after 10.002s: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:05:15 tc tailscaled[416]: Received error: PollNetMap: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:05:15 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:05:25 tc tailscaled[416]: control: lite map update error after 3.06s: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:06:08 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:06:09 tc tailscaled[416]: Received error: PollNetMap: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:06:18 tc tailscaled[416]: control: lite map update error after 10.001s: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:06:33 tc tailscaled[416]: Received error: PollNetMap: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:06:33 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:06:49 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:06:59 tc tailscaled[416]: control: lite map update error after 10.001s: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:07:14 tc tailscaled[416]: Received error: PollNetMap: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:07:14 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:07:26 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:07:36 tc tailscaled[416]: control: lite map update error after 10.002s: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:07:43 tc tailscaled[416]: Received error: PollNetMap: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:07:43 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:08:04 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:08:12 tc tailscaled[416]: Received error: PollNetMap: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:08:14 tc tailscaled[416]: control: lite map update error after 10.002s: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:08:50 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:08:59 tc tailscaled[416]: Received error: PollNetMap: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:09:00 tc tailscaled[416]: control: lite map update error after 10.002s: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:09:22 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:09:32 tc tailscaled[416]: control: lite map update error after 10.001s: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:09:33 tc tailscaled[416]: Received error: PollNetMap: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:09:33 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:10:11 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:10:16 tc tailscaled[416]: Received error: PollNetMap: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:10:21 tc tailscaled[416]: control: lite map update error after 10.002s: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:10:58 tc tailscaled[416]: Received error: PollNetMap: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:10:58 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:11:08 tc tailscaled[416]: control: lite map update error after 6.157s: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:11:32 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:11:42 tc tailscaled[416]: control: lite map update error after 10.001s: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:11:44 tc tailscaled[416]: Received error: PollNetMap: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:11:44 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:12:10 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:12:20 tc tailscaled[416]: control: lite map update error after 10.002s: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:12:30 tc tailscaled[416]: Received error: PollNetMap: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:12:30 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:12:49 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+Feb 08 02:12:59 tc tailscaled[416]: control: lite map update error after 10.001s: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:13:06 tc tailscaled[416]: Received error: PollNetMap: Post &quot;https://thagoat.xyz:8080/machine/map&quot;: connection attempts aborted by context: context deadline exceeded
+Feb 08 02:13:06 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial
+&lt;/code&gt;
+journalctl
+&lt;code&gt;2025/02/08 02:13:46 portmap: [v1] Got PMP response; IP: 72.9.21.17, epoch: 429182
+2025/02/08 02:13:46 portmap: [v1] UPnP reply {Location:http://192.168.0.1:1900/cxnom/rootDesc.xml Server:TP-LINK/TP-LINK UPnP/1.1 MiniUPnPd/1.8 USN:uuid:f4ee5508-faa5-4e75-825c-2293dbf47fac::urn:schemas-upnp-org:device:InternetGatewayDevice:1}, &quot;HTTP/1.1 200 OK\r\nCACHE-CONTROL: max-age=120\r\nST: urn:schemas-upnp-org:device:InternetGatewayDevice:1\r\nUSN: uuid:f4ee5508-faa5-4e75-825c-2293dbf47fac::urn:schemas-upnp-org:device:InternetGatewayDevice:1\r\nEXT:\r\nSERVER: TP-LINK/TP-LINK UPnP/1.1 MiniUPnPd/1.8\r\nLOCATION: http://192.168.0.1:1900/cxnom/rootDesc.xml\r\nOPT: \&quot;http://schemas.upnp.org/upnp/1/0/\&quot;; ns=01\r\n01-NLS: 1\r\nBOOTID.UPNP.ORG: 1\r\nCONFIGID.UPNP.ORG: 1337\r\n\r\n&quot;
+2025/02/08 02:13:46 portmap: [v1] UPnP reply {Location:http://192.168.0.1:1900/cxnom/rootDesc.xml Server:TP-LINK/TP-LINK UPnP/1.1 MiniUPnPd/1.8 USN:uuid:f4ee5508-faa5-4e75-825c-2293dbf47fac::urn:schemas-upnp-org:device:InternetGatewayDevice:1}, &quot;HTTP/1.1 200 OK\r\nCACHE-CONTROL: max-age=120\r\nST: urn:schemas-upnp-org:device:InternetGatewayDevice:1\r\nUSN: uuid:f4ee5508-faa5-4e75-825c-2293dbf47fac::urn:schemas-upnp-org:device:InternetGatewayDevice:1\r\nEXT:\r\nSERVER: TP-LINK/TP-LINK UPnP/1.1 MiniUPnPd/1.8\r\nLOCATION: http://192.168.0.1:1900/cxnom/rootDesc.xml\r\nOPT: \&quot;http://schemas.upnp.org/upnp/1/0/\&quot;; ns=01\r\n01-NLS: 1\r\nBOOTID.UPNP.ORG: 1\r\nCONFIGID.UPNP.ORG: 1337\r\n\r\n&quot;
+2025/02/08 02:13:46 portmap: [v1] UPnP reply {Location:http://192.168.0.1:1900/cxnom/rootDesc.xml Server:TP-LINK/TP-LINK UPnP/1.1 MiniUPnPd/1.8 USN:uuid:f4ee5508-faa5-4e75-825c-2293dbf47fac::urn:schemas-upnp-org:device:InternetGatewayDevice:1}, &quot;HTTP/1.1 200 OK\r\nCACHE-CONTROL: max-age=120\r\nST: urn:schemas-upnp-org:device:InternetGatewayDevice:1\r\nUSN: uuid:f4ee5508-faa5-4e75-825c-2293dbf47fac::urn:schemas-upnp-org:device:InternetGatewayDevice:1\r\nEXT:\r\nSERVER: TP-LINK/TP-LINK UPnP/1.1 MiniUPnPd/1.8\r\nLOCATION: http://192.168.0.1:1900/cxnom/rootDesc.xml\r\nOPT: \&quot;http://schemas.upnp.org/upnp/1/0/\&quot;; ns=01\r\n01-NLS: 1\r\nBOOTID.UPNP.ORG: 1\r\nCONFIGID.UPNP.ORG: 1337\r\n\r\n&quot;
+2025/02/08 02:13:47 portmap: UPnP meta changed: [{Location:http://192.168.0.1:1900/cxnom/rootDesc.xml Server:TP-LINK/TP-LINK UPnP/1.1 MiniUPnPd/1.8 USN:uuid:f4ee5508-faa5-4e75-825c-2293dbf47fac::urn:schemas-upnp-org:device:InternetGatewayDevice:1}]
+
+Report:
+	* Time: 2025-02-08T07:13:47.198841933Z
+	* UDP: true
+	* IPv4: yes, 72.9.21.17:46882
+	* IPv6: no, but OS has support
+	* MappingVariesByDestIP: false
+	* PortMapping: UPnP, NAT-PMP
+	* Nearest DERP: New York City
+	* DERP latency:
+		- nyc: 34.1ms  (New York City)
+		- tor: 45.1ms  (Toronto)
+		- iad: 45.9ms  (Ashburn)
+		- ord: 46.4ms  (Chicago)
+		- dfw: 63.3ms  (Dallas)
+		- den: 66.6ms  (Denver)
+		- mia: 72.2ms  (Miami)
+		- sfo: 88.8ms  (San Francisco)
+		- sea: 89.4ms  (Seattle)
+		- lax: 94.4ms  (Los Angeles)
+		- lhr: 96.4ms  (London)
+		- par: 99.1ms  (Paris)
+		- fra: 104.6ms (Frankfurt)
+		- ams: 108.1ms (Amsterdam)
+		- mad: 111ms   (Madrid)
+		- nue: 112.6ms (Nuremberg)
+		- waw: 124.3ms (Warsaw)
+		- hnl: 143.1ms (Honolulu)
+		- sao: 167.1ms (São Paulo)
+		- tok: 179.5ms (Tokyo)
+		- dbi: 207.9ms (Dubai)
+		- hkg: 237.5ms (Hong Kong)
+		- sin:         (Singapore)
+		- syd:         (Sydney)
+		- blr:         (Bangalore)
+		- jnb:         (Johannesburg)
+		- nai:         (Nairobi)
+&lt;/code&gt;
+Netcheck
+&lt;code&gt;=== &#x27;Use Tailscale DNS&#x27; status ===
+
+Tailscale DNS: enabled.
+
+Tailscale is configured to handle DNS queries on this device.
+Run &#x27;tailscale set --accept-dns=false&#x27; to revert to your system default DNS resolver.
+
+=== MagicDNS configuration ===
+
+This is the DNS configuration provided by the coordination server to this device.
+
+MagicDNS: enabled tailnet-wide (suffix = dns.thagoat.xyz)
+
+Other devices in your tailnet can reach this device at tc.dns.thagoat.xyz
+
+Failed to fetch network map: Access denied: watch IPN bus access denied, must set ipn.NotifyNoPrivateKeys when not running as admin/root or operator
+Access denied: watch IPN bus access denied, must set ipn.NotifyNoPrivateKeys when not running as admin/root or operator
+
+Use &#x27;sudo tailscale dns status&#x27; or &#x27;tailscale up --operator=$USER&#x27; to not require root.
+&lt;/code&gt;
+DNS Status
+
+Linux OS (Archlinux, Ubuntu Arm)
+
+Haven&#x27;t used SaaS
+</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2355#issuecomment-2644560699">nblock</a></h3><p>Created: 2025-02-08T07:23:44Z; updated: 2025-02-08T07:44:13Z</p><pre>@thagoat please use proper markdown formatting, preferably post logs as attachment. Also, run the dns status via sudo: `sudo tailscale dns status`.
+
+Please provide your headscale configuration and also logs from headscale.
+
+Please provide the *full log* since tailscale start (as attachment).</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2355#issuecomment-2645872514">MeCJay12</a></h3><p>Created: 2025-02-08T17:51:35Z; updated: 2025-02-08T17:53:23Z</p><pre>**sudo journalctl -u tailscaled**
+
+270k lines. Too large to upload. [See here](https://oc.cshaheen.tech/s/lKGHFOCibsJoBmy).
+
+**tailscale netcheck**
+```
+
+Report:
+	* Time: 2025-02-08T17:21:37.457183435Z
+	* UDP: true
+	* IPv4: yes, &lt;public_ip&gt;:60742
+	* IPv6: no, but OS has support
+	* MappingVariesByDestIP: false
+	* PortMapping: 
+	* Nearest DERP: Chicago
+	* DERP latency:
+		- ord: 36ms    (Chicago)
+		- tor: 39.1ms  (Toronto)
+		- iad: 46.3ms  (Ashburn)
+		- nyc: 49.9ms  (New York City)
+		- dfw: 53.4ms  (Dallas)
+		- mia: 57ms    (Miami)
+		- den: 63.9ms  (Denver)
+		- sfo: 82.2ms  (San Francisco)
+		- lax: 84.5ms  (Los Angeles)
+		- sea: 98.3ms  (Seattle)
+		- hnl: 113.8ms (Honolulu)
+		- par: 114.6ms (Paris)
+		- lhr: 116.5ms (London)
+		- fra: 118.6ms (Frankfurt)
+		- ams: 119.3ms (Amsterdam)
+		- mad: 126.2ms (Madrid)
+		- waw: 133.4ms (Warsaw)
+		- nue: 143.8ms (Nuremberg)
+		- sao: 147.2ms (São Paulo)
+		- tok: 184.6ms (Tokyo)
+		- syd: 217ms   (Sydney)
+		- dbi: 219.5ms (Dubai)
+		- hkg: 230.8ms (Hong Kong)
+		- jnb: 255.8ms (Johannesburg)
+		- sin:         (Singapore)
+		- blr:         (Bangalore)
+		- nai:         (Nairobi)
+```
+**tailscale status**
+```
+# Health check:
+#     - Unable to connect to the Tailscale coordination server to synchronize the state of your tailnet. Peer reachability might degrade over time.
+```
+^ Goes away for awhile after restarting Tailscale
+
+**sudo tailscale dns status**
+```
+
+=== &#x27;Use Tailscale DNS&#x27; status ===
+
+Tailscale DNS: enabled.
+
+Tailscale is configured to handle DNS queries on this device.
+Run &#x27;tailscale set --accept-dns=false&#x27; to revert to your system default DNS resolver.
+
+=== MagicDNS configuration ===
+
+This is the DNS configuration provided by the coordination server to this device.
+
+MagicDNS: disabled tailnet-wide.
+
+Resolvers (in preference order):
+  - fd7a:115c:a1e0::16
+  - fd7a:115c:a1e0::17
+  - fd7a:115c:a1e0::18
+  - fd7a:115c:a1e0::19
+  - 100.64.0.22
+  - 100.64.0.23
+  - 100.64.0.24
+  - 100.64.0.25
+
+Split DNS Routes:
+  (no routes configured: split DNS disabled)
+
+Search Domains:
+  - example.com
+  - headscale
+
+=== System DNS configuration ===
+
+This is the DNS configuration that Tailscale believes your operating system is using.
+Tailscale may use this configuration if &#x27;Override Local DNS&#x27; is disabled in the admin console,
+or if no resolvers are provided by the coordination server.
+
+Nameservers:
+  - 127.0.0.1
+  - 192.168.2.5
+  - 192.168.255.251
+  - 192.168.255.253
+  - fc00:0:0:2::5
+  - fc00:0:0:255::251
+  - fc00:0:0:255::253
+  - fc00:0:0:2::4
+  - fd00:976a::9
+  - fd00:976a::10
+  - fd00:976a::9
+  - fd00:976a::10
+
+Search domains:
+  - example.com
+
+[this is a preliminary version of this command; the output format may change in the future]
+```
+**Headscale Config**
+```
+server_url: https://hs.example.com
+listen_addr: 0.0.0.0:8080
+metrics_listen_addr: 0.0.0.0:9090
+grpc_listen_addr: 0.0.0.0:50443
+grpc_allow_insecure: false
+noise:
+  private_key_path: /var/lib/headscale/noise_private.key
+prefixes:
+  v4: 100.64.0.0/24
+  v6: fd7a:115c:a1e0::/64
+  allocation: sequential
+derp:
+  server:
+    enabled: false
+  urls:
+    - https://controlplane.tailscale.com/derpmap/default
+  auto_update_enabled: true
+  update_frequency: 24h
+  disable_check_updates: false
+  ephemeral_node_inactivity_timeout: 30m
+database:
+  type: sqlite
+  debug: false
+  gorm:
+    prepare_stmt: true
+    parameterized_queries: true
+    skip_err_record_not_found: true
+    slow_threshold: 1000
+  sqlite:
+    path: /etc/headscale/db.sqlite
+    write_ahead_log: true
+    wal_autocheckpoint: 1000
+log:
+  format: text
+  level: info
+policy:
+  mode: file
+  path: &quot;&quot;
+dns:
+  magic_dns: false
+  base_domain: headscale
+  nameservers:
+    global:
+      - fd7a:115c:a1e0::16
+      - fd7a:115c:a1e0::17
+      - fd7a:115c:a1e0::18
+      - fd7a:115c:a1e0::19
+      - 100.64.0.22
+      - 100.64.0.23
+      - 100.64.0.24
+      - 100.64.0.25
+  search_domains:
+    - example.com
+unix_socket: /var/run/headscale/headscale.sock
+unix_socket_permission: &quot;0770&quot;
+logtail:
+  enabled: false
+randomize_client_port: false
+```
+**Headscale Log**
+```
+2025-02-08T08:03:00Z WRN An updated version of Headscale has been found (0.25.0-beta.2 vs. your current v0.24.3). Check it out https://github.com/juanfont/headscale/releases
+
+2025-02-08T08:03:00Z INF Opening database database=sqlite3 path=/etc/headscale/db.sqlite
+2025-02-08T08:03:01Z WRN Listening without TLS but ServerURL does not start with http://
+2025-02-08T08:03:01Z INF listening and serving HTTP on: 0.0.0.0:8080
+2025-02-08T08:03:01Z INF listening and serving debug and metrics on: 0.0.0.0:9090
+2025-02-08T08:03:01Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc000002480, chan: 0xc000454540 node=syCanA node.id=22 omitPeers=false readOnly=false stream=true
+2025-02-08T08:03:02Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc000002780, chan: 0xc00030f0a0 node=syLab node.id=16 omitPeers=false readOnly=false stream=true
+2025-02-08T08:03:05Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc00027b200, chan: 0xc0005356c0 node=Bound2 node.id=30 omitPeers=false readOnly=false stream=true
+2025-02-08T08:03:06Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc000002600, chan: 0xc000518fc0 node=gns3 node.id=23 omitPeers=false readOnly=false stream=true
+2025-02-08T08:03:06Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc00023a480, chan: 0xc00030e700 node=Bound1 node.id=34 omitPeers=false readOnly=false stream=true
+2025-02-08T08:03:06Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc00027b380, chan: 0xc000455880 node=kvm-player2 node.id=42 omitPeers=false readOnly=false stream=true
+2025-02-08T08:03:06Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc00023a780, chan: 0xc00030f340 node=Bound4 node.id=32 omitPeers=false readOnly=false stream=true
+2025-02-08T08:03:06Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc000002900, chan: 0xc000303180 node=doklaba node.id=19 omitPeers=false readOnly=false stream=true
+2025-02-08T08:03:06Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc00023b200, chan: 0xc0005205b0 node=Player1 node.id=2 omitPeers=false readOnly=false stream=true
+2025-02-08T08:03:06Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc00027be00, chan: 0xc000300150 node=Bound3 node.id=31 omitPeers=false readOnly=false stream=true
+```</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2355#issuecomment-2646126140">nblock</a></h3><p>Created: 2025-02-09T08:34:18Z; updated: 2025-02-09T08:34:18Z</p><pre>Are you using `systemd-resolved`, please post the output of `resolvectl status` .</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2355#issuecomment-2646400189">nblock</a></h3><p>Created: 2025-02-09T16:49:41Z; updated: 2025-02-09T16:49:41Z</p><pre>Probably related: 
+
+* https://github.com/tailscale/tailscale/issues/14486
+* https://github.com/tailscale/tailscale/issues/13906</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2355#issuecomment-2646404919">MeCJay12</a></h3><p>Created: 2025-02-09T16:57:25Z; updated: 2025-02-09T16:57:25Z</p><pre>**resolvectl status**
+```
+Global
+           Protocols: -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+    resolv.conf mode: foreign
+         DNS Servers: 127.0.0.1
+Fallback DNS Servers: 192.168.2.4
+
+Link 2 (eth0)
+Current Scopes: DNS
+     Protocols: +DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+   DNS Servers: fd00:976a::9 fd00:976a::10
+
+Link 3 (vlan2)
+Current Scopes: DNS
+     Protocols: +DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+   DNS Servers: 192.168.2.5 192.168.255.251 192.168.255.253 fc00:0:0:2::5 fc00:0:0:255::251
+                fc00:0:0:255::253 fc00:0:0:2::4 fd00:976a::9 fd00:976a::10
+    DNS Domain: cshaheen.tech
+
+Link 4 (tailscale0)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 5 (br-00edbee28006)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 6 (br-7540beaf1abd)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 7 (docker0)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 8 (br-de821f6e70c8)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 10 (veth9335f16)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 12 (vetha3ad70f)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 14 (vethff56857)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 17 (veth33e9513)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 19 (veth5a41571)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 23 (vethf9097a5)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 25 (vethe952455)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 27 (veth351d6d9)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 29 (veth0ba56c3)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 31 (vetheb6422d)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 33 (vethdd4b181)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 35 (vetha1cf3e5)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 37 (vethd79a74c)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 85 (veth542451b)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+
+Link 87 (veth73c7452)
+Current Scopes: none
+     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+```</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2355#issuecomment-2715652203">jdewinne</a></h3><p>Created: 2025-03-11T20:38:43Z; updated: 2025-03-11T20:38:43Z</p><pre>In case you&#x27;re not able to use https for the control server, I&#x27;ve made a PR (tailscale/tailscale#15277) that allows disabling the noise dial check.
+This can be a valid use case when running headscale in a ephemeral way, so that creating a valid cert is not possible.
+</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2355#issuecomment-2716015459">MeCJay12</a></h3><p>Created: 2025-03-12T00:13:18Z; updated: 2025-03-12T00:13:18Z</p><pre>That could be my issue. Does the noise dial check require direct HTTPS to the server? My Headscale server is behind a reverse proxy that does the actual HTTPS decryption and passes back to the server in plain HTTP.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2355#issuecomment-2716315879">jdewinne</a></h3><p>Created: 2025-03-12T03:26:39Z; updated: 2025-03-12T03:26:39Z</p><pre>This is the case the PR handles:
+&gt; control: controlhttp: forcing port 443 dial due to recent noise dial
+
+If headscale is using a private IP, the `forcing port 443` will not happen if using tailscale 1.80.3+
+If headscale is not using a private IP, you should most likely look into at least running it using https. If that is not possible (for whatever reason) the PR tailscale/tailscale#15277 could be a workaround to disable the noise dial check.
+
+So it looks like if a recent noise dial check happened, the tailscale client will automatically switch to using https, unless you have headscale running on a private ip.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2355#issuecomment-2961015888">github-actions[bot]</a></h3><p>Created: 2025-06-11T02:10:32Z; updated: 2025-06-11T02:10:32Z</p><pre>This issue is stale because it has been open for 90 days with no activity.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2355#issuecomment-2982810949">github-actions[bot]</a></h3><p>Created: 2025-06-18T06:07:01Z; updated: 2025-06-18T06:07:01Z</p><pre>This issue was closed because it has been inactive for 14 days since being marked as stale.</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2025-01-20T05:18:13Z · labeled · MeCJay12</summary><pre>{
+  &quot;id&quot;: 15992919465,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz886myVOhzwAAAAO5QJWp&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/15992919465&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;MeCJay12&quot;,
+    &quot;id&quot;: 43658705,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQzNjU4NzA1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/43658705?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MeCJay12&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MeCJay12&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MeCJay12/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MeCJay12/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MeCJay12/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MeCJay12/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MeCJay12/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MeCJay12/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MeCJay12/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MeCJay12/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MeCJay12/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-01-20T05:18:13Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-01-20T05:18:59Z · commented · MeCJay12</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2601392019&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2355#issuecomment-2601392019&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2355&quot;,
+  &quot;id&quot;: 2601392019,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886bDheT&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;MeCJay12&quot;,
+    &quot;id&quot;: 43658705,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQzNjU4NzA1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/43658705?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MeCJay12&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MeCJay12&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MeCJay12/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MeCJay12/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MeCJay12/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MeCJay12/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MeCJay12/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MeCJay12/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MeCJay12/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MeCJay12/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MeCJay12/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-01-20T05:18:59Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-01-20T05:18:59Z&quot;,
+  &quot;body&quot;: &quot;[Tailscale Bug](https://github.com/tailscale/tailscale/issues/14692)&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2601392019/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;MeCJay12&quot;,
+    &quot;id&quot;: 43658705,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQzNjU4NzA1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/43658705?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MeCJay12&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MeCJay12&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MeCJay12/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MeCJay12/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MeCJay12/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MeCJay12/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MeCJay12/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MeCJay12/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MeCJay12/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MeCJay12/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MeCJay12/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-01-20T09:49:01Z · commented · kradalby</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2601921293&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2355#issuecomment-2601921293&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2355&quot;,
+  &quot;id&quot;: 2601921293,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886bFisN&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-01-20T09:49:01Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-01-20T09:49:01Z&quot;,
+  &quot;body&quot;: &quot;@MeCJay12 Have you tried using Tailscale SaaS and still have this problem? If not, please do not file issues with Tailscale, there is no point for us to put work on them if it is a problem with Headscale.&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2601921293/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-01-20T09:49:02Z · mentioned · MeCJay12</summary><pre>{
+  &quot;id&quot;: 15996004028,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz886myVOhzwAAAAO5b6a8&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/15996004028&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;MeCJay12&quot;,
+    &quot;id&quot;: 43658705,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQzNjU4NzA1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/43658705?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MeCJay12&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MeCJay12&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MeCJay12/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MeCJay12/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MeCJay12/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MeCJay12/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MeCJay12/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MeCJay12/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MeCJay12/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MeCJay12/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MeCJay12/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-01-20T09:49:02Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-01-20T09:49:02Z · subscribed · MeCJay12</summary><pre>{
+  &quot;id&quot;: 15996004038,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz886myVOhzwAAAAO5b6bG&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/15996004038&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;MeCJay12&quot;,
+    &quot;id&quot;: 43658705,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQzNjU4NzA1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/43658705?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MeCJay12&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MeCJay12&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MeCJay12/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MeCJay12/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MeCJay12/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MeCJay12/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MeCJay12/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MeCJay12/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MeCJay12/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MeCJay12/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MeCJay12/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-01-20T09:49:02Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-01-20T17:34:43Z · unsubscribed · mrabino1</summary><pre>{
+  &quot;id&quot;: 16002864806,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz886myVOhzwAAAAO52Fam&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/16002864806&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mrabino1&quot;,
+    &quot;id&quot;: 4902221,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ5MDIyMjE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4902221?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mrabino1&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mrabino1&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mrabino1/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mrabino1/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mrabino1/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mrabino1/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mrabino1/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mrabino1/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mrabino1/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mrabino1/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mrabino1/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-01-20T17:34:43Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-01-21T15:57:56Z · commented · MeCJay12</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2605121337&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2355#issuecomment-2605121337&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2355&quot;,
+  &quot;id&quot;: 2605121337,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886bRv85&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;MeCJay12&quot;,
+    &quot;id&quot;: 43658705,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQzNjU4NzA1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/43658705?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MeCJay12&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MeCJay12&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MeCJay12/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MeCJay12/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MeCJay12/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MeCJay12/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MeCJay12/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MeCJay12/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MeCJay12/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MeCJay12/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MeCJay12/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-01-21T15:57:56Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-01-21T15:57:56Z&quot;,
+  &quot;body&quot;: &quot;@kradalby While I have not used Tailscale SaaS, I opened a bug with both because it seems like a bug in the Linux Tailscale client.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2605121337/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;MeCJay12&quot;,
+    &quot;id&quot;: 43658705,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQzNjU4NzA1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/43658705?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MeCJay12&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MeCJay12&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MeCJay12/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MeCJay12/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MeCJay12/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MeCJay12/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MeCJay12/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MeCJay12/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MeCJay12/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MeCJay12/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MeCJay12/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-01-21T15:57:58Z · mentioned · kradalby</summary><pre>{
+  &quot;id&quot;: 16016727998,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz886myVOhzwAAAAO6q9--&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/16016727998&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-01-21T15:57:58Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-01-21T15:57:58Z · subscribed · kradalby</summary><pre>{
+  &quot;id&quot;: 16016728012,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz886myVOhzwAAAAO6q9_M&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/16016728012&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-01-21T15:57:58Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-01-23T12:28:04Z · commented · kradalby</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2609685240&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2355#issuecomment-2609685240&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2355&quot;,
+  &quot;id&quot;: 2609685240,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886bjKL4&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-01-23T12:28:04Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-01-23T12:28:04Z&quot;,
+  &quot;body&quot;: &quot;&gt; I opened a bug with both because it seems like a bug in the Linux Tailscale client.\n\nIf you have not tested it with Tailscale, it might only be a Headscale until you have tested that, and we try to maintain a good relationship with them by not driving more work than needed towards them. \n\nThe bare minimum would be to first establish if it happens with both, and then you can escalate it to Tailscale. \n\nGenerating noise in their issue tracker that they cannot debug because it is not connected to their infra is putting us in a bad light.&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2609685240/reactions&quot;,
+    &quot;total_count&quot;: 1,
+    &quot;+1&quot;: 1,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-01-23T13:02:27Z · subscribed · davidmehren</summary><pre>{
+  &quot;id&quot;: 16043579163,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz886myVOhzwAAAAO8RZcb&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/16043579163&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;davidmehren&quot;,
+    &quot;id&quot;: 5023650,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjUwMjM2NTA=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/5023650?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/davidmehren&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/davidmehren&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/davidmehren/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/davidmehren/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/davidmehren/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/davidmehren/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/davidmehren/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/davidmehren/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/davidmehren/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/davidmehren/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/davidmehren/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-01-23T13:02:27Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-02-08T06:05:01Z · commented · thagoat</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2644528662&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2355#issuecomment-2644528662&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2355&quot;,
+  &quot;id&quot;: 2644528662,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886doE4W&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;thagoat&quot;,
+    &quot;id&quot;: 16569070,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE2NTY5MDcw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/16569070?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thagoat&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thagoat&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thagoat/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thagoat/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thagoat/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thagoat/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thagoat/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thagoat/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thagoat/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thagoat/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thagoat/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-02-08T06:05:01Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-02-08T06:05:01Z&quot;,
+  &quot;body&quot;: &quot;Also started to see this issue with 1.78 and with 1.80 it is much worse. All linux clients offine everydat unless I set a cron job to restart the headscale.service multiple times per day.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2644528662/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;thagoat&quot;,
+    &quot;id&quot;: 16569070,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE2NTY5MDcw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/16569070?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thagoat&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thagoat&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thagoat/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thagoat/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thagoat/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thagoat/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thagoat/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thagoat/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thagoat/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thagoat/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thagoat/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-02-08T07:08:33Z · commented · nblock</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2644555240&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2355#issuecomment-2644555240&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2355&quot;,
+  &quot;id&quot;: 2644555240,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886doLXo&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-02-08T07:08:33Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-02-08T07:22:26Z&quot;,
+  &quot;body&quot;: &quot;&gt; Also started to see this issue with 1.78 and with 1.80 it is much worse. All linux clients offine everydat unless I set a cron job to restart the headscale.service multiple times per day.\n\nPlease provide logs from headscale and more information for tailscale clients where you experience this, e.g.:\n\n* Service logs `sudo journalctl -u tailscaled`\n* Netcheck: `tailscale netcheck`\n* Any health issues in: `tailscale status` ?\n* DNS status: `sudo tailscale dns status`\n* Which OS?\n\nCan you test with Tailscale SaaS? Can you reproduce it there, too?\n\nPlease use proper markdown formatting or use attachments.&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2644555240/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-02-08T07:16:05Z · commented · thagoat</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2644557818&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2355#issuecomment-2644557818&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2355&quot;,
+  &quot;id&quot;: 2644557818,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886doL_6&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;thagoat&quot;,
+    &quot;id&quot;: 16569070,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE2NTY5MDcw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/16569070?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thagoat&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thagoat&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thagoat/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thagoat/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thagoat/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thagoat/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thagoat/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thagoat/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thagoat/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thagoat/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thagoat/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-02-08T07:16:05Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-02-08T07:16:05Z&quot;,
+  &quot;body&quot;: &quot;&lt;code&gt;Feb 08 02:03:29 tc tailscaled[416]: control: lite map update error after 10.001s: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:03:44 tc tailscaled[416]: Received error: PollNetMap: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:03:44 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:03:54 tc tailscaled[416]: control: lite map update error after 8.659s: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:04:21 tc tailscaled[416]: Received error: PollNetMap: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:04:21 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:04:31 tc tailscaled[416]: control: lite map update error after 8.658s: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:04:50 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:04:51 tc tailscaled[416]: Received error: PollNetMap: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:05:00 tc tailscaled[416]: control: lite map update error after 10.002s: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:05:15 tc tailscaled[416]: Received error: PollNetMap: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:05:15 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:05:25 tc tailscaled[416]: control: lite map update error after 3.06s: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:06:08 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:06:09 tc tailscaled[416]: Received error: PollNetMap: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:06:18 tc tailscaled[416]: control: lite map update error after 10.001s: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:06:33 tc tailscaled[416]: Received error: PollNetMap: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:06:33 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:06:49 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:06:59 tc tailscaled[416]: control: lite map update error after 10.001s: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:07:14 tc tailscaled[416]: Received error: PollNetMap: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:07:14 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:07:26 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:07:36 tc tailscaled[416]: control: lite map update error after 10.002s: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:07:43 tc tailscaled[416]: Received error: PollNetMap: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:07:43 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:08:04 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:08:12 tc tailscaled[416]: Received error: PollNetMap: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:08:14 tc tailscaled[416]: control: lite map update error after 10.002s: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:08:50 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:08:59 tc tailscaled[416]: Received error: PollNetMap: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:09:00 tc tailscaled[416]: control: lite map update error after 10.002s: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:09:22 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:09:32 tc tailscaled[416]: control: lite map update error after 10.001s: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:09:33 tc tailscaled[416]: Received error: PollNetMap: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:09:33 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:10:11 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:10:16 tc tailscaled[416]: Received error: PollNetMap: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:10:21 tc tailscaled[416]: control: lite map update error after 10.002s: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:10:58 tc tailscaled[416]: Received error: PollNetMap: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:10:58 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:11:08 tc tailscaled[416]: control: lite map update error after 6.157s: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:11:32 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:11:42 tc tailscaled[416]: control: lite map update error after 10.001s: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:11:44 tc tailscaled[416]: Received error: PollNetMap: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:11:44 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:12:10 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:12:20 tc tailscaled[416]: control: lite map update error after 10.002s: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:12:30 tc tailscaled[416]: Received error: PollNetMap: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:12:30 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:12:49 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\nFeb 08 02:12:59 tc tailscaled[416]: control: lite map update error after 10.001s: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:13:06 tc tailscaled[416]: Received error: PollNetMap: Post \&quot;https://thagoat.xyz:8080/machine/map\&quot;: connection attempts aborted by context: context deadline exceeded\nFeb 08 02:13:06 tc tailscaled[416]: control: controlhttp: forcing port 443 dial due to recent noise dial\n&lt;/code&gt;\njournalctl\n&lt;code&gt;2025/02/08 02:13:46 portmap: [v1] Got PMP response; IP: 72.9.21.17, epoch: 429182\n2025/02/08 02:13:46 portmap: [v1] UPnP reply {Location:http://192.168.0.1:1900/cxnom/rootDesc.xml Server:TP-LINK/TP-LINK UPnP/1.1 MiniUPnPd/1.8 USN:uuid:f4ee5508-faa5-4e75-825c-2293dbf47fac::urn:schemas-upnp-org:device:InternetGatewayDevice:1}, \&quot;HTTP/1.1 200 OK\\r\\nCACHE-CONTROL: max-age=120\\r\\nST: urn:schemas-upnp-org:device:InternetGatewayDevice:1\\r\\nUSN: uuid:f4ee5508-faa5-4e75-825c-2293dbf47fac::urn:schemas-upnp-org:device:InternetGatewayDevice:1\\r\\nEXT:\\r\\nSERVER: TP-LINK/TP-LINK UPnP/1.1 MiniUPnPd/1.8\\r\\nLOCATION: http://192.168.0.1:1900/cxnom/rootDesc.xml\\r\\nOPT: \\\&quot;http://schemas.upnp.org/upnp/1/0/\\\&quot;; ns=01\\r\\n01-NLS: 1\\r\\nBOOTID.UPNP.ORG: 1\\r\\nCONFIGID.UPNP.ORG: 1337\\r\\n\\r\\n\&quot;\n2025/02/08 02:13:46 portmap: [v1] UPnP reply {Location:http://192.168.0.1:1900/cxnom/rootDesc.xml Server:TP-LINK/TP-LINK UPnP/1.1 MiniUPnPd/1.8 USN:uuid:f4ee5508-faa5-4e75-825c-2293dbf47fac::urn:schemas-upnp-org:device:InternetGatewayDevice:1}, \&quot;HTTP/1.1 200 OK\\r\\nCACHE-CONTROL: max-age=120\\r\\nST: urn:schemas-upnp-org:device:InternetGatewayDevice:1\\r\\nUSN: uuid:f4ee5508-faa5-4e75-825c-2293dbf47fac::urn:schemas-upnp-org:device:InternetGatewayDevice:1\\r\\nEXT:\\r\\nSERVER: TP-LINK/TP-LINK UPnP/1.1 MiniUPnPd/1.8\\r\\nLOCATION: http://192.168.0.1:1900/cxnom/rootDesc.xml\\r\\nOPT: \\\&quot;http://schemas.upnp.org/upnp/1/0/\\\&quot;; ns=01\\r\\n01-NLS: 1\\r\\nBOOTID.UPNP.ORG: 1\\r\\nCONFIGID.UPNP.ORG: 1337\\r\\n\\r\\n\&quot;\n2025/02/08 02:13:46 portmap: [v1] UPnP reply {Location:http://192.168.0.1:1900/cxnom/rootDesc.xml Server:TP-LINK/TP-LINK UPnP/1.1 MiniUPnPd/1.8 USN:uuid:f4ee5508-faa5-4e75-825c-2293dbf47fac::urn:schemas-upnp-org:device:InternetGatewayDevice:1}, \&quot;HTTP/1.1 200 OK\\r\\nCACHE-CONTROL: max-age=120\\r\\nST: urn:schemas-upnp-org:device:InternetGatewayDevice:1\\r\\nUSN: uuid:f4ee5508-faa5-4e75-825c-2293dbf47fac::urn:schemas-upnp-org:device:InternetGatewayDevice:1\\r\\nEXT:\\r\\nSERVER: TP-LINK/TP-LINK UPnP/1.1 MiniUPnPd/1.8\\r\\nLOCATION: http://192.168.0.1:1900/cxnom/rootDesc.xml\\r\\nOPT: \\\&quot;http://schemas.upnp.org/upnp/1/0/\\\&quot;; ns=01\\r\\n01-NLS: 1\\r\\nBOOTID.UPNP.ORG: 1\\r\\nCONFIGID.UPNP.ORG: 1337\\r\\n\\r\\n\&quot;\n2025/02/08 02:13:47 portmap: UPnP meta changed: [{Location:http://192.168.0.1:1900/cxnom/rootDesc.xml Server:TP-LINK/TP-LINK UPnP/1.1 MiniUPnPd/1.8 USN:uuid:f4ee5508-faa5-4e75-825c-2293dbf47fac::urn:schemas-upnp-org:device:InternetGatewayDevice:1}]\n\nReport:\n\t* Time: 2025-02-08T07:13:47.198841933Z\n\t* UDP: true\n\t* IPv4: yes, 72.9.21.17:46882\n\t* IPv6: no, but OS has support\n\t* MappingVariesByDestIP: false\n\t* PortMapping: UPnP, NAT-PMP\n\t* Nearest DERP: New York City\n\t* DERP latency:\n\t\t- nyc: 34.1ms  (New York City)\n\t\t- tor: 45.1ms  (Toronto)\n\t\t- iad: 45.9ms  (Ashburn)\n\t\t- ord: 46.4ms  (Chicago)\n\t\t- dfw: 63.3ms  (Dallas)\n\t\t- den: 66.6ms  (Denver)\n\t\t- mia: 72.2ms  (Miami)\n\t\t- sfo: 88.8ms  (San Francisco)\n\t\t- sea: 89.4ms  (Seattle)\n\t\t- lax: 94.4ms  (Los Angeles)\n\t\t- lhr: 96.4ms  (London)\n\t\t- par: 99.1ms  (Paris)\n\t\t- fra: 104.6ms (Frankfurt)\n\t\t- ams: 108.1ms (Amsterdam)\n\t\t- mad: 111ms   (Madrid)\n\t\t- nue: 112.6ms (Nuremberg)\n\t\t- waw: 124.3ms (Warsaw)\n\t\t- hnl: 143.1ms (Honolulu)\n\t\t- sao: 167.1ms (São Paulo)\n\t\t- tok: 179.5ms (Tokyo)\n\t\t- dbi: 207.9ms (Dubai)\n\t\t- hkg: 237.5ms (Hong Kong)\n\t\t- sin:         (Singapore)\n\t\t- syd:         (Sydney)\n\t\t- blr:         (Bangalore)\n\t\t- jnb:         (Johannesburg)\n\t\t- nai:         (Nairobi)\n&lt;/code&gt;\nNetcheck\n&lt;code&gt;=== &#x27;Use Tailscale DNS&#x27; status ===\n\nTailscale DNS: enabled.\n\nTailscale is configured to handle DNS queries on this device.\nRun &#x27;tailscale set --accept-dns=false&#x27; to revert to your system default DNS resolver.\n\n=== MagicDNS configuration ===\n\nThis is the DNS configuration provided by the coordination server to this device.\n\nMagicDNS: enabled tailnet-wide (suffix = dns.thagoat.xyz)\n\nOther devices in your tailnet can reach this device at tc.dns.thagoat.xyz\n\nFailed to fetch network map: Access denied: watch IPN bus access denied, must set ipn.NotifyNoPrivateKeys when not running as admin/root or operator\nAccess denied: watch IPN bus access denied, must set ipn.NotifyNoPrivateKeys when not running as admin/root or operator\n\nUse &#x27;sudo tailscale dns status&#x27; or &#x27;tailscale up --operator=$USER&#x27; to not require root.\n&lt;/code&gt;\nDNS Status\n\nLinux OS (Archlinux, Ubuntu Arm)\n\nHaven&#x27;t used SaaS\n&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2644557818/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;thagoat&quot;,
+    &quot;id&quot;: 16569070,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE2NTY5MDcw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/16569070?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thagoat&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thagoat&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thagoat/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thagoat/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thagoat/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thagoat/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thagoat/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thagoat/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thagoat/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thagoat/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thagoat/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-02-08T07:23:44Z · commented · nblock</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2644560699&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2355#issuecomment-2644560699&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2355&quot;,
+  &quot;id&quot;: 2644560699,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886doMs7&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-02-08T07:23:44Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-02-08T07:44:13Z&quot;,
+  &quot;body&quot;: &quot;@thagoat please use proper markdown formatting, preferably post logs as attachment. Also, run the dns status via sudo: `sudo tailscale dns status`.\n\nPlease provide your headscale configuration and also logs from headscale.\n\nPlease provide the *full log* since tailscale start (as attachment).&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2644560699/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-02-08T07:23:45Z · mentioned · thagoat</summary><pre>{
+  &quot;id&quot;: 16233540638,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz886myVOhzwAAAAPHmCwe&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/16233540638&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;thagoat&quot;,
+    &quot;id&quot;: 16569070,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE2NTY5MDcw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/16569070?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thagoat&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thagoat&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thagoat/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thagoat/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thagoat/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thagoat/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thagoat/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thagoat/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thagoat/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thagoat/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thagoat/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-02-08T07:23:45Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-02-08T07:23:45Z · subscribed · thagoat</summary><pre>{
+  &quot;id&quot;: 16233540639,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz886myVOhzwAAAAPHmCwf&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/16233540639&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;thagoat&quot;,
+    &quot;id&quot;: 16569070,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE2NTY5MDcw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/16569070?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thagoat&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thagoat&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thagoat/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thagoat/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thagoat/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thagoat/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thagoat/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thagoat/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thagoat/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thagoat/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thagoat/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-02-08T07:23:45Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-02-08T07:41:55Z · labeled · nblock</summary><pre>{
+  &quot;id&quot;: 16233590655,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz886myVOhzwAAAAPHmO9_&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/16233590655&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-02-08T07:41:55Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;question&quot;,
+    &quot;color&quot;: &quot;d876e3&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-02-08T17:51:35Z · commented · MeCJay12</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2645872514&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2355#issuecomment-2645872514&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2355&quot;,
+  &quot;id&quot;: 2645872514,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886dtM-C&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;MeCJay12&quot;,
+    &quot;id&quot;: 43658705,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQzNjU4NzA1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/43658705?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MeCJay12&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MeCJay12&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MeCJay12/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MeCJay12/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MeCJay12/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MeCJay12/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MeCJay12/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MeCJay12/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MeCJay12/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MeCJay12/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MeCJay12/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-02-08T17:51:35Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-02-08T17:53:23Z&quot;,
+  &quot;body&quot;: &quot;**sudo journalctl -u tailscaled**\n\n270k lines. Too large to upload. [See here](https://oc.cshaheen.tech/s/lKGHFOCibsJoBmy).\n\n**tailscale netcheck**\n```\n\nReport:\n\t* Time: 2025-02-08T17:21:37.457183435Z\n\t* UDP: true\n\t* IPv4: yes, &lt;public_ip&gt;:60742\n\t* IPv6: no, but OS has support\n\t* MappingVariesByDestIP: false\n\t* PortMapping: \n\t* Nearest DERP: Chicago\n\t* DERP latency:\n\t\t- ord: 36ms    (Chicago)\n\t\t- tor: 39.1ms  (Toronto)\n\t\t- iad: 46.3ms  (Ashburn)\n\t\t- nyc: 49.9ms  (New York City)\n\t\t- dfw: 53.4ms  (Dallas)\n\t\t- mia: 57ms    (Miami)\n\t\t- den: 63.9ms  (Denver)\n\t\t- sfo: 82.2ms  (San Francisco)\n\t\t- lax: 84.5ms  (Los Angeles)\n\t\t- sea: 98.3ms  (Seattle)\n\t\t- hnl: 113.8ms (Honolulu)\n\t\t- par: 114.6ms (Paris)\n\t\t- lhr: 116.5ms (London)\n\t\t- fra: 118.6ms (Frankfurt)\n\t\t- ams: 119.3ms (Amsterdam)\n\t\t- mad: 126.2ms (Madrid)\n\t\t- waw: 133.4ms (Warsaw)\n\t\t- nue: 143.8ms (Nuremberg)\n\t\t- sao: 147.2ms (São Paulo)\n\t\t- tok: 184.6ms (Tokyo)\n\t\t- syd: 217ms   (Sydney)\n\t\t- dbi: 219.5ms (Dubai)\n\t\t- hkg: 230.8ms (Hong Kong)\n\t\t- jnb: 255.8ms (Johannesburg)\n\t\t- sin:         (Singapore)\n\t\t- blr:         (Bangalore)\n\t\t- nai:         (Nairobi)\n```\n**tailscale status**\n```\n# Health check:\n#     - Unable to connect to the Tailscale coordination server to synchronize the state of your tailnet. Peer reachability might degrade over time.\n```\n^ Goes away for awhile after restarting Tailscale\n\n**sudo tailscale dns status**\n```\n\n=== &#x27;Use Tailscale DNS&#x27; status ===\n\nTailscale DNS: enabled.\n\nTailscale is configured to handle DNS queries on this device.\nRun &#x27;tailscale set --accept-dns=false&#x27; to revert to your system default DNS resolver.\n\n=== MagicDNS configuration ===\n\nThis is the DNS configuration provided by the coordination server to this device.\n\nMagicDNS: disabled tailnet-wide.\n\nResolvers (in preference order):\n  - fd7a:115c:a1e0::16\n  - fd7a:115c:a1e0::17\n  - fd7a:115c:a1e0::18\n  - fd7a:115c:a1e0::19\n  - 100.64.0.22\n  - 100.64.0.23\n  - 100.64.0.24\n  - 100.64.0.25\n\nSplit DNS Routes:\n  (no routes configured: split DNS disabled)\n\nSearch Domains:\n  - example.com\n  - headscale\n\n=== System DNS configuration ===\n\nThis is the DNS configuration that Tailscale believes your operating system is using.\nTailscale may use this configuration if &#x27;Override Local DNS&#x27; is disabled in the admin console,\nor if no resolvers are provided by the coordination server.\n\nNameservers:\n  - 127.0.0.1\n  - 192.168.2.5\n  - 192.168.255.251\n  - 192.168.255.253\n  - fc00:0:0:2::5\n  - fc00:0:0:255::251\n  - fc00:0:0:255::253\n  - fc00:0:0:2::4\n  - fd00:976a::9\n  - fd00:976a::10\n  - fd00:976a::9\n  - fd00:976a::10\n\nSearch domains:\n  - example.com\n\n[this is a preliminary version of this command; the output format may change in the future]\n```\n**Headscale Config**\n```\nserver_url: https://hs.example.com\nlisten_addr: 0.0.0.0:8080\nmetrics_listen_addr: 0.0.0.0:9090\ngrpc_listen_addr: 0.0.0.0:50443\ngrpc_allow_insecure: false\nnoise:\n  private_key_path: /var/lib/headscale/noise_private.key\nprefixes:\n  v4: 100.64.0.0/24\n  v6: fd7a:115c:a1e0::/64\n  allocation: sequential\nderp:\n  server:\n    enabled: false\n  urls:\n    - https://controlplane.tailscale.com/derpmap/default\n  auto_update_enabled: true\n  update_frequency: 24h\n  disable_check_updates: false\n  ephemeral_node_inactivity_timeout: 30m\ndatabase:\n  type: sqlite\n  debug: false\n  gorm:\n    prepare_stmt: true\n    parameterized_queries: true\n    skip_err_record_not_found: true\n    slow_threshold: 1000\n  sqlite:\n    path: /etc/headscale/db.sqlite\n    write_ahead_log: true\n    wal_autocheckpoint: 1000\nlog:\n  format: text\n  level: info\npolicy:\n  mode: file\n  path: \&quot;\&quot;\ndns:\n  magic_dns: false\n  base_domain: headscale\n  nameservers:\n    global:\n      - fd7a:115c:a1e0::16\n      - fd7a:115c:a1e0::17\n      - fd7a:115c:a1e0::18\n      - fd7a:115c:a1e0::19\n      - 100.64.0.22\n      - 100.64.0.23\n      - 100.64.0.24\n      - 100.64.0.25\n  search_domains:\n    - example.com\nunix_socket: /var/run/headscale/headscale.sock\nunix_socket_permission: \&quot;0770\&quot;\nlogtail:\n  enabled: false\nrandomize_client_port: false\n```\n**Headscale Log**\n```\n2025-02-08T08:03:00Z WRN An updated version of Headscale has been found (0.25.0-beta.2 vs. your current v0.24.3). Check it out https://github.com/juanfont/headscale/releases\n\n2025-02-08T08:03:00Z INF Opening database database=sqlite3 path=/etc/headscale/db.sqlite\n2025-02-08T08:03:01Z WRN Listening without TLS but ServerURL does not start with http://\n2025-02-08T08:03:01Z INF listening and serving HTTP on: 0.0.0.0:8080\n2025-02-08T08:03:01Z INF listening and serving debug and metrics on: 0.0.0.0:9090\n2025-02-08T08:03:01Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc000002480, chan: 0xc000454540 node=syCanA node.id=22 omitPeers=false readOnly=false stream=true\n2025-02-08T08:03:02Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc000002780, chan: 0xc00030f0a0 node=syLab node.id=16 omitPeers=false readOnly=false stream=true\n2025-02-08T08:03:05Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc00027b200, chan: 0xc0005356c0 node=Bound2 node.id=30 omitPeers=false readOnly=false stream=true\n2025-02-08T08:03:06Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc000002600, chan: 0xc000518fc0 node=gns3 node.id=23 omitPeers=false readOnly=false stream=true\n2025-02-08T08:03:06Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc00023a480, chan: 0xc00030e700 node=Bound1 node.id=34 omitPeers=false readOnly=false stream=true\n2025-02-08T08:03:06Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc00027b380, chan: 0xc000455880 node=kvm-player2 node.id=42 omitPeers=false readOnly=false stream=true\n2025-02-08T08:03:06Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc00023a780, chan: 0xc00030f340 node=Bound4 node.id=32 omitPeers=false readOnly=false stream=true\n2025-02-08T08:03:06Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc000002900, chan: 0xc000303180 node=doklaba node.id=19 omitPeers=false readOnly=false stream=true\n2025-02-08T08:03:06Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc00023b200, chan: 0xc0005205b0 node=Player1 node.id=2 omitPeers=false readOnly=false stream=true\n2025-02-08T08:03:06Z INF home/runner/work/headscale/headscale/hscontrol/poll.go:634 &gt; node has connected, mapSession: 0xc00027be00, chan: 0xc000300150 node=Bound3 node.id=31 omitPeers=false readOnly=false stream=true\n```&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2645872514/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;MeCJay12&quot;,
+    &quot;id&quot;: 43658705,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQzNjU4NzA1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/43658705?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MeCJay12&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MeCJay12&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MeCJay12/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MeCJay12/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MeCJay12/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MeCJay12/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MeCJay12/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MeCJay12/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MeCJay12/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MeCJay12/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MeCJay12/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-02-09T08:34:18Z · commented · nblock</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2646126140&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2355#issuecomment-2646126140&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2355&quot;,
+  &quot;id&quot;: 2646126140,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886duK48&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-02-09T08:34:18Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-02-09T08:34:18Z&quot;,
+  &quot;body&quot;: &quot;Are you using `systemd-resolved`, please post the output of `resolvectl status` .&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2646126140/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-02-09T16:49:41Z · commented · nblock</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2646400189&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2355#issuecomment-2646400189&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2355&quot;,
+  &quot;id&quot;: 2646400189,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886dvNy9&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-02-09T16:49:41Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-02-09T16:49:41Z&quot;,
+  &quot;body&quot;: &quot;Probably related: \n\n* https://github.com/tailscale/tailscale/issues/14486\n* https://github.com/tailscale/tailscale/issues/13906&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2646400189/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-02-09T16:57:25Z · commented · MeCJay12</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2646404919&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2355#issuecomment-2646404919&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2355&quot;,
+  &quot;id&quot;: 2646404919,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886dvO83&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;MeCJay12&quot;,
+    &quot;id&quot;: 43658705,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQzNjU4NzA1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/43658705?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MeCJay12&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MeCJay12&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MeCJay12/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MeCJay12/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MeCJay12/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MeCJay12/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MeCJay12/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MeCJay12/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MeCJay12/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MeCJay12/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MeCJay12/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-02-09T16:57:25Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-02-09T16:57:25Z&quot;,
+  &quot;body&quot;: &quot;**resolvectl status**\n```\nGlobal\n           Protocols: -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n    resolv.conf mode: foreign\n         DNS Servers: 127.0.0.1\nFallback DNS Servers: 192.168.2.4\n\nLink 2 (eth0)\nCurrent Scopes: DNS\n     Protocols: +DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n   DNS Servers: fd00:976a::9 fd00:976a::10\n\nLink 3 (vlan2)\nCurrent Scopes: DNS\n     Protocols: +DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n   DNS Servers: 192.168.2.5 192.168.255.251 192.168.255.253 fc00:0:0:2::5 fc00:0:0:255::251\n                fc00:0:0:255::253 fc00:0:0:2::4 fd00:976a::9 fd00:976a::10\n    DNS Domain: cshaheen.tech\n\nLink 4 (tailscale0)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 5 (br-00edbee28006)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 6 (br-7540beaf1abd)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 7 (docker0)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 8 (br-de821f6e70c8)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 10 (veth9335f16)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 12 (vetha3ad70f)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 14 (vethff56857)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 17 (veth33e9513)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 19 (veth5a41571)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 23 (vethf9097a5)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 25 (vethe952455)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 27 (veth351d6d9)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 29 (veth0ba56c3)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 31 (vetheb6422d)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 33 (vethdd4b181)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 35 (vetha1cf3e5)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 37 (vethd79a74c)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 85 (veth542451b)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n\nLink 87 (veth73c7452)\nCurrent Scopes: none\n     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported\n```&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2646404919/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;MeCJay12&quot;,
+    &quot;id&quot;: 43658705,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQzNjU4NzA1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/43658705?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MeCJay12&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MeCJay12&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MeCJay12/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MeCJay12/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MeCJay12/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MeCJay12/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MeCJay12/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MeCJay12/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MeCJay12/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MeCJay12/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MeCJay12/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-02-09T16:57:36Z · unsubscribed · MeCJay12</summary><pre>{
+  &quot;id&quot;: 16238771548,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz886myVOhzwAAAAPH5_1c&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/16238771548&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;MeCJay12&quot;,
+    &quot;id&quot;: 43658705,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQzNjU4NzA1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/43658705?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MeCJay12&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MeCJay12&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MeCJay12/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MeCJay12/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MeCJay12/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MeCJay12/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MeCJay12/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MeCJay12/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MeCJay12/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MeCJay12/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MeCJay12/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-02-09T16:57:36Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-02-09T16:57:37Z · subscribed · MeCJay12</summary><pre>{
+  &quot;id&quot;: 16238771584,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz886myVOhzwAAAAPH5_2A&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/16238771584&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;MeCJay12&quot;,
+    &quot;id&quot;: 43658705,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQzNjU4NzA1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/43658705?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MeCJay12&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MeCJay12&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MeCJay12/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MeCJay12/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MeCJay12/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MeCJay12/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MeCJay12/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MeCJay12/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MeCJay12/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MeCJay12/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MeCJay12/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-02-09T16:57:37Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-02-12T15:22:44Z · subscribed · toppk</summary><pre>{
+  &quot;id&quot;: 16282813923,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz886myVOhzwAAAAPKiAXj&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/16282813923&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;toppk&quot;,
+    &quot;id&quot;: 6306634,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjYzMDY2MzQ=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6306634?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/toppk&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/toppk&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/toppk/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/toppk/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/toppk/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/toppk/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/toppk/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/toppk/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/toppk/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/toppk/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/toppk/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-02-12T15:22:44Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-02-17T16:10:23Z · subscribed · d0ntrash</summary><pre>{
+  &quot;id&quot;: 16336125522,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz886myVOhzwAAAAPNtX5S&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/16336125522&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;d0ntrash&quot;,
+    &quot;id&quot;: 50521948,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjUwNTIxOTQ4&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/50521948?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/d0ntrash&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/d0ntrash&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/d0ntrash/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/d0ntrash/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/d0ntrash/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/d0ntrash/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/d0ntrash/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/d0ntrash/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/d0ntrash/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/d0ntrash/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/d0ntrash/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-02-17T16:10:23Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-02-27T10:03:21Z · subscribed · quantumdecoherence</summary><pre>{
+  &quot;id&quot;: 16494008792,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz886myVOhzwAAAAPXHpnY&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/16494008792&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;quantumdecoherence&quot;,
+    &quot;id&quot;: 91878185,
+    &quot;node_id&quot;: &quot;U_kgDOBXnzKQ&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/91878185?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/quantumdecoherence&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/quantumdecoherence&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/quantumdecoherence/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/quantumdecoherence/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/quantumdecoherence/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/quantumdecoherence/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/quantumdecoherence/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/quantumdecoherence/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/quantumdecoherence/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/quantumdecoherence/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/quantumdecoherence/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-02-27T10:03:21Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-03-04T10:04:07Z · subscribed · kanwren</summary><pre>{
+  &quot;id&quot;: 16554246706,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz886myVOhzwAAAAPatcIy&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/16554246706&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kanwren&quot;,
+    &quot;id&quot;: 34543915,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjM0NTQzOTE1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/34543915?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kanwren&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kanwren&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kanwren/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kanwren/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kanwren/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kanwren/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kanwren/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kanwren/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kanwren/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kanwren/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kanwren/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-03-04T10:04:07Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-03-11T20:38:43Z · commented · jdewinne</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2715652203&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2355#issuecomment-2715652203&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2355&quot;,
+  &quot;id&quot;: 2715652203,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886h3ZBr&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;jdewinne&quot;,
+    &quot;id&quot;: 1579188,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE1NzkxODg=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/1579188?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/jdewinne&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/jdewinne&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/jdewinne/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/jdewinne/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/jdewinne/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/jdewinne/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/jdewinne/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/jdewinne/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/jdewinne/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/jdewinne/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/jdewinne/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-03-11T20:38:43Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-03-11T20:38:43Z&quot;,
+  &quot;body&quot;: &quot;In case you&#x27;re not able to use https for the control server, I&#x27;ve made a PR (tailscale/tailscale#15277) that allows disabling the noise dial check.\nThis can be a valid use case when running headscale in a ephemeral way, so that creating a valid cert is not possible.\n&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2715652203/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;jdewinne&quot;,
+    &quot;id&quot;: 1579188,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE1NzkxODg=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/1579188?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/jdewinne&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/jdewinne&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/jdewinne/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/jdewinne/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/jdewinne/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/jdewinne/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/jdewinne/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/jdewinne/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/jdewinne/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/jdewinne/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/jdewinne/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-03-12T00:13:18Z · commented · MeCJay12</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2716015459&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2355#issuecomment-2716015459&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2355&quot;,
+  &quot;id&quot;: 2716015459,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886h4xtj&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;MeCJay12&quot;,
+    &quot;id&quot;: 43658705,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQzNjU4NzA1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/43658705?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MeCJay12&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MeCJay12&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MeCJay12/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MeCJay12/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MeCJay12/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MeCJay12/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MeCJay12/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MeCJay12/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MeCJay12/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MeCJay12/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MeCJay12/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-03-12T00:13:18Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-03-12T00:13:18Z&quot;,
+  &quot;body&quot;: &quot;That could be my issue. Does the noise dial check require direct HTTPS to the server? My Headscale server is behind a reverse proxy that does the actual HTTPS decryption and passes back to the server in plain HTTP.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2716015459/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;MeCJay12&quot;,
+    &quot;id&quot;: 43658705,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQzNjU4NzA1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/43658705?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MeCJay12&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MeCJay12&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MeCJay12/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MeCJay12/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MeCJay12/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MeCJay12/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MeCJay12/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MeCJay12/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MeCJay12/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MeCJay12/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MeCJay12/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-03-12T03:26:39Z · commented · jdewinne</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2716315879&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2355#issuecomment-2716315879&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2355&quot;,
+  &quot;id&quot;: 2716315879,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886h57Dn&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;jdewinne&quot;,
+    &quot;id&quot;: 1579188,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE1NzkxODg=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/1579188?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/jdewinne&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/jdewinne&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/jdewinne/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/jdewinne/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/jdewinne/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/jdewinne/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/jdewinne/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/jdewinne/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/jdewinne/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/jdewinne/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/jdewinne/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-03-12T03:26:39Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-03-12T03:26:39Z&quot;,
+  &quot;body&quot;: &quot;This is the case the PR handles:\n&gt; control: controlhttp: forcing port 443 dial due to recent noise dial\n\nIf headscale is using a private IP, the `forcing port 443` will not happen if using tailscale 1.80.3+\nIf headscale is not using a private IP, you should most likely look into at least running it using https. If that is not possible (for whatever reason) the PR tailscale/tailscale#15277 could be a workaround to disable the noise dial check.\n\nSo it looks like if a recent noise dial check happened, the tailscale client will automatically switch to using https, unless you have headscale running on a private ip.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2716315879/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;jdewinne&quot;,
+    &quot;id&quot;: 1579188,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE1NzkxODg=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/1579188?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/jdewinne&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/jdewinne&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/jdewinne/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/jdewinne/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/jdewinne/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/jdewinne/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/jdewinne/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/jdewinne/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/jdewinne/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/jdewinne/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/jdewinne/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-05-14T23:43:07Z · subscribed · kgreenek</summary><pre>{
+  &quot;id&quot;: 17662062585,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz886myVOhzwAAAAQcva_5&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/17662062585&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kgreenek&quot;,
+    &quot;id&quot;: 1295700,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEyOTU3MDA=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/1295700?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kgreenek&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kgreenek&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kgreenek/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kgreenek/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kgreenek/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kgreenek/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kgreenek/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kgreenek/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kgreenek/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kgreenek/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kgreenek/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-05-14T23:43:07Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-05-29T01:14:05Z · subscribed · brenozd</summary><pre>{
+  &quot;id&quot;: 17860137719,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz886myVOhzwAAAAQojBL3&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/17860137719&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;brenozd&quot;,
+    &quot;id&quot;: 18338829,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MzM4ODI5&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/18338829?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/brenozd&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/brenozd&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/brenozd/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/brenozd/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/brenozd/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/brenozd/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/brenozd/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/brenozd/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/brenozd/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/brenozd/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/brenozd/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-05-29T01:14:05Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-06-11T02:10:32Z · commented · github-actions[bot]</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2961015888&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2355#issuecomment-2961015888&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2355&quot;,
+  &quot;id&quot;: 2961015888,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886wfYRQ&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-06-11T02:10:32Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-06-11T02:10:32Z&quot;,
+  &quot;body&quot;: &quot;This issue is stale because it has been open for 90 days with no activity.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2961015888/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: {
+    &quot;id&quot;: 15368,
+    &quot;client_id&quot;: &quot;Iv1.05c79e9ad1f6bdfa&quot;,
+    &quot;slug&quot;: &quot;github-actions&quot;,
+    &quot;node_id&quot;: &quot;MDM6QXBwMTUzNjg=&quot;,
+    &quot;owner&quot;: {
+      &quot;login&quot;: &quot;github&quot;,
+      &quot;id&quot;: 9919,
+      &quot;node_id&quot;: &quot;MDEyOk9yZ2FuaXphdGlvbjk5MTk=&quot;,
+      &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/9919?v=4&quot;,
+      &quot;gravatar_id&quot;: &quot;&quot;,
+      &quot;url&quot;: &quot;https://api.github.com/users/github&quot;,
+      &quot;html_url&quot;: &quot;https://github.com/github&quot;,
+      &quot;followers_url&quot;: &quot;https://api.github.com/users/github/followers&quot;,
+      &quot;following_url&quot;: &quot;https://api.github.com/users/github/following{/other_user}&quot;,
+      &quot;gists_url&quot;: &quot;https://api.github.com/users/github/gists{/gist_id}&quot;,
+      &quot;starred_url&quot;: &quot;https://api.github.com/users/github/starred{/owner}{/repo}&quot;,
+      &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github/subscriptions&quot;,
+      &quot;organizations_url&quot;: &quot;https://api.github.com/users/github/orgs&quot;,
+      &quot;repos_url&quot;: &quot;https://api.github.com/users/github/repos&quot;,
+      &quot;events_url&quot;: &quot;https://api.github.com/users/github/events{/privacy}&quot;,
+      &quot;received_events_url&quot;: &quot;https://api.github.com/users/github/received_events&quot;,
+      &quot;type&quot;: &quot;Organization&quot;,
+      &quot;user_view_type&quot;: &quot;public&quot;,
+      &quot;site_admin&quot;: false
+    },
+    &quot;name&quot;: &quot;GitHub Actions&quot;,
+    &quot;description&quot;: &quot;Automate your workflow from idea to production&quot;,
+    &quot;external_url&quot;: &quot;https://help.github.com/en/actions&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;created_at&quot;: &quot;2018-07-30T09:30:17Z&quot;,
+    &quot;updated_at&quot;: &quot;2026-06-18T16:17:48Z&quot;,
+    &quot;permissions&quot;: {
+      &quot;actions&quot;: &quot;write&quot;,
+      &quot;administration&quot;: &quot;read&quot;,
+      &quot;artifact_metadata&quot;: &quot;write&quot;,
+      &quot;attestations&quot;: &quot;write&quot;,
+      &quot;checks&quot;: &quot;write&quot;,
+      &quot;code_quality&quot;: &quot;write&quot;,
+      &quot;contents&quot;: &quot;write&quot;,
+      &quot;copilot_requests&quot;: &quot;write&quot;,
+      &quot;deployments&quot;: &quot;write&quot;,
+      &quot;discussions&quot;: &quot;write&quot;,
+      &quot;drives&quot;: &quot;write&quot;,
+      &quot;issues&quot;: &quot;write&quot;,
+      &quot;merge_queues&quot;: &quot;write&quot;,
+      &quot;metadata&quot;: &quot;read&quot;,
+      &quot;models&quot;: &quot;read&quot;,
+      &quot;packages&quot;: &quot;write&quot;,
+      &quot;pages&quot;: &quot;write&quot;,
+      &quot;pull_requests&quot;: &quot;write&quot;,
+      &quot;repository_hooks&quot;: &quot;write&quot;,
+      &quot;repository_projects&quot;: &quot;write&quot;,
+      &quot;security_events&quot;: &quot;write&quot;,
+      &quot;statuses&quot;: &quot;write&quot;,
+      &quot;vulnerability_alerts&quot;: &quot;read&quot;
+    },
+    &quot;events&quot;: [
+      &quot;branch_protection_rule&quot;,
+      &quot;check_run&quot;,
+      &quot;check_suite&quot;,
+      &quot;create&quot;,
+      &quot;delete&quot;,
+      &quot;deployment&quot;,
+      &quot;deployment_status&quot;,
+      &quot;discussion&quot;,
+      &quot;discussion_comment&quot;,
+      &quot;fork&quot;,
+      &quot;gollum&quot;,
+      &quot;issues&quot;,
+      &quot;issue_comment&quot;,
+      &quot;label&quot;,
+      &quot;merge_group&quot;,
+      &quot;milestone&quot;,
+      &quot;page_build&quot;,
+      &quot;public&quot;,
+      &quot;pull_request&quot;,
+      &quot;pull_request_review&quot;,
+      &quot;pull_request_review_comment&quot;,
+      &quot;push&quot;,
+      &quot;registry_package&quot;,
+      &quot;release&quot;,
+      &quot;repository&quot;,
+      &quot;repository_dispatch&quot;,
+      &quot;status&quot;,
+      &quot;watch&quot;,
+      &quot;workflow_dispatch&quot;,
+      &quot;workflow_run&quot;
+    ]
+  },
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-06-11T02:10:32Z · labeled · github-actions[bot]</summary><pre>{
+  &quot;id&quot;: 18085295770,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz886myVOhzwAAAAQ197aa&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/18085295770&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-06-11T02:10:32Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;stale&quot;,
+    &quot;color&quot;: &quot;ededed&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-06-18T06:07:01Z · commented · github-actions[bot]</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2982810949&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2355#issuecomment-2982810949&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2355&quot;,
+  &quot;id&quot;: 2982810949,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886xyhVF&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-06-18T06:07:01Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-06-18T06:07:01Z&quot;,
+  &quot;body&quot;: &quot;This issue was closed because it has been inactive for 14 days since being marked as stale.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2982810949/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: {
+    &quot;id&quot;: 15368,
+    &quot;client_id&quot;: &quot;Iv1.05c79e9ad1f6bdfa&quot;,
+    &quot;slug&quot;: &quot;github-actions&quot;,
+    &quot;node_id&quot;: &quot;MDM6QXBwMTUzNjg=&quot;,
+    &quot;owner&quot;: {
+      &quot;login&quot;: &quot;github&quot;,
+      &quot;id&quot;: 9919,
+      &quot;node_id&quot;: &quot;MDEyOk9yZ2FuaXphdGlvbjk5MTk=&quot;,
+      &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/9919?v=4&quot;,
+      &quot;gravatar_id&quot;: &quot;&quot;,
+      &quot;url&quot;: &quot;https://api.github.com/users/github&quot;,
+      &quot;html_url&quot;: &quot;https://github.com/github&quot;,
+      &quot;followers_url&quot;: &quot;https://api.github.com/users/github/followers&quot;,
+      &quot;following_url&quot;: &quot;https://api.github.com/users/github/following{/other_user}&quot;,
+      &quot;gists_url&quot;: &quot;https://api.github.com/users/github/gists{/gist_id}&quot;,
+      &quot;starred_url&quot;: &quot;https://api.github.com/users/github/starred{/owner}{/repo}&quot;,
+      &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github/subscriptions&quot;,
+      &quot;organizations_url&quot;: &quot;https://api.github.com/users/github/orgs&quot;,
+      &quot;repos_url&quot;: &quot;https://api.github.com/users/github/repos&quot;,
+      &quot;events_url&quot;: &quot;https://api.github.com/users/github/events{/privacy}&quot;,
+      &quot;received_events_url&quot;: &quot;https://api.github.com/users/github/received_events&quot;,
+      &quot;type&quot;: &quot;Organization&quot;,
+      &quot;user_view_type&quot;: &quot;public&quot;,
+      &quot;site_admin&quot;: false
+    },
+    &quot;name&quot;: &quot;GitHub Actions&quot;,
+    &quot;description&quot;: &quot;Automate your workflow from idea to production&quot;,
+    &quot;external_url&quot;: &quot;https://help.github.com/en/actions&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;created_at&quot;: &quot;2018-07-30T09:30:17Z&quot;,
+    &quot;updated_at&quot;: &quot;2026-06-18T16:17:48Z&quot;,
+    &quot;permissions&quot;: {
+      &quot;actions&quot;: &quot;write&quot;,
+      &quot;administration&quot;: &quot;read&quot;,
+      &quot;artifact_metadata&quot;: &quot;write&quot;,
+      &quot;attestations&quot;: &quot;write&quot;,
+      &quot;checks&quot;: &quot;write&quot;,
+      &quot;code_quality&quot;: &quot;write&quot;,
+      &quot;contents&quot;: &quot;write&quot;,
+      &quot;copilot_requests&quot;: &quot;write&quot;,
+      &quot;deployments&quot;: &quot;write&quot;,
+      &quot;discussions&quot;: &quot;write&quot;,
+      &quot;drives&quot;: &quot;write&quot;,
+      &quot;issues&quot;: &quot;write&quot;,
+      &quot;merge_queues&quot;: &quot;write&quot;,
+      &quot;metadata&quot;: &quot;read&quot;,
+      &quot;models&quot;: &quot;read&quot;,
+      &quot;packages&quot;: &quot;write&quot;,
+      &quot;pages&quot;: &quot;write&quot;,
+      &quot;pull_requests&quot;: &quot;write&quot;,
+      &quot;repository_hooks&quot;: &quot;write&quot;,
+      &quot;repository_projects&quot;: &quot;write&quot;,
+      &quot;security_events&quot;: &quot;write&quot;,
+      &quot;statuses&quot;: &quot;write&quot;,
+      &quot;vulnerability_alerts&quot;: &quot;read&quot;
+    },
+    &quot;events&quot;: [
+      &quot;branch_protection_rule&quot;,
+      &quot;check_run&quot;,
+      &quot;check_suite&quot;,
+      &quot;create&quot;,
+      &quot;delete&quot;,
+      &quot;deployment&quot;,
+      &quot;deployment_status&quot;,
+      &quot;discussion&quot;,
+      &quot;discussion_comment&quot;,
+      &quot;fork&quot;,
+      &quot;gollum&quot;,
+      &quot;issues&quot;,
+      &quot;issue_comment&quot;,
+      &quot;label&quot;,
+      &quot;merge_group&quot;,
+      &quot;milestone&quot;,
+      &quot;page_build&quot;,
+      &quot;public&quot;,
+      &quot;pull_request&quot;,
+      &quot;pull_request_review&quot;,
+      &quot;pull_request_review_comment&quot;,
+      &quot;push&quot;,
+      &quot;registry_package&quot;,
+      &quot;release&quot;,
+      &quot;repository&quot;,
+      &quot;repository_dispatch&quot;,
+      &quot;status&quot;,
+      &quot;watch&quot;,
+      &quot;workflow_dispatch&quot;,
+      &quot;workflow_run&quot;
+    ]
+  },
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-06-18T06:07:01Z · closed · github-actions[bot]</summary><pre>{
+  &quot;id&quot;: 18203351939,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz886myVOhzwAAAAQ9ARuD&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/18203351939&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-06-18T06:07:01Z&quot;,
+  &quot;state_reason&quot;: &quot;not_planned&quot;,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

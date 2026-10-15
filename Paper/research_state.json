@@ -1,0 +1,153 @@
+{
+  "objective": "将学生CW升级为可投CCF B或二区期刊的论文",
+  "status": "active",
+  "manuscript": "Paper/build/manuscript.pdf",
+  "verified_pages": 18,
+  "tests_passed": 41,
+  "completed": [
+    "Workspace-local uv and locked Python research environment",
+    "Pinned Git, identity and timestamp sensitivity",
+    "Complete 2166 PR metadata, submitted-review and lifecycle census",
+    "Complete file membership for 1318 merged human-account PRs",
+    "76 PR comment-process pilot and 100 issue evidence sample",
+    "Matched author/reviewer/integrator roles with fractional PR credit and artifact-scope controls",
+    "First processing episodes and historical pending queues; metadata-only baseline archived",
+    "Exploratory merge models with role, exposure-window, elapsed-time and omitted-backlog sensitivity",
+    "41 tests and raw-page, numerical-source, script and dependency provenance verification",
+    "Compiled an English working draft; independent human coding forms prepared",
+    "Five-minute episode coalescing and all 23 leave-quarter-out influence fits completed",
+    "All Bash reproduction and documented Python collection entry points use the locked uv environment; baseline metrics reproduced byte-for-byte",
+    "Declared human coding and source-bound adjudication importer tested; no real human annotations completed",
+    "Neutral independently ordered offline packets for all 100 sampled issues, with 48 available commit patches and 12 exact-SHA-linked PR contexts; complete rendered bodies and unchanged human inputs verified",
+    "Author-confirmed name and affiliation incorporated; unconfirmed correspondence and supervisor coauthorship recorded explicitly",
+    "English venue/contribution assessment checked against current CCF classification and publisher sources; no unverified current quartile claimed",
+    "English-only manuscript and review instructions; 235-word abstract with defined HHI and six keywords",
+    "Verified flattened manuscript review ZIP independently compiles to identical rendered text",
+    "Targeted Headscale and maintenance-direction literature search recorded; same-project performance paper and direct review-aware bus-factor precedents integrated with access limits",
+    "Conditional ESEM/ICSME research-track assessment checked against official CCF directory and conference calls; contribution validation remains unfinished",
+    "Missing reviewer identity sensitivity verified on the fixed 1259 reviewed merged PRs; conservative outer bounds and conditional ordering reversals added to the English manuscript, with independent enumeration/optimization checks",
+    "Two selected closing-commit cases have executed parent/repair component checks with identical oracles and dependency manifests; three regressions change from fail to pass and two controls pass on both versions, including a cached rerun"
+  ],
+  "in_progress": [],
+  "required_remaining": [
+    "Conduct declared human responsibility/outcome coding of the fixed sample after the author's deferred stage; choose the actual reviewer design and preserve original judgments",
+    "Validate explanatory mechanisms and distinguish the contribution from issue-classification and review-ownership research",
+    "Integrate declared human coding, agreement and adjudication evidence when available",
+    "Human author review and venue-specific submission preparation"
+  ],
+  "note": "Goal remains active and unachieved. Two source-available server repair cases now have native before/after component evidence, semantic failure checks and normal-case controls, reproduced in a cached run. The English 18-page working draft, 126 generated quantities and independent review-source compilation are verified; 41 Python tests pass. Component behavior checks strengthen local repair evidence but do not establish a general responsibility-routing mechanism, population repair prevalence or sufficient CCF B novelty. Human coding remains deferred and unperformed; human author review, corresponding authorship and final declarations are unfinished. No venue submission or permanent archival deposit has occurred.",
+  "review_endpoints_completed": 2166,
+  "current_working_manuscript_title": "Contribution Concentration and Maintenance Outcomes: A Longitudinal Case Study of Headscale",
+  "generated_quantities": 126,
+  "timeline_endpoints_completed": 2166,
+  "merged_pr_file_endpoints_completed": 1318,
+  "previous_goal_turn_classification": "progress",
+  "last_updated_at_utc": "2026-10-15T02:24:33.190321+00:00",
+  "process_history": [
+    {
+      "task": "Review census",
+      "session_id": 63231,
+      "state": "completed, exit 0"
+    },
+    {
+      "task": "Timeline census",
+      "session_id": 90775,
+      "state": "completed, exit 0"
+    },
+    {
+      "task": "Merged PR file census",
+      "session_id": 66070,
+      "state": "completed, exit 0"
+    },
+    {
+      "task": "Initial native repair execution",
+      "session_id": 69077,
+      "state": "completed, exit 0"
+    },
+    {
+      "task": "Cached native repair execution",
+      "session_id": 18378,
+      "state": "completed, exit 0"
+    },
+    {
+      "task": "41-test Python suite",
+      "session_id": 97743,
+      "state": "completed, exit 0"
+    },
+    {
+      "task": "Working manuscript compilation",
+      "session_id": 72394,
+      "state": "completed, exit 0"
+    },
+    {
+      "task": "Standalone review-source compilation",
+      "session_id": 48348,
+      "state": "completed, exit 0"
+    }
+  ],
+  "pending_user_input": "Supervisor coauthorship and corresponding author to be confirmed later; coding deferred rather than awaiting an immediate reply",
+  "last_goal_turn_evidence": {
+    "author_metadata": "Paper/submission/author_metadata.json",
+    "venue_assessment": "Paper/submission/venue_assessment.txt",
+    "draft_declarations": "Paper/submission/declarations.txt",
+    "standalone_compile": "Paper/submission/review_package_verification.json",
+    "compiled_artifact": "Paper/build/verification.json",
+    "semantic_coding": "Deferred; actual forms remain uncompleted",
+    "literature_overlap": "Paper/submission/literature_overlap_assessment.txt",
+    "literature_search_log": "Paper/submission/literature_search_log.json",
+    "conference_contribution_assessment": "Paper/submission/venue_assessment.txt",
+    "review_identity_sensitivity": "Paper/results/review-identity-sensitivity/summary.json",
+    "full_test_suite": {
+      "tests_passed": 41,
+      "log": "/tmp/headscale-tests-repair.log",
+      "log_sha256": "b3343e1b6f3f06bc2e44ee908d4ca20eb5c1285abd0e0bc961e2e1389212300a"
+    },
+    "cached_timeline_identity_crosscheck": {
+      "records_checked": 212,
+      "exact_reviewed_event_id_matches": 208,
+      "exact_matches_with_no_account_login": 208,
+      "no_exact_event_id_matches": 4,
+      "preserved_actor_logins_found": 0,
+      "scope": "Exact review IDs in already collected timeline events; no current API re-fetch or identity imputation"
+    },
+    "component_repair_validation": "Paper/results/repair-validation/20261015T021429517007Z/summary.json",
+    "component_execution_plan": "Paper/repair_validation_plan.json"
+  },
+  "confirmed_author": "Xiaoyu SHEN",
+  "affiliation": "University of Nottingham Ningbo China",
+  "submission_language": "English",
+  "corresponding_author_status": "Unconfirmed; author-provided provisional contact George.Zhou@nottingham.edu.cn",
+  "semantic_review_status": "Deferred at the author's request; zero declared completed human coding cases",
+  "review_identity_sensitivity_status": {
+    "fixed_reviewed_prs": 1259,
+    "eligible_missing_records": 177,
+    "affected_prs": 74,
+    "affected_quarters": [
+      "2022-Q2",
+      "2025-Q2",
+      "2025-Q3",
+      "2025-Q4"
+    ],
+    "conditional_reviewer_author_order_reversal_quarters": [
+      "2025-Q2",
+      "2025-Q3"
+    ],
+    "sharp_bounds": false,
+    "identities_imputed": false
+  },
+  "component_validation_status": {
+    "cases": [
+      2121,
+      2181
+    ],
+    "regression_checks": 3,
+    "normal_case_controls": 2,
+    "both_versions_executed": true,
+    "cached_rerun_passed": true,
+    "toolchain": "go1.24.0",
+    "actual_version_observed": "go version go1.24.0 linux/amd64",
+    "original_deployment_replayed": false,
+    "human_labels_generated": false,
+    "population_repair_prevalence_estimated": false
+  }
+}

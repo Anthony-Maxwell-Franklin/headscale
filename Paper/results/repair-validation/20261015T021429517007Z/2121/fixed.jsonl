@@ -1,0 +1,20 @@
+{"Time":"2026-10-15T02:14:31.80720631Z","Action":"start","Package":"github.com/juanfont/headscale/hscontrol/db"}
+{"Time":"2026-10-15T02:14:31.813339962Z","Action":"run","Package":"github.com/juanfont/headscale/hscontrol/db","Test":"TestResearchRename2121"}
+{"Time":"2026-10-15T02:14:31.813425025Z","Action":"output","Package":"github.com/juanfont/headscale/hscontrol/db","Test":"TestResearchRename2121","Output":"=== RUN   TestResearchRename2121\n"}
+{"Time":"2026-10-15T02:14:31.813449167Z","Action":"run","Package":"github.com/juanfont/headscale/hscontrol/db","Test":"TestResearchRename2121/unique_name"}
+{"Time":"2026-10-15T02:14:31.813454231Z","Action":"output","Package":"github.com/juanfont/headscale/hscontrol/db","Test":"TestResearchRename2121/unique_name","Output":"=== RUN   TestResearchRename2121/unique_name\n"}
+{"Time":"2026-10-15T02:14:31.813457098Z","Action":"output","Package":"github.com/juanfont/headscale/hscontrol/db","Test":"TestResearchRename2121/unique_name","Output":"2026/10/15 02:14:31 database path: /home/franklin/CW/.cache/go-tmp/headscale-db-test-3223793499/headscale_test.db\n"}
+{"Time":"2026-10-15T02:14:31.813460135Z","Action":"output","Package":"github.com/juanfont/headscale/hscontrol/db","Test":"TestResearchRename2121/unique_name","Output":"{\"level\":\"info\",\"database\":\"sqlite3\",\"path\":\"/home/franklin/CW/.cache/go-tmp/headscale-db-test-3223793499/headscale_test.db\",\"time\":\"2026-10-15T02:14:31Z\",\"message\":\"Opening database\"}\n"}
+{"Time":"2026-10-15T02:14:32.115274541Z","Action":"output","Package":"github.com/juanfont/headscale/hscontrol/db","Test":"TestResearchRename2121/unique_name","Output":"--- PASS: TestResearchRename2121/unique_name (0.30s)\n"}
+{"Time":"2026-10-15T02:14:32.11532534Z","Action":"pass","Package":"github.com/juanfont/headscale/hscontrol/db","Test":"TestResearchRename2121/unique_name","Elapsed":0.3}
+{"Time":"2026-10-15T02:14:32.115333771Z","Action":"run","Package":"github.com/juanfont/headscale/hscontrol/db","Test":"TestResearchRename2121/duplicate_name"}
+{"Time":"2026-10-15T02:14:32.115338317Z","Action":"output","Package":"github.com/juanfont/headscale/hscontrol/db","Test":"TestResearchRename2121/duplicate_name","Output":"=== RUN   TestResearchRename2121/duplicate_name\n"}
+{"Time":"2026-10-15T02:14:32.115346768Z","Action":"output","Package":"github.com/juanfont/headscale/hscontrol/db","Test":"TestResearchRename2121/duplicate_name","Output":"2026/10/15 02:14:32 database path: /home/franklin/CW/.cache/go-tmp/headscale-db-test-3691494867/headscale_test.db\n"}
+{"Time":"2026-10-15T02:14:32.115351304Z","Action":"output","Package":"github.com/juanfont/headscale/hscontrol/db","Test":"TestResearchRename2121/duplicate_name","Output":"{\"level\":\"info\",\"database\":\"sqlite3\",\"path\":\"/home/franklin/CW/.cache/go-tmp/headscale-db-test-3691494867/headscale_test.db\",\"time\":\"2026-10-15T02:14:32Z\",\"message\":\"Opening database\"}\n"}
+{"Time":"2026-10-15T02:14:32.318739Z","Action":"output","Package":"github.com/juanfont/headscale/hscontrol/db","Test":"TestResearchRename2121/duplicate_name","Output":"--- PASS: TestResearchRename2121/duplicate_name (0.20s)\n"}
+{"Time":"2026-10-15T02:14:32.318789209Z","Action":"pass","Package":"github.com/juanfont/headscale/hscontrol/db","Test":"TestResearchRename2121/duplicate_name","Elapsed":0.2}
+{"Time":"2026-10-15T02:14:32.318797915Z","Action":"output","Package":"github.com/juanfont/headscale/hscontrol/db","Test":"TestResearchRename2121","Output":"--- PASS: TestResearchRename2121 (0.51s)\n"}
+{"Time":"2026-10-15T02:14:32.318801883Z","Action":"pass","Package":"github.com/juanfont/headscale/hscontrol/db","Test":"TestResearchRename2121","Elapsed":0.51}
+{"Time":"2026-10-15T02:14:32.318808101Z","Action":"output","Package":"github.com/juanfont/headscale/hscontrol/db","Output":"PASS\n"}
+{"Time":"2026-10-15T02:14:32.320502867Z","Action":"output","Package":"github.com/juanfont/headscale/hscontrol/db","Output":"ok  \tgithub.com/juanfont/headscale/hscontrol/db\t0.513s\n"}
+{"Time":"2026-10-15T02:14:32.320540704Z","Action":"pass","Package":"github.com/juanfont/headscale/hscontrol/db","Elapsed":0.513}

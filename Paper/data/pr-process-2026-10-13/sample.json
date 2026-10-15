@@ -1,0 +1,458 @@
+[
+  {
+    "number": 1,
+    "year": "2020",
+    "stratum_size": 4,
+    "inclusion_probability": 1.0
+  },
+  {
+    "number": 2,
+    "year": "2020",
+    "stratum_size": 4,
+    "inclusion_probability": 1.0
+  },
+  {
+    "number": 3,
+    "year": "2020",
+    "stratum_size": 4,
+    "inclusion_probability": 1.0
+  },
+  {
+    "number": 4,
+    "year": "2020",
+    "stratum_size": 4,
+    "inclusion_probability": 1.0
+  },
+  {
+    "number": 10,
+    "year": "2021",
+    "stratum_size": 160,
+    "inclusion_probability": 0.075
+  },
+  {
+    "number": 20,
+    "year": "2021",
+    "stratum_size": 160,
+    "inclusion_probability": 0.075
+  },
+  {
+    "number": 26,
+    "year": "2021",
+    "stratum_size": 160,
+    "inclusion_probability": 0.075
+  },
+  {
+    "number": 33,
+    "year": "2021",
+    "stratum_size": 160,
+    "inclusion_probability": 0.075
+  },
+  {
+    "number": 81,
+    "year": "2021",
+    "stratum_size": 160,
+    "inclusion_probability": 0.075
+  },
+  {
+    "number": 86,
+    "year": "2021",
+    "stratum_size": 160,
+    "inclusion_probability": 0.075
+  },
+  {
+    "number": 167,
+    "year": "2021",
+    "stratum_size": 160,
+    "inclusion_probability": 0.075
+  },
+  {
+    "number": 237,
+    "year": "2021",
+    "stratum_size": 160,
+    "inclusion_probability": 0.075
+  },
+  {
+    "number": 242,
+    "year": "2021",
+    "stratum_size": 160,
+    "inclusion_probability": 0.075
+  },
+  {
+    "number": 245,
+    "year": "2021",
+    "stratum_size": 160,
+    "inclusion_probability": 0.075
+  },
+  {
+    "number": 258,
+    "year": "2021",
+    "stratum_size": 160,
+    "inclusion_probability": 0.075
+  },
+  {
+    "number": 261,
+    "year": "2021",
+    "stratum_size": 160,
+    "inclusion_probability": 0.075
+  },
+  {
+    "number": 347,
+    "year": "2022",
+    "stratum_size": 534,
+    "inclusion_probability": 0.02247191011235955
+  },
+  {
+    "number": 517,
+    "year": "2022",
+    "stratum_size": 534,
+    "inclusion_probability": 0.02247191011235955
+  },
+  {
+    "number": 558,
+    "year": "2022",
+    "stratum_size": 534,
+    "inclusion_probability": 0.02247191011235955
+  },
+  {
+    "number": 575,
+    "year": "2022",
+    "stratum_size": 534,
+    "inclusion_probability": 0.02247191011235955
+  },
+  {
+    "number": 591,
+    "year": "2022",
+    "stratum_size": 534,
+    "inclusion_probability": 0.02247191011235955
+  },
+  {
+    "number": 624,
+    "year": "2022",
+    "stratum_size": 534,
+    "inclusion_probability": 0.02247191011235955
+  },
+  {
+    "number": 654,
+    "year": "2022",
+    "stratum_size": 534,
+    "inclusion_probability": 0.02247191011235955
+  },
+  {
+    "number": 694,
+    "year": "2022",
+    "stratum_size": 534,
+    "inclusion_probability": 0.02247191011235955
+  },
+  {
+    "number": 730,
+    "year": "2022",
+    "stratum_size": 534,
+    "inclusion_probability": 0.02247191011235955
+  },
+  {
+    "number": 847,
+    "year": "2022",
+    "stratum_size": 534,
+    "inclusion_probability": 0.02247191011235955
+  },
+  {
+    "number": 1005,
+    "year": "2022",
+    "stratum_size": 534,
+    "inclusion_probability": 0.02247191011235955
+  },
+  {
+    "number": 1064,
+    "year": "2022",
+    "stratum_size": 534,
+    "inclusion_probability": 0.02247191011235955
+  },
+  {
+    "number": 1269,
+    "year": "2023",
+    "stratum_size": 359,
+    "inclusion_probability": 0.033426183844011144
+  },
+  {
+    "number": 1353,
+    "year": "2023",
+    "stratum_size": 359,
+    "inclusion_probability": 0.033426183844011144
+  },
+  {
+    "number": 1398,
+    "year": "2023",
+    "stratum_size": 359,
+    "inclusion_probability": 0.033426183844011144
+  },
+  {
+    "number": 1399,
+    "year": "2023",
+    "stratum_size": 359,
+    "inclusion_probability": 0.033426183844011144
+  },
+  {
+    "number": 1414,
+    "year": "2023",
+    "stratum_size": 359,
+    "inclusion_probability": 0.033426183844011144
+  },
+  {
+    "number": 1422,
+    "year": "2023",
+    "stratum_size": 359,
+    "inclusion_probability": 0.033426183844011144
+  },
+  {
+    "number": 1440,
+    "year": "2023",
+    "stratum_size": 359,
+    "inclusion_probability": 0.033426183844011144
+  },
+  {
+    "number": 1446,
+    "year": "2023",
+    "stratum_size": 359,
+    "inclusion_probability": 0.033426183844011144
+  },
+  {
+    "number": 1450,
+    "year": "2023",
+    "stratum_size": 359,
+    "inclusion_probability": 0.033426183844011144
+  },
+  {
+    "number": 1546,
+    "year": "2023",
+    "stratum_size": 359,
+    "inclusion_probability": 0.033426183844011144
+  },
+  {
+    "number": 1565,
+    "year": "2023",
+    "stratum_size": 359,
+    "inclusion_probability": 0.033426183844011144
+  },
+  {
+    "number": 1639,
+    "year": "2023",
+    "stratum_size": 359,
+    "inclusion_probability": 0.033426183844011144
+  },
+  {
+    "number": 1673,
+    "year": "2024",
+    "stratum_size": 364,
+    "inclusion_probability": 0.03296703296703297
+  },
+  {
+    "number": 1702,
+    "year": "2024",
+    "stratum_size": 364,
+    "inclusion_probability": 0.03296703296703297
+  },
+  {
+    "number": 1749,
+    "year": "2024",
+    "stratum_size": 364,
+    "inclusion_probability": 0.03296703296703297
+  },
+  {
+    "number": 1782,
+    "year": "2024",
+    "stratum_size": 364,
+    "inclusion_probability": 0.03296703296703297
+  },
+  {
+    "number": 1874,
+    "year": "2024",
+    "stratum_size": 364,
+    "inclusion_probability": 0.03296703296703297
+  },
+  {
+    "number": 1918,
+    "year": "2024",
+    "stratum_size": 364,
+    "inclusion_probability": 0.03296703296703297
+  },
+  {
+    "number": 2022,
+    "year": "2024",
+    "stratum_size": 364,
+    "inclusion_probability": 0.03296703296703297
+  },
+  {
+    "number": 2054,
+    "year": "2024",
+    "stratum_size": 364,
+    "inclusion_probability": 0.03296703296703297
+  },
+  {
+    "number": 2214,
+    "year": "2024",
+    "stratum_size": 364,
+    "inclusion_probability": 0.03296703296703297
+  },
+  {
+    "number": 2254,
+    "year": "2024",
+    "stratum_size": 364,
+    "inclusion_probability": 0.03296703296703297
+  },
+  {
+    "number": 2281,
+    "year": "2024",
+    "stratum_size": 364,
+    "inclusion_probability": 0.03296703296703297
+  },
+  {
+    "number": 2302,
+    "year": "2024",
+    "stratum_size": 364,
+    "inclusion_probability": 0.03296703296703297
+  },
+  {
+    "number": 2346,
+    "year": "2025",
+    "stratum_size": 373,
+    "inclusion_probability": 0.032171581769437
+  },
+  {
+    "number": 2347,
+    "year": "2025",
+    "stratum_size": 373,
+    "inclusion_probability": 0.032171581769437
+  },
+  {
+    "number": 2392,
+    "year": "2025",
+    "stratum_size": 373,
+    "inclusion_probability": 0.032171581769437
+  },
+  {
+    "number": 2468,
+    "year": "2025",
+    "stratum_size": 373,
+    "inclusion_probability": 0.032171581769437
+  },
+  {
+    "number": 2533,
+    "year": "2025",
+    "stratum_size": 373,
+    "inclusion_probability": 0.032171581769437
+  },
+  {
+    "number": 2679,
+    "year": "2025",
+    "stratum_size": 373,
+    "inclusion_probability": 0.032171581769437
+  },
+  {
+    "number": 2727,
+    "year": "2025",
+    "stratum_size": 373,
+    "inclusion_probability": 0.032171581769437
+  },
+  {
+    "number": 2733,
+    "year": "2025",
+    "stratum_size": 373,
+    "inclusion_probability": 0.032171581769437
+  },
+  {
+    "number": 2755,
+    "year": "2025",
+    "stratum_size": 373,
+    "inclusion_probability": 0.032171581769437
+  },
+  {
+    "number": 2767,
+    "year": "2025",
+    "stratum_size": 373,
+    "inclusion_probability": 0.032171581769437
+  },
+  {
+    "number": 2814,
+    "year": "2025",
+    "stratum_size": 373,
+    "inclusion_probability": 0.032171581769437
+  },
+  {
+    "number": 2828,
+    "year": "2025",
+    "stratum_size": 373,
+    "inclusion_probability": 0.032171581769437
+  },
+  {
+    "number": 3018,
+    "year": "2026",
+    "stratum_size": 372,
+    "inclusion_probability": 0.03225806451612903
+  },
+  {
+    "number": 3019,
+    "year": "2026",
+    "stratum_size": 372,
+    "inclusion_probability": 0.03225806451612903
+  },
+  {
+    "number": 3039,
+    "year": "2026",
+    "stratum_size": 372,
+    "inclusion_probability": 0.03225806451612903
+  },
+  {
+    "number": 3109,
+    "year": "2026",
+    "stratum_size": 372,
+    "inclusion_probability": 0.03225806451612903
+  },
+  {
+    "number": 3145,
+    "year": "2026",
+    "stratum_size": 372,
+    "inclusion_probability": 0.03225806451612903
+  },
+  {
+    "number": 3164,
+    "year": "2026",
+    "stratum_size": 372,
+    "inclusion_probability": 0.03225806451612903
+  },
+  {
+    "number": 3177,
+    "year": "2026",
+    "stratum_size": 372,
+    "inclusion_probability": 0.03225806451612903
+  },
+  {
+    "number": 3221,
+    "year": "2026",
+    "stratum_size": 372,
+    "inclusion_probability": 0.03225806451612903
+  },
+  {
+    "number": 3222,
+    "year": "2026",
+    "stratum_size": 372,
+    "inclusion_probability": 0.03225806451612903
+  },
+  {
+    "number": 3368,
+    "year": "2026",
+    "stratum_size": 372,
+    "inclusion_probability": 0.03225806451612903
+  },
+  {
+    "number": 3528,
+    "year": "2026",
+    "stratum_size": 372,
+    "inclusion_probability": 0.03225806451612903
+  },
+  {
+    "number": 3545,
+    "year": "2026",
+    "stratum_size": 372,
+    "inclusion_probability": 0.03225806451612903
+  }
+]

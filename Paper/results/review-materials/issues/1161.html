@@ -1,0 +1,156 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #1161: Split DNS behaviour differs from tailscale&#x27;s</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #1161: Split DNS behaviour differs from tailscale&#x27;s</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/1161">Original issue #1161</a></p><p>Created: 2023-01-23T12:22:21Z; updated: 2023-01-30T23:15:50Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>**Bug description**
+
+Tailscale allows split DNS configurations common for corporate VPNs:
+
+ * queries for corporate domains go to a resolver on the VPN
+ * other queries go to local resolver (because I want to use my pihole)
+
+In tailscale config UI, the following configuration results in exactly the above behaviour:
+
+![splitDNS](https://user-images.githubusercontent.com/6534306/214037588-dd287251-dcc5-4373-a477-13c65442f9cc.png)
+
+My tailscale client logs show this:
+
+```
+dns: Set: {DefaultResolvers:[] Routes:{foocorp.com.:[10.1.0.2]} SearchDomains:[foocorp.com.] Hosts:4}
+dns: Resolvercfg: {Routes:{} Hosts:4 LocalDomains:[]}
+dns: OScfg: {Nameservers:[10.1.0.2] SearchDomains:[foocorp.com.] MatchDomains:[foocorp.com.] Hosts:[]}
+```
+
+and `systemd-resolve` agrees:
+
+```bash
+# resolvectl status tailscale0
+Link 4 (tailscale0)
+    Current Scopes: DNS
+         Protocols: -DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+Current DNS Server: 10.1.0.2
+       DNS Servers: 10.1.0.2
+        DNS Domain: foocorp.com
+```
+
+**To Reproduce**
+
+Equivalent headscale config would be:
+
+```yaml
+dns_config:
+  override_local_dns: false
+  restricted_nameservers:
+    foocorp.com:
+      - 10.1.0.2
+  magic_dns: false
+```
+However, headscale explictly ignores `dns_config.restricted_nameservers` unless global nameservers are configured. The closest possible config is:
+
+```yaml
+dns_config:
+  override_local_dns: true
+  nameservers:
+    - 1.1.1.1
+
+  restricted_nameservers:
+    foocorp.com:
+      - 10.1.0.2
+
+  domains: [&quot;foocorp.com&quot;]
+
+  magic_dns: false
+```
+which tailscale sees as:
+
+```
+dns: Set: {DefaultResolvers:[1.1.1.1] Routes:{foocorp.com.:[10.1.0.2]} SearchDomains:[foocorp.com.] Hosts:1}
+dns: Resolvercfg: {Routes:{.:[1.1.1.1] foocorp.com.:[10.1.0.2]} Hosts:1 LocalDomains:[]}
+dns: OScfg: {Nameservers:[100.100.100.100] SearchDomains:[foocorp.com.] MatchDomains:[] Hosts:[]}
+```
+
+and results in this local resolver config:
+
+```bash
+# resolvectl status tailscale0
+Link 4 (tailscale0)
+    Current Scopes: DNS
+         Protocols: +DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+Current DNS Server: 100.100.100.100
+       DNS Servers: 100.100.100.100
+        DNS Domain: foocorp.com ~.
+```
+
+which uses the embedded tailscale DNS server as the default route and therefore bypasses my pihole.
+
+So headscale&#x27;s behaviour is different to tailscale&#x27;s and more limited
+
+**Context info**
+
+- Version of headscale used: 0.19.0-beta1
+- Version of tailscale client: 1.34.2
+- OS: Ubuntu 22.04.1 LTS
+- Kernel version: 5.15.0-56-generic</pre><h2>Comments, in creation order</h2><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2023-01-23T12:22:21Z · labeled · dbevacqua</summary><pre>{
+  &quot;id&quot;: 8333663747,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz885ckPtFzwAAAAHwuZ4D&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/8333663747&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;dbevacqua&quot;,
+    &quot;id&quot;: 6534306,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjY1MzQzMDY=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6534306?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/dbevacqua&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/dbevacqua&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/dbevacqua/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/dbevacqua/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/dbevacqua/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/dbevacqua/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/dbevacqua/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/dbevacqua/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/dbevacqua/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/dbevacqua/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/dbevacqua/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2023-01-23T12:22:21Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2023-01-30T23:15:50Z · closed · juanfont</summary><pre>{
+  &quot;id&quot;: 8393427301,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz885ckPtFzwAAAAH0SYll&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/8393427301&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;juanfont&quot;,
+    &quot;id&quot;: 181059,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2023-01-30T23:15:50Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

@@ -1,0 +1,30 @@
+{
+  "archived_at_utc": "2026-10-13T17:16:09.542479+00:00",
+  "source_sha256": {
+    "Paper/metadata-baseline-scripts/fit_maintenance_models.py": "51a82aaea48392e1f633c8bdef0e8ca44033dfd41161f72571eeaed53c83adf8",
+    "Paper/metadata-baseline-scripts/fit_piecewise_models.py": "0e65eb7f8c18869a43f90f5e194e8d0dbe03020b4355c0bd43a72488d1e0bacf",
+    "Paper/results/metadata-only-baseline/pr-census/coverage.json": "b205027506dcaf2e6cc614cb33ac99bb4adfa1a483f660988cf17fe496bfedc9",
+    "Paper/results/metadata-only-baseline/pr-census/human_pr_metadata_features.csv": "adc03b2a48a240dbff8d361b861d7f33c0042b04ffa9e1fa2d74091e37dbae0c",
+    "Paper/results/metadata-only-baseline/pr-census/summary.json": "a7470d8db362b7034f4b76ede03e405d3c852636b36c70e0f586f3d797f0116f",
+    "Paper/results/metadata-only-baseline/pr-census/quarterly_merge_responsibility.csv": "1a457a0dd8a794e999bb29d46db3fb90773f9bc67ac1ef61a54c5621baa461a8",
+    "Paper/results/metadata-only-baseline/inference/piecewise_merge_model.json": "051750f4a202e953c2083382cfdaf2f3c59b279a6647f2e16a82d756383fff91",
+    "Paper/results/metadata-only-baseline/inference/cause_specific_merge_models.json": "0ccd53793cb93ef4e6415847fbc4fe92effabc3252b9270e9ee84a041b12ee24",
+    "Paper/results/metadata-only-baseline/pr-census-window30/coverage.json": "b205027506dcaf2e6cc614cb33ac99bb4adfa1a483f660988cf17fe496bfedc9",
+    "Paper/results/metadata-only-baseline/pr-census-window30/human_pr_metadata_features.csv": "e8fb857eb8519d2b3b0e313fb18ade0ce08a4b92c9b5c19aa841322e50a82c38",
+    "Paper/results/metadata-only-baseline/pr-census-window30/summary.json": "6a82a99ad5ec142d6286e8828d086000ba4af323708c51b5c9298e0a12005e95",
+    "Paper/results/metadata-only-baseline/pr-census-window30/quarterly_merge_responsibility.csv": "1a457a0dd8a794e999bb29d46db3fb90773f9bc67ac1ef61a54c5621baa461a8",
+    "Paper/results/metadata-only-baseline/inference-window30/piecewise_merge_model.json": "712d28845f4e051b6e9125c4912208f8fca908aa7c6cc22d58b4a1b0287c1dc2",
+    "Paper/results/metadata-only-baseline/inference-window30/cause_specific_merge_models.json": "31cae98f96f86361a4626fc9362f5dd6b008a91180ad9cfbd6fba9cb9ec83bcb",
+    "Paper/results/metadata-only-baseline/pr-census-window180/coverage.json": "b205027506dcaf2e6cc614cb33ac99bb4adfa1a483f660988cf17fe496bfedc9",
+    "Paper/results/metadata-only-baseline/pr-census-window180/human_pr_metadata_features.csv": "c3ce99551b8f6796a24bb6417c3667a8f7ab9fa7bdfdb9df2c14d1fdf209e6d8",
+    "Paper/results/metadata-only-baseline/pr-census-window180/summary.json": "ffb800fc99ca276507d37ec62cfba5af69ac0db6cd0648ac500058c4b938e8dd",
+    "Paper/results/metadata-only-baseline/pr-census-window180/quarterly_merge_responsibility.csv": "1a457a0dd8a794e999bb29d46db3fb90773f9bc67ac1ef61a54c5621baa461a8",
+    "Paper/results/metadata-only-baseline/inference-window180/piecewise_merge_model.json": "29922e481ca7f35a98e978be73155504c97dee7dfd032a50b1952797d0074ad4",
+    "Paper/results/metadata-only-baseline/inference-window180/cause_specific_merge_models.json": "b5d545555eba4b3175d4ca8122867fe947cb191b40125eabd0b70ebab379323e"
+  },
+  "purpose": "Fixed final-metadata-only baseline before lifecycle reconstruction",
+  "limitations": [
+    "Backlog and durations use last recorded dispositions, not full reopening history.",
+    "Fitting scripts and numerical exports are preserved; API snapshots remain shared."
+  ]
+}

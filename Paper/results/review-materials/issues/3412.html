@@ -1,0 +1,244 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #3412: [Bug] Inverted HTTP metrics skip condition</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #3412: [Bug] Inverted HTTP metrics skip condition</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/3412">Original issue #3412</a></p><p>Created: 2026-08-05T15:59:06Z; updated: 2026-08-28T11:13:50Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+The HTTP metrics collector skips every request whose method is not OPTIONS. As a result, regular requests such as GET, POST, PUT, and DELETE are not recorded in http_requests_total or http_request_duration_seconds.
+
+Only OPTIONS requests are currently collected.
+
+### Expected Behavior
+
+The collector should skip only OPTIONS requests and collect metrics for all regular HTTP traffic.
+
+This behavior should apply consistently to both the main and Noise routers, ensuring that requests are properly represented in http_requests_total and http_request_duration_seconds.
+
+### Steps To Reproduce
+
+1. Start Headscale v0.29.x with the HTTP and metrics listeners enabled:
+
+   ```yaml
+   listen_addr: 127.0.0.1:8080
+   metrics_listen_addr: 127.0.0.1:9090
+   ```
+
+2. Check the current HTTP metrics:
+
+   ```bash
+   curl -s http://127.0.0.1:9090/metrics |
+     grep -E &#x27;http_requests_total|http_request_duration_seconds&#x27;
+   ```
+
+3. Send multiple regular requests to the `/apple` endpoint:
+
+   ```bash
+   for i in $(seq 1 10); do
+     curl -s http://127.0.0.1:8080/apple &gt;/dev/null
+   done
+   ```
+
+4. Check the metrics again:
+
+   ```bash
+   curl -s http://127.0.0.1:9090/metrics |
+     grep -E &#x27;http_requests_total|http_request_duration_seconds&#x27;
+   ```
+
+5. Observe that the `GET /apple` requests were not recorded.
+
+6. Send an `OPTIONS` request to the same endpoint:
+
+   ```bash
+   curl -i -X OPTIONS http://127.0.0.1:8080/apple
+   ```
+
+7. Check the metrics again:
+
+   ```bash
+   curl -s http://127.0.0.1:9090/metrics |
+     grep -E &#x27;http_requests_total|http_request_duration_seconds&#x27;
+   ```
+
+8. Observe that the `OPTIONS` request was recorded, demonstrating that the skip condition is inverted.
+
+### Environment
+
+```markdown
+- OS: N/A — server-side issue independent of the operating system
+- Headscale version: 0.29.3
+- Tailscale version: N/A — reproducible directly against the Headscale HTTP endpoint
+```
+
+### Runtime environment
+
+- [x] Headscale is behind a (reverse) proxy
+- [x] Headscale runs in a container
+
+### Debug information
+
+N/A</pre><h2>Comments, in creation order</h2><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2026-08-05T15:59:07Z · labeled · PauloLuna</summary><pre>{
+  &quot;id&quot;: 29019842742,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABLlzcvc8AAAAGwbeotg&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/29019842742&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;PauloLuna&quot;,
+    &quot;id&quot;: 3519029,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjM1MTkwMjk=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/3519029?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/PauloLuna&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/PauloLuna&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/PauloLuna/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/PauloLuna/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/PauloLuna/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/PauloLuna/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/PauloLuna/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/PauloLuna/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/PauloLuna/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/PauloLuna/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/PauloLuna/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-08-05T15:59:07Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-08-06T01:46:57Z · unsubscribed · mrabino1</summary><pre>{
+  &quot;id&quot;: 29042854927,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz888AAAABLlzcvc8AAAAGwxbMDw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/29042854927&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mrabino1&quot;,
+    &quot;id&quot;: 4902221,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ5MDIyMjE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4902221?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mrabino1&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mrabino1&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mrabino1/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mrabino1/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mrabino1/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mrabino1/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mrabino1/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mrabino1/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mrabino1/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mrabino1/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mrabino1/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-08-06T01:46:57Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-08-17T06:24:23Z · referenced · harriiinnii</summary><pre>{
+  &quot;id&quot;: 29545981888,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABLlzcvc8AAAAG4RPnwA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/29545981888&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;harriiinnii&quot;,
+    &quot;id&quot;: 222820279,
+    &quot;node_id&quot;: &quot;U_kgDODUf3tw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/222820279?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/harriiinnii&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/harriiinnii&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/harriiinnii/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/harriiinnii/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/harriiinnii/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/harriiinnii/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/harriiinnii/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/harriiinnii/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/harriiinnii/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/harriiinnii/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/harriiinnii/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;fd56b983498526abf91bb89eac7a81cf3c724572&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/harriiinnii/headscale/commits/fd56b983498526abf91bb89eac7a81cf3c724572&quot;,
+  &quot;created_at&quot;: &quot;2026-08-17T06:24:23Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-08-26T10:30:24Z · milestoned · kradalby</summary><pre>{
+  &quot;id&quot;: 30036418820,
+  &quot;node_id&quot;: &quot;MIE_lADOEFLz888AAAABLlzcvc8AAAAG_k9hBA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/30036418820&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;milestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-08-26T10:30:24Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.29&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-08-28T11:13:50Z · closed · kradalby</summary><pre>{
+  &quot;id&quot;: 30161344663,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz888AAAABLlzcvc8AAAAHBcGYlw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/30161344663&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-08-28T11:13:50Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><article><h3><a href="https://api.github.com/repos/harriiinnii/headscale/commits/fd56b983498526abf91bb89eac7a81cf3c724572">fd56b983498526abf91bb89eac7a81cf3c724572</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/29545981888">referenced</a> · 2026-08-17T06:24:23Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article></body></html>

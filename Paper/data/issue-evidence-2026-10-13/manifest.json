@@ -1,0 +1,520 @@
+{
+  "repository": "juanfont/headscale",
+  "started_at_utc": "2026-10-13T14:08:45.011517+00:00",
+  "complete": true,
+  "sample_sha256": "2fe3ae4317163c89c75e609d3b712f614433baf8f3a9e6dd66093c7f0c540541",
+  "sample_size": 100,
+  "limitations": [
+    "Timeline cross-reference is not by itself verified defect repair.",
+    "Edited/deleted comments and events may be missing.",
+    "Human outcome coding and independent validation remain pending."
+  ],
+  "last_quota_remaining": "4366",
+  "finished_at_utc": "2026-10-13T14:17:26.535641+00:00",
+  "last_run_requests": 0,
+  "last_run_at_utc": "2026-10-13T14:44:32.685469+00:00",
+  "sampling_design_sha256": "e518a88c02585f2ac9b9bb26040af7cfd1b2c98ff14f04e14664a5816d43eb73",
+  "sampling_design": [
+    {
+      "number": "253",
+      "stratum": "('2021', 'closed', 'completed')",
+      "inclusion_probability": "0.6153846153846154"
+    },
+    {
+      "number": "226",
+      "stratum": "('2021', 'closed', 'completed')",
+      "inclusion_probability": "0.6153846153846154"
+    },
+    {
+      "number": "149",
+      "stratum": "('2021', 'closed', 'completed')",
+      "inclusion_probability": "0.6153846153846154"
+    },
+    {
+      "number": "259",
+      "stratum": "('2021', 'closed', 'completed')",
+      "inclusion_probability": "0.6153846153846154"
+    },
+    {
+      "number": "160",
+      "stratum": "('2021', 'closed', 'completed')",
+      "inclusion_probability": "0.6153846153846154"
+    },
+    {
+      "number": "257",
+      "stratum": "('2021', 'closed', 'completed')",
+      "inclusion_probability": "0.6153846153846154"
+    },
+    {
+      "number": "117",
+      "stratum": "('2021', 'closed', 'completed')",
+      "inclusion_probability": "0.6153846153846154"
+    },
+    {
+      "number": "254",
+      "stratum": "('2021', 'closed', 'completed')",
+      "inclusion_probability": "0.6153846153846154"
+    },
+    {
+      "number": "309",
+      "stratum": "('2022', 'closed', 'completed')",
+      "inclusion_probability": "0.058394160583941604"
+    },
+    {
+      "number": "663",
+      "stratum": "('2022', 'closed', 'completed')",
+      "inclusion_probability": "0.058394160583941604"
+    },
+    {
+      "number": "339",
+      "stratum": "('2022', 'closed', 'completed')",
+      "inclusion_probability": "0.058394160583941604"
+    },
+    {
+      "number": "275",
+      "stratum": "('2022', 'closed', 'completed')",
+      "inclusion_probability": "0.058394160583941604"
+    },
+    {
+      "number": "652",
+      "stratum": "('2022', 'closed', 'completed')",
+      "inclusion_probability": "0.058394160583941604"
+    },
+    {
+      "number": "390",
+      "stratum": "('2022', 'closed', 'completed')",
+      "inclusion_probability": "0.058394160583941604"
+    },
+    {
+      "number": "673",
+      "stratum": "('2022', 'closed', 'completed')",
+      "inclusion_probability": "0.058394160583941604"
+    },
+    {
+      "number": "515",
+      "stratum": "('2022', 'closed', 'completed')",
+      "inclusion_probability": "0.058394160583941604"
+    },
+    {
+      "number": "623",
+      "stratum": "('2022', 'closed', 'not_planned')",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "806",
+      "stratum": "('2022', 'closed', 'not_planned')",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "1413",
+      "stratum": "('2023', 'closed', 'completed')",
+      "inclusion_probability": "0.06451612903225806"
+    },
+    {
+      "number": "1552",
+      "stratum": "('2023', 'closed', 'completed')",
+      "inclusion_probability": "0.06451612903225806"
+    },
+    {
+      "number": "1228",
+      "stratum": "('2023', 'closed', 'completed')",
+      "inclusion_probability": "0.06451612903225806"
+    },
+    {
+      "number": "1161",
+      "stratum": "('2023', 'closed', 'completed')",
+      "inclusion_probability": "0.06451612903225806"
+    },
+    {
+      "number": "1225",
+      "stratum": "('2023', 'closed', 'completed')",
+      "inclusion_probability": "0.06451612903225806"
+    },
+    {
+      "number": "1529",
+      "stratum": "('2023', 'closed', 'completed')",
+      "inclusion_probability": "0.06451612903225806"
+    },
+    {
+      "number": "1292",
+      "stratum": "('2023', 'closed', 'completed')",
+      "inclusion_probability": "0.06451612903225806"
+    },
+    {
+      "number": "1259",
+      "stratum": "('2023', 'closed', 'completed')",
+      "inclusion_probability": "0.06451612903225806"
+    },
+    {
+      "number": "1643",
+      "stratum": "('2023', 'closed', 'not_planned')",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "1636",
+      "stratum": "('2023', 'closed', 'not_planned')",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "1650",
+      "stratum": "('2023', 'closed', 'not_planned')",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "1384",
+      "stratum": "('2023', 'closed', 'not_planned')",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "1654",
+      "stratum": "('2023', 'closed', 'not_planned')",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "1637",
+      "stratum": "('2023', 'closed', 'not_planned')",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "1313",
+      "stratum": "('2023', 'closed', 'not_planned')",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "1114",
+      "stratum": "('2023', 'closed', 'not_planned')",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "2153",
+      "stratum": "('2024', 'closed', 'completed')",
+      "inclusion_probability": "0.05228758169934641"
+    },
+    {
+      "number": "2181",
+      "stratum": "('2024', 'closed', 'completed')",
+      "inclusion_probability": "0.05228758169934641"
+    },
+    {
+      "number": "2121",
+      "stratum": "('2024', 'closed', 'completed')",
+      "inclusion_probability": "0.05228758169934641"
+    },
+    {
+      "number": "1968",
+      "stratum": "('2024', 'closed', 'completed')",
+      "inclusion_probability": "0.05228758169934641"
+    },
+    {
+      "number": "2045",
+      "stratum": "('2024', 'closed', 'completed')",
+      "inclusion_probability": "0.05228758169934641"
+    },
+    {
+      "number": "1678",
+      "stratum": "('2024', 'closed', 'completed')",
+      "inclusion_probability": "0.05228758169934641"
+    },
+    {
+      "number": "1838",
+      "stratum": "('2024', 'closed', 'completed')",
+      "inclusion_probability": "0.05228758169934641"
+    },
+    {
+      "number": "2141",
+      "stratum": "('2024', 'closed', 'completed')",
+      "inclusion_probability": "0.05228758169934641"
+    },
+    {
+      "number": "2209",
+      "stratum": "('2024', 'closed', 'not_planned')",
+      "inclusion_probability": "0.27586206896551724"
+    },
+    {
+      "number": "1851",
+      "stratum": "('2024', 'closed', 'not_planned')",
+      "inclusion_probability": "0.27586206896551724"
+    },
+    {
+      "number": "1810",
+      "stratum": "('2024', 'closed', 'not_planned')",
+      "inclusion_probability": "0.27586206896551724"
+    },
+    {
+      "number": "2130",
+      "stratum": "('2024', 'closed', 'not_planned')",
+      "inclusion_probability": "0.27586206896551724"
+    },
+    {
+      "number": "2142",
+      "stratum": "('2024', 'closed', 'not_planned')",
+      "inclusion_probability": "0.27586206896551724"
+    },
+    {
+      "number": "1767",
+      "stratum": "('2024', 'closed', 'not_planned')",
+      "inclusion_probability": "0.27586206896551724"
+    },
+    {
+      "number": "2183",
+      "stratum": "('2024', 'closed', 'not_planned')",
+      "inclusion_probability": "0.27586206896551724"
+    },
+    {
+      "number": "2027",
+      "stratum": "('2024', 'closed', 'not_planned')",
+      "inclusion_probability": "0.27586206896551724"
+    },
+    {
+      "number": "2168",
+      "stratum": "('2024', 'open', None)",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "2234",
+      "stratum": "('2024', 'open', None)",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "2863",
+      "stratum": "('2025', 'closed', 'completed')",
+      "inclusion_probability": "0.047619047619047616"
+    },
+    {
+      "number": "2787",
+      "stratum": "('2025', 'closed', 'completed')",
+      "inclusion_probability": "0.047619047619047616"
+    },
+    {
+      "number": "2462",
+      "stratum": "('2025', 'closed', 'completed')",
+      "inclusion_probability": "0.047619047619047616"
+    },
+    {
+      "number": "2839",
+      "stratum": "('2025', 'closed', 'completed')",
+      "inclusion_probability": "0.047619047619047616"
+    },
+    {
+      "number": "2352",
+      "stratum": "('2025', 'closed', 'completed')",
+      "inclusion_probability": "0.047619047619047616"
+    },
+    {
+      "number": "2762",
+      "stratum": "('2025', 'closed', 'completed')",
+      "inclusion_probability": "0.047619047619047616"
+    },
+    {
+      "number": "2751",
+      "stratum": "('2025', 'closed', 'completed')",
+      "inclusion_probability": "0.047619047619047616"
+    },
+    {
+      "number": "2520",
+      "stratum": "('2025', 'closed', 'completed')",
+      "inclusion_probability": "0.047619047619047616"
+    },
+    {
+      "number": "2876",
+      "stratum": "('2025', 'closed', 'duplicate')",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "2835",
+      "stratum": "('2025', 'closed', 'duplicate')",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "2466",
+      "stratum": "('2025', 'closed', 'not_planned')",
+      "inclusion_probability": "0.38095238095238093"
+    },
+    {
+      "number": "2355",
+      "stratum": "('2025', 'closed', 'not_planned')",
+      "inclusion_probability": "0.38095238095238093"
+    },
+    {
+      "number": "2629",
+      "stratum": "('2025', 'closed', 'not_planned')",
+      "inclusion_probability": "0.38095238095238093"
+    },
+    {
+      "number": "2363",
+      "stratum": "('2025', 'closed', 'not_planned')",
+      "inclusion_probability": "0.38095238095238093"
+    },
+    {
+      "number": "2502",
+      "stratum": "('2025', 'closed', 'not_planned')",
+      "inclusion_probability": "0.38095238095238093"
+    },
+    {
+      "number": "2973",
+      "stratum": "('2025', 'closed', 'not_planned')",
+      "inclusion_probability": "0.38095238095238093"
+    },
+    {
+      "number": "2397",
+      "stratum": "('2025', 'closed', 'not_planned')",
+      "inclusion_probability": "0.38095238095238093"
+    },
+    {
+      "number": "2425",
+      "stratum": "('2025', 'closed', 'not_planned')",
+      "inclusion_probability": "0.38095238095238093"
+    },
+    {
+      "number": "2714",
+      "stratum": "('2025', 'open', None)",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "2757",
+      "stratum": "('2025', 'open', None)",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "2753",
+      "stratum": "('2025', 'open', None)",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "2719",
+      "stratum": "('2025', 'open', None)",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "2631",
+      "stratum": "('2025', 'open', None)",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "2899",
+      "stratum": "('2025', 'open', None)",
+      "inclusion_probability": "1.0"
+    },
+    {
+      "number": "3299",
+      "stratum": "('2026', 'closed', 'completed')",
+      "inclusion_probability": "0.09090909090909091"
+    },
+    {
+      "number": "3087",
+      "stratum": "('2026', 'closed', 'completed')",
+      "inclusion_probability": "0.09090909090909091"
+    },
+    {
+      "number": "3512",
+      "stratum": "('2026', 'closed', 'completed')",
+      "inclusion_probability": "0.09090909090909091"
+    },
+    {
+      "number": "3047",
+      "stratum": "('2026', 'closed', 'completed')",
+      "inclusion_probability": "0.09090909090909091"
+    },
+    {
+      "number": "3412",
+      "stratum": "('2026', 'closed', 'completed')",
+      "inclusion_probability": "0.09090909090909091"
+    },
+    {
+      "number": "3546",
+      "stratum": "('2026', 'closed', 'completed')",
+      "inclusion_probability": "0.09090909090909091"
+    },
+    {
+      "number": "3502",
+      "stratum": "('2026', 'closed', 'completed')",
+      "inclusion_probability": "0.09090909090909091"
+    },
+    {
+      "number": "2990",
+      "stratum": "('2026', 'closed', 'completed')",
+      "inclusion_probability": "0.09090909090909091"
+    },
+    {
+      "number": "3243",
+      "stratum": "('2026', 'closed', 'not_planned')",
+      "inclusion_probability": "0.7272727272727273"
+    },
+    {
+      "number": "3165",
+      "stratum": "('2026', 'closed', 'not_planned')",
+      "inclusion_probability": "0.7272727272727273"
+    },
+    {
+      "number": "3407",
+      "stratum": "('2026', 'closed', 'not_planned')",
+      "inclusion_probability": "0.7272727272727273"
+    },
+    {
+      "number": "3054",
+      "stratum": "('2026', 'closed', 'not_planned')",
+      "inclusion_probability": "0.7272727272727273"
+    },
+    {
+      "number": "3178",
+      "stratum": "('2026', 'closed', 'not_planned')",
+      "inclusion_probability": "0.7272727272727273"
+    },
+    {
+      "number": "3219",
+      "stratum": "('2026', 'closed', 'not_planned')",
+      "inclusion_probability": "0.7272727272727273"
+    },
+    {
+      "number": "3227",
+      "stratum": "('2026', 'closed', 'not_planned')",
+      "inclusion_probability": "0.7272727272727273"
+    },
+    {
+      "number": "3369",
+      "stratum": "('2026', 'closed', 'not_planned')",
+      "inclusion_probability": "0.7272727272727273"
+    },
+    {
+      "number": "3125",
+      "stratum": "('2026', 'open', None)",
+      "inclusion_probability": "0.8888888888888888"
+    },
+    {
+      "number": "3471",
+      "stratum": "('2026', 'open', None)",
+      "inclusion_probability": "0.8888888888888888"
+    },
+    {
+      "number": "3373",
+      "stratum": "('2026', 'open', None)",
+      "inclusion_probability": "0.8888888888888888"
+    },
+    {
+      "number": "3355",
+      "stratum": "('2026', 'open', None)",
+      "inclusion_probability": "0.8888888888888888"
+    },
+    {
+      "number": "3302",
+      "stratum": "('2026', 'open', None)",
+      "inclusion_probability": "0.8888888888888888"
+    },
+    {
+      "number": "3429",
+      "stratum": "('2026', 'open', None)",
+      "inclusion_probability": "0.8888888888888888"
+    },
+    {
+      "number": "3316",
+      "stratum": "('2026', 'open', None)",
+      "inclusion_probability": "0.8888888888888888"
+    },
+    {
+      "number": "3491",
+      "stratum": "('2026', 'open', None)",
+      "inclusion_probability": "0.8888888888888888"
+    }
+  ],
+  "finish_timestamp_basis": "Latest successfully collected evidence page; cached reruns do not advance this cutoff"
+}

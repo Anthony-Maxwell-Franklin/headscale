@@ -1,0 +1,220 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #2520: [Bug] Pre-auth keys &quot;user&quot; field returns the email.</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #2520: [Bug] Pre-auth keys &quot;user&quot; field returns the email.</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/2520">Original issue #2520</a></p><p>Created: 2025-04-06T19:26:05Z; updated: 2025-04-30T09:45:10Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+I&#x27;m not entirely sure if this is intended behavior or a bug, but when requesting pre-auth keys via the API `/api/v1/preauthkey?user=&lt;user&gt;`, the `user` field on the returned keys have emails and not the `user.name` or a user object.
+
+Example:
+```json
+{
+  &quot;preAuthKeys&quot;: [
+    {
+      &quot;user&quot;: &quot;aarnavtale@icloud.com&quot;,
+      &quot;id&quot;: &quot;2&quot;,
+      &quot;key&quot;: &quot;[redacted]&quot;,
+      &quot;reusable&quot;: true,
+      &quot;ephemeral&quot;: false,
+      &quot;used&quot;: true,
+      &quot;expiration&quot;: &quot;2025-07-05T19:00:37.730Z&quot;,
+      &quot;createdAt&quot;: &quot;2025-04-06T19:00:37.840878704Z&quot;,
+      &quot;aclTags&quot;: []
+    }
+  ]
+}
+```
+
+### Expected Behavior
+
+API docs aren&#x27;t clear on this and I expect the response to either return the `user.name` since that is what we use to filter for pre-auth keys in the request (`?user=&lt;user.name&gt;`). Or even better, it should return the entire user object, exactly the same as how `/api/v1/node` does.
+
+### Steps To Reproduce
+
+1. Setup Headscale with OIDC
+2. Authenticate via OIDC (creating an OIDC user in the database)
+3. Generate a pre-auth key tied to the OIDC user
+4. Request the auth keys tied to the OIDC user via the API.
+
+### Environment
+
+```markdown
+- OS: macOS Sequoia 15.3.2
+- Headscale version: v0.25.1
+- Tailscale version: 1.82.0
+```
+
+### Runtime environment
+
+- [ ] Headscale is behind a (reverse) proxy
+- [x] Headscale runs in a container
+
+### Debug information
+
+[status.json](https://github.com/user-attachments/files/19623076/status.json)
+[debug_netmap.json](https://github.com/user-attachments/files/19623075/debug_netmap.json)
+</pre><h2>Comments, in creation order</h2><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2025-04-06T19:26:05Z · labeled · tale</summary><pre>{
+  &quot;id&quot;: 17144059064,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz886xVUyWzwAAAAP93ZS4&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/17144059064&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;tale&quot;,
+    &quot;id&quot;: 46133336,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ2MTMzMzM2&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/46133336?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/tale&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/tale&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/tale/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/tale/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/tale/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/tale/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/tale/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/tale/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/tale/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/tale/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/tale/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-04-06T19:26:05Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-04-06T20:06:21Z · unsubscribed · mrabino1</summary><pre>{
+  &quot;id&quot;: 17144144627,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz886xVUyWzwAAAAP93uLz&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/17144144627&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mrabino1&quot;,
+    &quot;id&quot;: 4902221,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ5MDIyMjE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4902221?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mrabino1&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mrabino1&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mrabino1/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mrabino1/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mrabino1/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mrabino1/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mrabino1/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mrabino1/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mrabino1/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mrabino1/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mrabino1/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-04-06T20:06:21Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-04-14T08:03:30Z · milestoned · kradalby</summary><pre>{
+  &quot;id&quot;: 17243923204,
+  &quot;node_id&quot;: &quot;MIE_lADOEFLz886xVUyWzwAAAAQD0WME&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/17243923204&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;milestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-04-14T08:03:30Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.26.0&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-04-15T04:35:55Z · subscribed · hdhoang</summary><pre>{
+  &quot;id&quot;: 17261066000,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz886xVUyWzwAAAAQE1vcQ&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/17261066000&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;hdhoang&quot;,
+    &quot;id&quot;: 12537,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEyNTM3&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/12537?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/hdhoang&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/hdhoang&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/hdhoang/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/hdhoang/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/hdhoang/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/hdhoang/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/hdhoang/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/hdhoang/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/hdhoang/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/hdhoang/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/hdhoang/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-04-15T04:35:55Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-04-30T09:45:10Z · closed · kradalby</summary><pre>{
+  &quot;id&quot;: 17469886506,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz886xVUyWzwAAAAQRSVAq&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/17469886506&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-04-30T09:45:10Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

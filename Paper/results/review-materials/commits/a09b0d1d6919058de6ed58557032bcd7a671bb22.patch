@@ -1,0 +1,46 @@
+commit a09b0d1d6919058de6ed58557032bcd7a671bb22
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Mon Feb 2 14:33:22 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Tue Feb 3 16:53:15 2026 +0100
+
+    policy/v2: add Caller() to log statements in compileACLWithAutogroupSelf
+    
+    Both compileFilterRules and compileSSHPolicy include .Caller() on
+    their resolution error log statements, but compileACLWithAutogroupSelf
+    does not. Add .Caller() to the three log sites (source resolution
+    error, destination resolution error, nil destination) for consistent
+    debuggability across all compilation paths.
+    
+    Updates #2990
+---
+ hscontrol/policy/v2/filter.go | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/hscontrol/policy/v2/filter.go b/hscontrol/policy/v2/filter.go
+index e7d58fdf..3ba14feb 100644
+--- a/hscontrol/policy/v2/filter.go
++++ b/hscontrol/policy/v2/filter.go
+@@ -150,7 +150,7 @@ func (pol *Policy) compileACLWithAutogroupSelf(
+ 
+ 		ips, err := src.Resolve(pol, users, nodes)
+ 		if err != nil {
+-			log.Trace().Err(err).Msgf("resolving source ips")
++			log.Trace().Caller().Err(err).Msgf("resolving source ips")
+ 		}
+ 
+ 		if ips != nil {
+@@ -234,11 +234,11 @@ func (pol *Policy) compileACLWithAutogroupSelf(
+ 			for _, dest := range otherDests {
+ 				ips, err := dest.Resolve(pol, users, nodes)
+ 				if err != nil {
+-					log.Trace().Err(err).Msgf("resolving destination ips")
++					log.Trace().Caller().Err(err).Msgf("resolving destination ips")
+ 				}
+ 
+ 				if ips == nil {
+-					log.Debug().Msgf("destination resolved to nil ips: %v", dest)
++					log.Debug().Caller().Msgf("destination resolved to nil ips: %v", dest)
+ 					continue
+ 				}
+ 

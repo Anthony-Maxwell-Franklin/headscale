@@ -1,0 +1,166 @@
+{
+  "complete": true,
+  "started_at_utc": "2026-10-15T02:05:24.587774+00:00",
+  "finished_at_utc": "2026-10-15T02:07:18.935918+00:00",
+  "go_toolchain": "go1.24.0",
+  "downloads_allowed": true,
+  "cases": [
+    {
+      "issue": 2121,
+      "pr": 2127,
+      "demonstrated": true,
+      "claim_boundary": "RenameNode rejects a duplicate given name without changing the node; DNS resolution on the original Debian/Tailscale deployment is not replayed",
+      "variants": {
+        "parent": {
+          "variant": "parent",
+          "command": [
+            "go",
+            "test",
+            "-mod=readonly",
+            "-p=2",
+            "-count=1",
+            "-timeout=120s",
+            "-json",
+            "-run",
+            "^TestResearchRename2121$",
+            "./hscontrol/db"
+          ],
+          "exit_code": 1,
+          "test_outcomes": {
+            "TestResearchRename2121/duplicate_name": "fail",
+            "TestResearchRename2121/unique_name": "pass"
+          },
+          "expected_behavior_demonstrated": true,
+          "source_provenance": {
+            "commit": "64319f79ff1934865805fc73be2228dddce0ec80",
+            "source_archive_sha256": "2753584baead02016507e065815ed479f1de8b5a21df0d9ed732465c636e30cb",
+            "fixture_sha256": "b186943e9044a5bf6a4401221b2ccbe1920972254402cf9e163514255f95d951",
+            "dependency_sha256": {
+              "go.mod": "0e0bbbf1abdde4221c3303d4d5e8b607fc38bf1ab4cea51a32a53a1c05775cc2",
+              "go.sum": "aff3a77c360f6a4e32cbafb6c71419506d81997c065b270f37a017036d85f4e0"
+            }
+          },
+          "stdout_sha256": "f9aa5292255983588f8814dc3952b1a046bf9de04864b526048f4f14f6e8ec55",
+          "stderr_sha256": "b849a550e4413ea49148bec672dca15d2a9eb1cd317adf1df08cc4333da7e3d9"
+        },
+        "fixed": {
+          "variant": "fixed",
+          "command": [
+            "go",
+            "test",
+            "-mod=readonly",
+            "-p=2",
+            "-count=1",
+            "-timeout=120s",
+            "-json",
+            "-run",
+            "^TestResearchRename2121$",
+            "./hscontrol/db"
+          ],
+          "exit_code": 0,
+          "test_outcomes": {
+            "TestResearchRename2121/duplicate_name": "pass",
+            "TestResearchRename2121/unique_name": "pass"
+          },
+          "expected_behavior_demonstrated": true,
+          "source_provenance": {
+            "commit": "064c46f2a5889a328627673f153a01c26812c945",
+            "source_archive_sha256": "047a90dfb3ec9188e639521b5aae3c7a15b871bbccfb70b4c0b50244de79728f",
+            "fixture_sha256": "b186943e9044a5bf6a4401221b2ccbe1920972254402cf9e163514255f95d951",
+            "dependency_sha256": {
+              "go.mod": "0e0bbbf1abdde4221c3303d4d5e8b607fc38bf1ab4cea51a32a53a1c05775cc2",
+              "go.sum": "aff3a77c360f6a4e32cbafb6c71419506d81997c065b270f37a017036d85f4e0"
+            }
+          },
+          "stdout_sha256": "5238f3499a49a7e811dc1f6f639177dfd0ec5b68b8c47d67a4893022a6edf0f9",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "issue": 2181,
+      "pr": 2556,
+      "demonstrated": true,
+      "claim_boundary": "FilterNodesByACL peer visibility for a /32 ACL within a /16 advertised route; original Kubernetes subnet-router traffic and PostgreSQL access are not replayed",
+      "variants": {
+        "parent": {
+          "variant": "parent",
+          "command": [
+            "go",
+            "test",
+            "-mod=readonly",
+            "-p=2",
+            "-count=1",
+            "-timeout=120s",
+            "-json",
+            "-run",
+            "^TestFilterNodesByACL$/(subnet-router-with-only-route-smaller-mask-2181|node-to-subnet-router-with-only-route-smaller-mask-2181|subnet-router-with-only-route)$",
+            "./hscontrol/policy"
+          ],
+          "exit_code": 1,
+          "test_outcomes": {
+            "TestFilterNodesByACL/subnet-router-with-only-route-smaller-mask-2181": "fail",
+            "TestFilterNodesByACL/node-to-subnet-router-with-only-route-smaller-mask-2181": "fail",
+            "TestFilterNodesByACL/subnet-router-with-only-route": "pass"
+          },
+          "expected_behavior_demonstrated": true,
+          "source_provenance": {
+            "commit": "93afb03f6756983d85fe3f39666d21430a886dae",
+            "source_archive_sha256": "963b172471a0d8a4e0dde7e247c50dfacef458de5c02e6a65b8540a4a546ed0c",
+            "fixture_sha256": "ff967e81491bb30869c165a99608cf7d700c49e42272db15df1282ffc836d793",
+            "dependency_sha256": {
+              "go.mod": "6068eafcf7c002d9cbacaa543eba5d49c01ae7543072c0f3fd478689efa2d414",
+              "go.sum": "fb8ac7a5eda3b0f37beb26337a98566bd49101715710ed573cc64ba29d500158"
+            }
+          },
+          "stdout_sha256": "a7ac9917f3ddf957d064f37c8849e13c42f5c06b20d143f02ac3dae24047ede1",
+          "stderr_sha256": "c8d17696f484ad1ef9fa2abc0d67deabd86790a6f5217822d6701ef422f8960d"
+        },
+        "fixed": {
+          "variant": "fixed",
+          "command": [
+            "go",
+            "test",
+            "-mod=readonly",
+            "-p=2",
+            "-count=1",
+            "-timeout=120s",
+            "-json",
+            "-run",
+            "^TestFilterNodesByACL$/(subnet-router-with-only-route-smaller-mask-2181|node-to-subnet-router-with-only-route-smaller-mask-2181|subnet-router-with-only-route)$",
+            "./hscontrol/policy"
+          ],
+          "exit_code": 0,
+          "test_outcomes": {
+            "TestFilterNodesByACL/subnet-router-with-only-route-smaller-mask-2181": "pass",
+            "TestFilterNodesByACL/node-to-subnet-router-with-only-route-smaller-mask-2181": "pass",
+            "TestFilterNodesByACL/subnet-router-with-only-route": "pass"
+          },
+          "expected_behavior_demonstrated": true,
+          "source_provenance": {
+            "commit": "d810597414df46826671eef3d0605eba9a5a0a5f",
+            "source_archive_sha256": "9deb05a8284d98c13b9157dfc20494baaee25e905dd01219fa70d9ddfab4e447",
+            "fixture_sha256": "ff967e81491bb30869c165a99608cf7d700c49e42272db15df1282ffc836d793",
+            "dependency_sha256": {
+              "go.mod": "6068eafcf7c002d9cbacaa543eba5d49c01ae7543072c0f3fd478689efa2d414",
+              "go.sum": "fb8ac7a5eda3b0f37beb26337a98566bd49101715710ed573cc64ba29d500158"
+            }
+          },
+          "stdout_sha256": "0dd1c5232f8832146a3ccf6ab90e23c083ec2345624387accab427e87b4fc537",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    }
+  ],
+  "source_available_selection": true,
+  "human_labels_generated": false,
+  "population_repair_prevalence_estimated": false,
+  "original_deployment_replayed": false,
+  "provenance": {
+    "script_sha256": "b64074141fc57586adc2b5af357283e018dd5f52e718d0bb28da9bad9ca1c158",
+    "plan_sha256": "484f923bae64487f11400bd8bae77a3e7c0f5bdd1c762240f6b0eef096e0c0d7",
+    "researcher_fixture_sha256": "b186943e9044a5bf6a4401221b2ccbe1920972254402cf9e163514255f95d951",
+    "closure_inputs_sha256": "d37d79c884e8028829792bb1c9705ff20e2bf9333a811a6a17346ee45f66a20a",
+    "packets_sha256": "e414b07c4ada876ba7b50e7c4543fede210e736f890e001056ef88f5a40ce0c4"
+  }
+}

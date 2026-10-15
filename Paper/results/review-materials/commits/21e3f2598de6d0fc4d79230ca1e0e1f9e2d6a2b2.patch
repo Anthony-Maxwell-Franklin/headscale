@@ -1,0 +1,36 @@
+commit 21e3f2598de6d0fc4d79230ca1e0e1f9e2d6a2b2
+Author:     Kristoffer Dalby <kristoffer@tailscale.com>
+AuthorDate: Mon Nov 10 17:00:03 2025 +0100
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Mon Nov 10 20:34:12 2025 +0100
+
+    policy: fix issue where non existent user results in empty ssh pol
+    
+    When we encounter a source we cannot resolve, we skipped the whole rule,
+    even if some of the srcs could be resolved. In this case, if we had one user
+    that exists and one that does not.
+    
+    In the regular policy, we log this, and still let a rule be created from what
+    does exist, while in the SSH policy we did not.
+    
+    This commit fixes it so the behaviour is the same.
+    
+    Fixes #2863
+    
+    Signed-off-by: Kristoffer Dalby <kristoffer@tailscale.com>
+---
+ hscontrol/policy/v2/filter.go | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/hscontrol/policy/v2/filter.go b/hscontrol/policy/v2/filter.go
+index bb7d089a..dd8e70c5 100644
+--- a/hscontrol/policy/v2/filter.go
++++ b/hscontrol/policy/v2/filter.go
+@@ -316,7 +316,6 @@ func (pol *Policy) compileSSHPolicy(
+ 		srcIPs, err := rule.Sources.Resolve(pol, users, nodes)
+ 		if err != nil {
+ 			log.Trace().Caller().Err(err).Msgf("SSH policy compilation failed resolving source ips for rule %+v", rule)
+-			continue // Skip this rule if we can't resolve sources
+ 		}
+ 
+ 		if srcIPs == nil || len(srcIPs.Prefixes()) == 0 {

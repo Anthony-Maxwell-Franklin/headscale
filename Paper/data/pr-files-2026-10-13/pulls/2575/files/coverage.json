@@ -1,0 +1,12 @@
+{
+  "start_url": "https://api.github.com/repos/juanfont/headscale/pulls/2575/files?per_page=100",
+  "next_url": null,
+  "pages": [
+    {
+      "file": "page_0001.json",
+      "sha256": "745d574c679cf71577fcd62ee865df82b31c3efe825b53915735b12c30ae27e7",
+      "fetched_at_utc": "2026-10-13T18:29:17.048028+00:00"
+    }
+  ],
+  "complete": true
+}

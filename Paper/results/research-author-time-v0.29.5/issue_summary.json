@@ -1,0 +1,23 @@
+{
+  "issues": 1371,
+  "currently_bug_labeled": 773,
+  "open_censored": 17,
+  "closed": 756,
+  "closure_km_median_days": 14.759456018518518,
+  "validation_sample_size": 100,
+  "observation_cutoff": "2026-10-13T13:45:25.174735+00:00",
+  "observed_closure_reasons": {
+    "completed": 683,
+    "not_planned": 71,
+    "unknown": 17,
+    "duplicate": 2
+  },
+  "interpretation": "Time to last observed issue closure, not MTTR or verified repair time",
+  "limitations": [
+    "Current bug labels may differ from labels at issue creation.",
+    "Reopening history is not reconstructed; latest closure can include multiple episodes.",
+    "Current API state is observed over a non-atomic collection interval.",
+    "Open issues are right-censored; closed-only cohort statistics are descriptive.",
+    "Sample coding is pending; administrative closures are not yet separated from fixes."
+  ]
+}

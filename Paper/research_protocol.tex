@@ -1,0 +1,154 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=25mm]{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\title{From Contribution Growth to Maintenance Capacity:\\A Longitudinal Study Protocol for Headscale}
+\author{Research protocol derived from the Headscale coursework}
+\date{13 October 2026}
+\begin{document}
+\maketitle
+\paragraph{Status.} This is a living study protocol updated after the motivating
+pilot, not a preregistration or submission-ready manuscript. Completed work includes
+release-pinned Git analysis, core-alias and timestamp sensitivity, all-state issue
+collection, the complete PR metadata census, a 76-PR process pilot with timelines,
+evidence extraction for 100 issues, complete submitted-review and lifecycle
+collection for 2,166 PRs, and exploratory first-episode merge-hazard models with
+role/experience, exposure-window and elapsed-time diagnostics. Component-matched
+role sensitivity uses complete file lists for 1,318 merged PRs. Independent semantic
+outcome coding and explanatory mechanism validation remain incomplete. No acceptance
+claim or causal conclusion is made.
+
+\paragraph{Target contribution.} Establish whether growth in contribution breadth
+translates into distributed maintenance responsibility, and whether concentrated
+maintenance is associated with different response and resolution outcomes. Test
+both bottleneck and efficient-specialisation explanations. The upstream-funded
+alternative implementation is a distinctive case context, not proof that funding
+causes either outcome. Initial target: an empirical study suitable for consideration
+by Journal of Systems and Software, Information and Software Technology or
+Empirical Software Engineering; venue suitability must be reassessed after results.
+
+\paragraph{Research questions.}
+\begin{enumerate}
+\item RQ1: How do contribution, review and merge concentration evolve in fixed
+calendar windows, and do they move together?
+\item RQ2: What relationship can be established between prior maintenance
+concentration, workload and subsequent response or disposition outcomes?
+\item RQ3: Which observable closure and responsibility mechanisms change the
+interpretation of repository-level maintenance indicators?
+\end{enumerate}
+
+\paragraph{Novelty gate.} Contribution ownership and response latency are existing
+research topics. Reusing HHI or analysing a popular repository is not a novelty
+claim. Position against ownership and review-aware ownership studies, integrator
+surveys, CODEOWNERS research, time-to-first-response work and recent PR-workflow
+mortality research. Advance only if validated process data
+and triangulated mechanisms provide a distinct contribution; otherwise expand the
+comparative design or narrow the manuscript to a measurement-validity study.
+
+\paragraph{Evidence and provenance.} Preserve the coursework and its closed-bug
+cache. Pin each Git endpoint by tag and commit SHA; record the official release
+publication timestamp separately from commit timestamps. Use an independent bare
+repository so working-tree edits cannot enter measurements. Retain API pages,
+retrieval timestamps, integrity hashes and completion status. Treat historical
+issue labels and state as unknown where only collection-time observations exist.
+PR reviews, comments, merge data and issue timelines are distinct data sources.
+Record coverage and missingness for each before analysis.
+
+\paragraph{Measurements.} Primary time windows are complete calendar quarters,
+with monthly or 90-day windows as sensitivity analyses. Partial windows are labelled
+and excluded from direct volume comparisons. Authorship is contribution activity,
+not knowledge. The minimum number of contributors accounting for 50\% of activity
+is named literally, not called a validated bus factor. Separate production Go,
+tests, generated code, documentation and other artifacts. Track confirmed file
+renames and manually audit splits and moves. Compare name-based and validated
+identity mappings. Measure human response and review directly from timestamped
+events, excluding author self-comments and bots under a documented rule. Define
+merge concentration from merger identities, not commit authors.
+
+\paragraph{Defects and survival outcomes.} Begin with all issues, including open
+ones. Determine defect eligibility using labels plus human validation. Distinguish
+verified fix, duplicate, unsupported configuration, cannot reproduce, deliberate
+non-fix, and unknown closure. Closure and repair are separate outcomes. Link repair
+PRs/commits where supported by explicit evidence. Include open issues as right
+censored at the observation cutoff, handle reopened episodes explicitly, and treat
+non-fix closure as a competing event. Report time-to-closure descriptively even
+when fix linkage is unavailable, without calling it MTTR. Historical claims must
+not use future events or collection-time states as if known at release time.
+
+\paragraph{Validation design.} Use a fixed-seed stratified random sample across
+periods, closure types, automated/human actors and latency tails. Two independent
+coders should validate defect status and closure outcomes, reconcile disagreements
+and report agreement with uncertainty. A single-coder pilot must be labelled as
+such. Record exclusions and sampling probabilities. Prepare interview questions
+and public-evidence coding, but contact participants only after explicit user
+authorization and the applicable research-ethics requirements are established.
+Public FOSDEM testimony is contextual evidence, not an independent confirmation
+of repository-derived conclusions.
+On 14 October the author deferred human coding. The two-reviewer and explicitly
+declared single-reviewer options remain available; neither has been carried out.
+Other manuscript preparation continues without assigning human labels or
+reporting repair prevalence. Before a mechanism claim, trace a component-boundary
+observation to an explicit maintenance decision and subsequent treatment, retaining
+unclear and contradictory cases. This is a post-pilot explanatory test, not a
+preregistered hypothesis.
+
+\paragraph{Inference plan.} First establish coverage, identities and event
+definitions. Report effect sizes and uncertainty; plot distributions and survival
+curves rather than only means. Model lagged concentration with workload, backlog,
+change size, contributor experience, component, issue type and available severity
+controls. Account for calendar trends, dependence and clustered observations.
+Use competing-risk or cause-specific models when justified; assess proportional
+hazards before using a Cox interpretation. Avoid inferring causality from temporal
+co-movement. Choose models and comparison-project sample sizes after checking
+feasibility and the estimand, not after selecting favourable results.
+
+\paragraph{External validation gate.} A single case can support a carefully bounded
+mechanism study with triangulation. Claims about open-source projects generally
+require a transparent comparative sample. Select projects using documented ecosystem,
+language, age, activity and governance criteria, without selecting on the outcome.
+Exclude incomparable label/review histories or report them explicitly. If no
+credible comparison can be assembled, keep conclusions specific to Headscale.
+
+\paragraph{Exploratory identity sensitivity, 14 October 2026.}
+After inspecting missing review accounts, add a fixed-population sensitivity
+for fractional reviewer concentration. Retain merged PRs with an attributed
+eligible review. Apply the same cutoff, open intervals and final-disposition
+boundaries to unattributed submitted records. Derive conservative bounds from
+known-credit floors and the maximum additional identity capacity; do not describe
+relaxed endpoints as sharp bounds or confidence intervals. Report all affected
+quarters and conditional account scenarios, including changed role orderings.
+This addition follows observation of the data and is not preregistered.
+Deleted or informal review and known-account alias uncertainty remain uncovered.
+
+\paragraph{Exploratory component validation, 15 October 2026.}
+The execution plan in \texttt{repair\_validation\_plan.json} was saved before
+running the checks. From the fixed issue sample, select all final-closure commit
+pointers with an exact merged-PR match and a locally available official commit.
+This source-availability rule selects issues 2121 and 2181 from five pointers.
+Compare each repair commit with its first parent, holding the Go toolchain,
+dependency manifests and regression oracle constant within the pair. Retain
+normal-case controls. One oracle follows the reported duplicate-name rename
+setup; the other uses the exact upstream ACL regression test file. Require
+executed target tests to fail before and pass after the repair, with controls
+passing in both variants. Compilation failures, absent tests and timeouts are
+inconclusive. Report component behavior separately from original-deployment
+reproduction, independent human outcome coding and population repair prevalence.
+This is purposive post-pilot triangulation, not a preregistered experiment.
+
+\paragraph{Preliminary update.} Legacy Git analysis at v0.28.0 gives 2,803
+non-merge, non-bot commits after the initial tag, 238 case-insensitive author names,
+48.16\% top-author share and author HHI 0.2602. At v0.29.5 these become 3,401,
+259, 54.78\% and 0.3202. The newly segmented cross-author edit interval median
+is 13.95 days, versus 21.27 in the preceding long segment. These measurements use
+unequal windows and are descriptive; the interval is not measured coordination
+waiting. They motivate testing divergent explanations rather than retaining the
+coursework's monotonic ``scaling crisis'' narrative. New issue outcomes have not
+yet been established by this Git update.
+
+\paragraph{Submission readiness gate.} Required: validated data definitions;
+complete or explicitly bounded event coverage; reproducible pinned analysis;
+appropriate uncertainty and robustness; related-work positioning; triangulated
+interpretation or comparative validation; a complete manuscript with bounded
+claims; checked figures, tables and references. A Linux port, larger dataset or
+manuscript skeleton alone does not meet this gate.
+\end{document}

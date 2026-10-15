@@ -1,0 +1,436 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #2753: [Bug] Headscale reads extra DNS records from path too early</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #2753: [Bug] Headscale reads extra DNS records from path too early</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/2753">Original issue #2753</a></p><p>Created: 2025-08-30T11:01:34Z; updated: 2025-12-17T14:20:36Z; observed state: open; reason: None</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+I use the `dns.extra_records_path` configuration option to load DNS records from a JSON file. This file is created by a script that combines multiple files into one. The relevant line is:
+
+```bash
+jq --sort-keys --slurp &#x27;unique | flatten&#x27; dns.d/*.json &gt; /var/lib/headscale/extra-records.json
+```
+
+There are about 150 DNS records written to `/var/lib/headscale/extra-records.json` with each invocation. From time to time Headscale&#x27;s filewatcher picks up the file while it is being written. Presumably, the output buffer is flushed by `jq` and a partial JSON file is persisted for a short while. This causes errors about broken JSON in Headscale&#x27;s logs:
+
+```
+[snipped]
+{\\n    \\\&quot;name\\\&quot;: \\\&quot;acgmw.example.com\\\&quot;,\\n    \\\&quot;type\\\&quot;: \\\&quot;A\\\&quot;,\\n    \\\&quot;value\\\&quot;: \\\&quot;100.64.0.1\\\&quot;\\n  },\\n  {\\n    \\\&quot;name\\\&quot;: \\\&quot;acgmx.example.com\\\&quot;,\\n    \\\&quot;type\\\&quot;: \\\&quot;A\\\&quot;,\\n    \\\&quot;value\\\&quot;: \\\&quot;100.64.0.1\\\&quot;\\n  },\\n  {\\n    \\\&quot;name\\\&quot;: \\\&quot;acgmy.example.com\\\&quot;,\\n    \\\&quot;type\\\&quot;: \\\&quot;A\\\&quot;,\\n    \\\&quot;v\&quot;: 
+unexpected end of JSON input&quot;
+```
+
+As a workaround, I use `stdbuf` to enlarge the output buffer for `jq`:
+
+```bash
+stdbuf -o 1M jq --sort-keys --slurp &#x27;unique | flatten&#x27; dns.d/*.json &gt; /var/lib/headscale/extra-records.json
+```
+
+Is there a way to configure the filewatcher such that it picks up the file once no other process is writing to it?
+
+### Expected Behavior
+
+Unsure what is the best solution to this, some ideas:
+
+- Read the records in `dns.extra_records_path` once no other process writes to it
+- Delay the read a bit (probably just a workaround)
+
+### Steps To Reproduce
+
+1. Setup Headscale 0.26.1 with `dns.extra_records_path`
+1. Create some sample JSON files
+    - [sample-1000.json](https://github.com/user-attachments/files/22057864/sample-1000.json)
+    - [sample-100.json](https://github.com/user-attachments/files/22057863/sample-100.json)
+    - [sample-10.json](https://github.com/user-attachments/files/22057865/sample-10.json)
+    - [gen-extra-records.py](https://github.com/user-attachments/files/22057866/gen-extra-records.py)
+1. Update the JSON file with the DNS records: 
+    ```bash
+    jq --sort-keys --slurp &#x27;unique | flatten&#x27; sample-*.json &gt; .headscale/extra-records.json
+    ```
+1. Observe the error message in Headscale&#x27;s log
+
+### Environment
+
+```markdown
+- OS: Debian 13
+- Headscale version: 0.26.1
+- Tailscale version: -
+```
+
+### Runtime environment
+
+- [ ] Headscale is behind a (reverse) proxy
+- [ ] Headscale runs in a container
+
+### Debug information
+
+-</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/2753#issuecomment-3307148732">reinob</a></h3><p>Created: 2025-09-18T12:19:03Z; updated: 2025-09-18T12:19:03Z</p><pre>It would probably be safer to first generate a temporary file, and then replace the existing one with the new one, in one go (using mv, which should be atomic).</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2753#issuecomment-3307469895">nblock</a></h3><p>Created: 2025-09-18T13:29:52Z; updated: 2025-09-18T13:29:52Z</p><pre>&gt; (using mv, which should be atomic).
+
+I saw some errors with `mv` also; but can&#x27;t remember if they were identical.</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2025-08-30T11:01:36Z · labeled · nblock</summary><pre>{
+  &quot;id&quot;: 19423450705,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz887IzypFzwAAAASFulZR&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/19423450705&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-08-30T11:01:36Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-08-30T11:01:36Z · labeled · nblock</summary><pre>{
+  &quot;id&quot;: 19423450716,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz887IzypFzwAAAASFulZc&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/19423450716&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-08-30T11:01:36Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;no-stale-bot&quot;,
+    &quot;color&quot;: &quot;6ECABC&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-08-30T12:36:27Z · unsubscribed · mrabino1</summary><pre>{
+  &quot;id&quot;: 19423725147,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz887IzypFzwAAAASFvoZb&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/19423725147&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mrabino1&quot;,
+    &quot;id&quot;: 4902221,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ5MDIyMjE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4902221?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mrabino1&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mrabino1&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mrabino1/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mrabino1/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mrabino1/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mrabino1/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mrabino1/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mrabino1/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mrabino1/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mrabino1/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mrabino1/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-08-30T12:36:27Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-09-18T12:19:03Z · commented · reinob</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3307148732&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2753#issuecomment-3307148732&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2753&quot;,
+  &quot;id&quot;: 3307148732,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz887FHxW8&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;reinob&quot;,
+    &quot;id&quot;: 6651880,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjY2NTE4ODA=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6651880?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/reinob&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/reinob&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/reinob/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/reinob/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/reinob/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/reinob/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/reinob/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/reinob/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/reinob/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/reinob/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/reinob/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-09-18T12:19:03Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-09-18T12:19:03Z&quot;,
+  &quot;body&quot;: &quot;It would probably be safer to first generate a temporary file, and then replace the existing one with the new one, in one go (using mv, which should be atomic).&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3307148732/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;reinob&quot;,
+    &quot;id&quot;: 6651880,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjY2NTE4ODA=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6651880?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/reinob&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/reinob&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/reinob/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/reinob/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/reinob/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/reinob/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/reinob/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/reinob/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/reinob/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/reinob/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/reinob/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-09-18T13:29:52Z · commented · nblock</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3307469895&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2753#issuecomment-3307469895&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2753&quot;,
+  &quot;id&quot;: 3307469895,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz887FI_xH&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-09-18T13:29:52Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-09-18T13:29:52Z&quot;,
+  &quot;body&quot;: &quot;&gt; (using mv, which should be atomic).\n\nI saw some errors with `mv` also; but can&#x27;t remember if they were identical.&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3307469895/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-12-17T13:57:39Z · milestoned · kradalby</summary><pre>{
+  &quot;id&quot;: 21618160881,
+  &quot;node_id&quot;: &quot;MIE_lADOEFLz887IzypFzwAAAAUIivTx&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/21618160881&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;milestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-12-17T13:57:39Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.34.0&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-12-17T14:20:36Z · demilestoned · kradalby</summary><pre>{
+  &quot;id&quot;: 21618697796,
+  &quot;node_id&quot;: &quot;DEME_lADOEFLz887IzypFzwAAAAUIkyZE&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/21618697796&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;demilestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-12-17T14:20:36Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.34.0&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-12-17T14:20:36Z · milestoned · kradalby</summary><pre>{
+  &quot;id&quot;: 21618697821,
+  &quot;node_id&quot;: &quot;MIE_lADOEFLz887IzypFzwAAAAUIkyZd&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/21618697821&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;milestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-12-17T14:20:36Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.31.0&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-09T07:55:17Z · referenced · trancong12102</summary><pre>{
+  &quot;id&quot;: 30811801032,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz887IzypFzwAAAAcshsXI&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/30811801032&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;trancong12102&quot;,
+    &quot;id&quot;: 52101938,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjUyMTAxOTM4&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/52101938?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/trancong12102&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/trancong12102&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/trancong12102/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/trancong12102/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/trancong12102/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/trancong12102/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/trancong12102/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/trancong12102/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/trancong12102/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/trancong12102/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/trancong12102/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;9016105e91df07eee61de8fbd8366dcde0ca5f12&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/aislopware/slopscale/commits/9016105e91df07eee61de8fbd8366dcde0ca5f12&quot;,
+  &quot;created_at&quot;: &quot;2026-09-09T07:55:17Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><article><h3><a href="https://api.github.com/repos/aislopware/slopscale/commits/9016105e91df07eee61de8fbd8366dcde0ca5f12">9016105e91df07eee61de8fbd8366dcde0ca5f12</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/30811801032">referenced</a> · 2026-09-09T07:55:17Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article></body></html>

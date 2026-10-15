@@ -1,0 +1,75 @@
+{
+  "complete": true,
+  "fixed_population": "Human-authored merged PRs with at least one attributed eligible review",
+  "total_prs": 2166,
+  "human_merged_prs": 1318,
+  "fixed_reviewed_prs": 1259,
+  "global_unattributed_submitted_records": 212,
+  "eligible_missing_records_in_fixed_subset": 177,
+  "affected_fixed_subset_prs": 74,
+  "affected_quarters": [
+    "2022-Q2",
+    "2025-Q2",
+    "2025-Q3",
+    "2025-Q4"
+  ],
+  "affected_quarters_with_integrator_above_upper": [
+    "2022-Q2",
+    "2025-Q2",
+    "2025-Q3",
+    "2025-Q4"
+  ],
+  "affected_quarters_with_unresolved_reviewer_author_order": [
+    "2025-Q2",
+    "2025-Q3"
+  ],
+  "quarters_with_opposite_reviewer_author_order_in_two_identity_scenarios": [
+    "2025-Q2",
+    "2025-Q3"
+  ],
+  "unknown_record_audit_counts": {
+    "retained:fixed_subset=1": 177,
+    "retained:fixed_subset=0": 35
+  },
+  "method": "Conservative outer bounds from credit floors, finite account capacity and simplex relaxation",
+  "sharp_bounds": false,
+  "confidence_intervals": false,
+  "identities_imputed": false,
+  "identity_scenarios": [
+    "Known-only: missing actors supply no additional eligible human identities.",
+    "All-distinct-human: each eligible missing record adds a different non-author human account; accounts are distinct across PRs.",
+    "These are conditional what-if assignments, not estimates of actual identities or their likelihood."
+  ],
+  "cutoff_utc": "2026-10-13T13:51:09.921007+00:00",
+  "limitations": [
+    "The population is fixed to PRs with an attributed review; it does not expand to unknown-only or unreviewed PRs.",
+    "Unknown records can refer to authors, bots, repeated reviewers, known accounts or additional accounts.",
+    "Per-PR incidence and author-exclusion constraints are relaxed; endpoints need not be attainable assignments.",
+    "The all-distinct-human scenario assumes every eligible missing record adds an otherwise unknown eligible account; no actual account is assigned.",
+    "Observed open intervals and final-disposition boundaries use collected lifecycle events at second precision.",
+    "Deleted records, missing informal reviews, known-account aliases and unobserved identity changes are outside these bounds.",
+    "No sampling uncertainty, effort, knowledge ownership or bus factor is estimated."
+  ],
+  "provenance": {
+    "scripts_sha256": {
+      "analyze_review_identity_bounds.py": "8184fe786d6490b65d52be926d86b7292c6c3aee6a8b8df66d5e9e2162e1aa44",
+      "analyze_review_census.py": "349009e57c80a8fab7f4204039b43d756e10d49648947ab17ab2a16fc18724a9",
+      "analyze.py": "0c2e3588e331ee7104bf642509d78b27803e78469a7392a1d2f887b3aa6b65d5",
+      "analyze_process.py": "d5664ecac7097863b65470f03124802ce63d20a605f610f984b0736211d9810f",
+      "collect_process.py": "b126613ba5f6d482a408c96a3b99cb382b81425580901b2f99070e9e6eb4c649",
+      "pr_history.py": "f1cdf433d9114e8bee27eea54f40b866e87d2ee3972f9602cbccba20da82ea0b"
+    },
+    "source_sha256": {
+      "Paper/results/review-census/summary.json": "4d106e8724171a4ca1fa39425b0fbba1d19c7671da4c4768ccb996435e7c4c37",
+      "Paper/results/review-census/coverage.json": "e7a7636f2f2508d5b579d1e979275b9a2681c8c80f413f9be051993667c0cd0f",
+      "Paper/results/review-census/human_pr_formal_review_observations.csv": "83a033571e8c60e87be9afab0930093787787ed9ce055986eb52fb007d5aad0a",
+      "Paper/results/review-census/quarterly_paired_review_roles.csv": "c676878f9fb7a26ff549ce204aa928685b788ef5d63769e7857b005c0b867a2f",
+      "Paper/uv.lock": "63bdd8a6cfa7f84a4a8cc3bb5b8d2892a11bec354814c4fa9beeb591bf9a6148"
+    }
+  },
+  "output_sha256": {
+    "quarterly_hhi_outer_bounds.csv": "bf4c2f60d509a7d909a01af9df8f5d631763a0d44ae0d232dd4dd077189322d0",
+    "merged_pr_identity_inputs.csv": "ae47bfd06761b7d0cd196b391ec4416af47740d42b077110fcdf87ef3868f7f2",
+    "unattributed_record_audit.csv": "0622cf2242737ca27a58cf3e9d5ab728a00637d8f5cef60a7cde452791b8521b"
+  }
+}

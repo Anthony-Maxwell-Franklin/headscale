@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "repository": "juanfont/headscale",
+  "started_at_utc": "2026-10-13T13:48:30.543945+00:00",
+  "complete": true,
+  "list_complete": true,
+  "detailed_complete": true,
+  "limitations": [
+    "API collection is not an atomic snapshot.",
+    "Detailed sample is a pilot, not sufficient evidence for population-wide conclusions.",
+    "Reviews/comments may be deleted or edited; draft readiness needs timeline data.",
+    "PR activity does not establish issue repair linkage."
+  ],
+  "last_quota_remaining": "4711",
+  "pull_requests": 2166,
+  "detail_scope": "year-stratified pilot",
+  "sample_size": 76,
+  "seed": 20261013,
+  "per_year": 12,
+  "last_run_at_utc": "2026-10-13T14:05:30.029328+00:00",
+  "last_run_requests": 259,
+  "finished_at_utc": "2026-10-13T14:05:30.029322+00:00"
+}

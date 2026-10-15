@@ -1,0 +1,1318 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #3165: [Bug] Up function takes one second longer than before, after updating headscale from 0.25.1 to 0.28</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #3165: [Bug] Up function takes one second longer than before, after updating headscale from 0.25.1 to 0.28</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/3165">Original issue #3165</a></p><p>Created: 2026-04-02T06:25:10Z; updated: 2026-09-28T01:50:18Z; observed state: closed; reason: not_planned</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+I have two headscale servers, both on version 0.25.1. 
+After upgrading them to version 0.28, the client (using Tailscale in user space mode) takes about one second longer to call Up (increased from 0.8s to 1.8s). After rolling back headscale to version 0.25.1, the Up call time returns to 0.8s.&quot;
+
+log from headscale 0.25.1 and tailscale 1.96.4
+```
+PS E:\codes\go\gotsnet\gotsnet&gt; python .\test_tsnet.py
+control url: http://124.xxx.xxx.xxx:40000
+auth key: 3812e96e...
+hostname: tsnet-win-pc
+directory: tsnet-tx-sh
+2026/04/02 13:11:18.495445 Tsnet TsnetInit pid=22716 GOOS=&quot;windows&quot; GOARCH=&quot;amd64&quot; Version=&quot;go1.26.1&quot;
+2026/04/02 13:11:18.502223 Tsnet TsnetInit Executable=&quot;D:\\Python312x64\\python.exe&quot; err=&lt;nil&gt;
+2026/04/02 13:11:18.502223 Tsnet TsnetInit UserConfigDir=&quot;C:\\Users\\admin\\AppData\\Roaming&quot; err=&lt;nil&gt;
+2026/04/02 13:11:18.502223 Tsnet TsnetInit BuildTime=2026-04-01 15:12:09 Git=2026-04-01 15:07:29 +0800 7c5fd03a1f69abf58708a19bd60dcf8462326d07 (HEAD -&gt; master, origin/master)
+2026/04/02 13:11:18.502223 Tsnet TsnetInit tailscale.com(tsnet) module version=v1.96.4
+2026/04/02 13:11:18.502223 Tsnet TsnetInit create tsnet 0x259572EDED88
+2026/04/02 13:11:18.502768 Tsnet TsnetSetDir dir: &quot;tsnet-tx-sh&quot;
+2026/04/02 13:11:18.502768 Tsnet TsnetUp enter pid=22716 timeout=10000 url=http://124.xxx.xxx.xxx:40000 key=xxxxxxxx... hostname=tsnet-win-pc
+2026/04/02 13:11:18.700097 TsInternal [v1] using fake (no-op) tun device
+2026/04/02 13:11:18.700607 TsInternal [v1] using fake (no-op) OS network configurator
+2026/04/02 13:11:18.700607 TsInternal [v1] using fake (no-op) DNS configurator
+2026/04/02 13:11:18.701129 TsInternal dns: using dns.noopManager
+2026/04/02 13:11:18.701129 TsInternal link state: interfaces.State{defaultRoute=以太网 (Intel(R) Ethernet Connection (11) I219-V) ifs={Tailscale:[100.64.0.3/32 fd7a:115c:a1e0::3/128 llu6] VMware Network Adapter VMnet1:[192.168.80.1/24 llu6] VMware Network Adapter VMnet8:[192.168.126.1/24 llu6] WLAN 2:[192.168.6.151/24 llu6] vEthernet (WSL):[172.21.176.1/20 llu6] 以太网:[192.168.2.188/24 llu6]} v4=true v6=false}
+2026/04/02 13:11:18.725514 TsInternal magicsock: disco key = d:70d983c324451e20
+2026/04/02 13:11:18.725514 TsInternal Creating WireGuard device...
+2026/04/02 13:11:18.726091 TsInternal Bringing WireGuard device up...
+2026/04/02 13:11:18.726091 TsInternal wg: [v2] UDP bind has been updated
+2026/04/02 13:11:18.726091 TsInternal wg: [v2] Routine: receive incoming mkReceiveFunc - started
+2026/04/02 13:11:18.726091 TsInternal wg: [v2] Routine: receive incoming mkReceiveFunc - started
+2026/04/02 13:11:18.726091 TsInternal wg: [v2] Routine: receive incoming receiveDERP - started
+2026/04/02 13:11:18.726091 TsInternal wg: [v2] Interface state was Down, requested Up, now Up
+2026/04/02 13:11:18.726601 TsInternal Bringing router up...
+2026/04/02 13:11:18.726601 TsInternal [v1] warning: fakeRouter.Up: not implemented.
+2026/04/02 13:11:18.726601 TsInternal Clearing router settings...
+2026/04/02 13:11:18.726601 TsInternal [v1] warning: fakeRouter.Set: not implemented.
+2026/04/02 13:11:18.726601 TsInternal Starting network monitor...
+2026/04/02 13:11:18.727146 TsInternal Engine created.
+2026/04/02 13:11:18 tsnet running state path tsnet-tx-sh\tailscaled.state
+2026/04/02 13:11:18.727657 TsInternal pm: using backend prefs for &quot;profile-daab&quot;: Prefs{ra=true dns=true want=true statefulFiltering=false url=&quot;http://124.xxx.xxx.xxx:40000&quot; host=&quot;tsnet-win-pc&quot; update=check Persist{o=, n=[1+jVB] u=&quot;yks&quot; ak=-}}
+2026/04/02 13:11:18.730195 TsInternal linkChange: in state NoState; PAC or proxyConfig changed; updating routes
+2026/04/02 13:11:18.730195 TsInternal [v1] netmap packet filter: (not ready yet)
+2026/04/02 13:11:18 tsnet starting with hostname &quot;tsnet-win-pc&quot;, varRoot &quot;tsnet-tx-sh&quot;
+2026/04/02 13:11:18.730195 TsInternal Start
+2026/04/02 13:11:18.730195 TsInternal ipnext: active extensions:
+2026/04/02 13:11:18.731196 TsInternal [vJSON]1{&quot;Hostinfo&quot;:{&quot;IPNVersion&quot;:&quot;1.96.4-dev20260401-t7c5fd03a1-dirty&quot;,&quot;BackendLogID&quot;:&quot;070a049b5e5b2f612c08bc0cced07176387bc98fcbb7ce3fca5f607c9e3ab730&quot;,&quot;OS&quot;:&quot;windows&quot;,&quot;OSVersion&quot;:&quot;10.0.19045.6466&quot;,&quot;Package&quot;:&quot;tsnet&quot;,&quot;Hostname&quot;:&quot;skypc&quot;,&quot;GoArch&quot;:&quot;amd64&quot;,&quot;GoArchVar&quot;:&quot;v1&quot;,&quot;GoVersion&quot;:&quot;go1.26.1&quot;,&quot;Userspace&quot;:true,&quot;UserspaceRouter&quot;:true,&quot;AppConnector&quot;:false,&quot;StateEncrypted&quot;:false}}
+2026/04/02 13:11:18.731196 TsInternal Start: updated prefs: Prefs{ra=true dns=true want=true statefulFiltering=false url=&quot;http://124.xxx.xxx.xxx:40000&quot; host=&quot;tsnet-win-pc&quot; update=check Persist{o=, n=[1+jVB] u=&quot;yks&quot; ak=-}}, reason: [opts.UpdatePrefs]
+2026/04/02 13:11:18.765007 TsInternal Start: serverMode=false
+2026/04/02 13:11:18.765007 TsInternal control: [v1] HostInfo: {&quot;IPNVersion&quot;:&quot;1.96.4-dev20260401-t7c5fd03a1-dirty&quot;,&quot;BackendLogID&quot;:&quot;070a049b5e5b2f612c08bc0cced07176387bc98fcbb7ce3fca5f607c9e3ab730&quot;,&quot;OS&quot;:&quot;windows&quot;,&quot;OSVersion&quot;:&quot;10.0.19045.6466&quot;,&quot;Package&quot;:&quot;tsnet&quot;,&quot;Hostname&quot;:&quot;tsnet-win-pc&quot;,&quot;GoArch&quot;:&quot;amd64&quot;,&quot;GoArchVar&quot;:&quot;v1&quot;,&quot;GoVersion&quot;:&quot;go1.26.1&quot;,&quot;Services&quot;:[{&quot;Proto&quot;:&quot;peerapi-dns-proxy&quot;,&quot;Port&quot;:1}],&quot;Userspace&quot;:true,&quot;UserspaceRouter&quot;:true,&quot;AppConnector&quot;:false,&quot;StateEncrypted&quot;:false}
+2026/04/02 13:11:18.765521 TsInternal control: [v1] authRoutine: loggedIn=false; goal=nil paused=false
+2026/04/02 13:11:18.765521 TsInternal control: [v1] mapRoutine: loggedIn=false
+2026/04/02 13:11:18.765521 TsInternal Backend: logs: be:070a049b5e5b2f612c08bc0cced07176387bc98fcbb7ce3fca5f607c9e3ab730 fe:
+2026/04/02 13:11:18.766064 TsInternal control: client.Login(0)
+2026/04/02 13:11:18.766064 TsInternal control: [v1] mapRoutine: context done.
+2026/04/02 13:11:18.766064 TsInternal health(warnable=warming-up): error: Tailscale is starting. Please wait.
+2026/04/02 13:11:18 Authkey is set; but state is NoState. Ignoring authkey. Re-run with TSNET_FORCE_LOGIN=1 to force use of authkey.
+2026/04/02 13:11:18.766064 TsInternal control: [v1] authRoutine: context done.
+2026/04/02 13:11:18.766064 TsInternal control: [v1] mapRoutine: loggedIn=false
+2026/04/02 13:11:18.766574 TsInternal control: [v1] authRoutine: loggedIn=false; wantLoggedIn=true
+2026/04/02 13:11:18.766574 TsInternal control: [v1] direct.TryLogin(flags=0)
+2026/04/02 13:11:18.766574 TsInternal control: doLogin(regen=false, hasUrl=false)
+2026/04/02 13:11:18.804679 TsInternal control: control server key from http://124.xxx.xxx.xxx:40000: ts2021=[hj932], legacy=
+2026/04/02 13:11:18.805682 TsInternal control: RegisterReq: onode= node=[1+jVB] fup=false nks=false
+2026/04/02 13:11:18.805682 TsInternal control: [v1] creating new noise client
+2026/04/02 13:11:18.857260 TsInternal control: RegisterReq: got response; nodeKeyExpired=false, machineAuthorized=true; authURL=false
+2026/04/02 13:11:18.857435 TsInternal control: [v1] No AuthURL
+2026/04/02 13:11:18.858136 TsInternal control: [v1] sendStatus: authRoutine-success: loggedIn=true inMapPoll=false
+2026/04/02 13:11:18.858338 TsInternal control: [v1] restartMap: synced=false
+2026/04/02 13:11:18.858338 TsInternal control: [v1] mapRoutine: context done.
+2026/04/02 13:11:18.858874 TsInternal [v1] authReconfig: netmap not yet valid. Skipping.
+2026/04/02 13:11:18.858919 TsInternal control: [v1] authRoutine: loggedIn=true; goal=nil paused=false
+2026/04/02 13:11:18.859549 TsInternal control: [v1] mapRoutine: loggedIn=true
+2026/04/02 13:11:18.859549 TsInternal control: [v1] PollNetMap: stream=false ep=[]
+2026/04/02 13:11:18.860107 TsInternal control: [v1] PollNetMap: stream=true ep=[]
+2026/04/02 13:11:18.875885 TsInternal control: [v1] successful lite map update in 16ms
+2026/04/02 13:11:18.880547 TsInternal control: [vJSON]1{&quot;controltime&quot;:&quot;2026-04-02T05:11:18.83839657Z&quot;}
+2026/04/02 13:11:18.880547 TsInternal health(warnable=not-in-map-poll): ok
+2026/04/02 13:11:18.880674 TsInternal control: [v1] new network map (periodic):
+netmap: self: [1+jVB] auth=machine-authorized u=yks [100.64.0.4/32 fd7a:115c:a1e0::4/128]
+
+Tsnet TsnetInit pid=22716 GOOS=&quot;windows&quot; GOARCH=&quot;amd64&quot; Version=&quot;go1.26.1&quot;Tsnet TsnetInit Executable=&quot;D:\\Python312x64\\python.exe&quot; err=&lt;nil&gt;Tsnet TsnetInit UserConfigDir=&quot;C:\\Users\\admin\\AppData\\Roaming&quot; err=&lt;nil&gt;Tsnet TsnetInit BuildTime=2026-04-01 15:12:09 Git=2026-04-01 15:07:29 +0800 7c5fd03a1f69abf58708a19bd60dcf8462326d07 (HEAD -&gt; master, origin/master)Tsnet TsnetInit tailscale.com(tsnet) module version=v1.96.4Tsnet TsnetInit create tsnet 0x259572EDED88Tsnet TsnetSetDir dir: &quot;tsnet-tx-sh&quot;Tsnet TsnetUp enter pid=22716 timeout=10000 url=http://124.xxx.xxx.xxx:40000 key=xxxxxxxx... hostname=tsnet-win-pcTsInternal [v1] using fake (no-op) tun deviceTsInternal [v1] using fake (no-op) OS network configuratorTsInternal [v1] using fake (no-op) DNS configuratorTsInternal dns: using dns.noopManagerTsInternal link state: interfaces.State{defaultRoute=以太网 (Intel(R) Ethernet Connection (11) I219-V) ifs={Tailscale:[100.64.0.3/32 fd7a:115c:a1e0::3/128 llu6] VMware Network Adapter VMnet1:[192.168.80.1/24 llu6] VMware Network Adapter VMnet8:[192.168.126.1/24 llu6] WLAN 2:[192.168.6.151/24 llu6] vEthernet (WSL):[172.21.176.1/20 llu6] 以太网:[192.168.2.188/24 llu6]} v4=true v6=false}TsInternal magicsock: disco key = d:70d983c324451e20TsInternal Creating WireGuard device...TsInternal Bringing WireGuard device up...TsInternal wg: [v2] UDP bind has been updatedTsInternal wg: [v2] Routine: receive incoming mkReceiveFunc - startedTsInternal wg: [v2] Routine: receive incoming mkReceiveFunc - startedTsInternal wg: [v2] Routine: receive incoming receiveDERP - startedTsInternal wg: [v2] Interface state was Down, requested Up, now UpTsInternal Bringing router up...TsInternal [v1] warning: fakeRouter.Up: not implemented.TsInternal Clearing router settings...TsInternal [v1] warning: fakeRouter.Set: not implemented.TsInternal Starting network monitor...TsInternal Engine created.TsInternal pm: using backend prefs for &quot;profile-daab&quot;: Prefs{ra=true dns=true want=true statefulFiltering=false url=&quot;http://124.xxx.xxx.xxx:40000&quot; host=&quot;tsnet-win-pc&quot; update=check Persist{o=, n=[1+jVB] u=&quot;yks&quot; ak=-}}TsInternal linkChange: in state NoState; PAC or proxyConfig changed; updating routesTsInternal [v1] netmap packet filter: (not ready yet)TsInternal StartTsInternal ipnext: active extensions: TsInternal [vTsInternal Start: updated prefs: Prefs{ra=true dns=true want=true statefulFiltering=false url=&quot;http://124.xxx.xxx.xxx:40000&quot; host=&quot;tsnet-win-pc&quot; update=check Persist{o=, n=[1+jVB] u=&quot;yks&quot; ak=-}}, reason: [opts.UpdatePrefs]TsInternal Start: serverMode=falseTsInternal control: [v1] HostInfo: {&quot;IPNVersion&quot;:&quot;1.96.4-dev20260401-t7c5fd03a1-dirty&quot;,&quot;BackendLogID&quot;:&quot;070a049b5e5b2f612c08bc0cced07176387bc98fcbb7ce3fca5f607c9e3ab730&quot;,&quot;OS&quot;:&quot;windows&quot;,&quot;OSVersion&quot;:&quot;10.0.19045.6466&quot;,&quot;Package&quot;:&quot;tsnet&quot;,&quot;Hostname&quot;:&quot;tsnet-win-pc&quot;,&quot;GoArch&quot;:&quot;amd64&quot;,&quot;GoArchVar&quot;:&quot;v1&quot;,&quot;GoVersion&quot;:&quot;go1.26.1&quot;,&quot;Services&quot;:[{&quot;Proto&quot;:&quot;peerapi-dns-proxy&quot;,&quot;Port&quot;:1}],&quot;Userspace&quot;:true,&quot;UserspaceRouter&quot;:true,&quot;AppConnector&quot;:false,&quot;StateEncrypted&quot;:false}TsInternal control: [v1] authRoutine: loggedIn=false; goal=nil paused=falseTsInternal control: [v1] mapRoutine: loggedIn=falseTsInternal Backend: logs: be:070a049b5e5b2f612c08bc0cced07176387bc98fcbb7ce3fca5f607c9e3ab730 fe:TsInternal control: client.Login(0)TsInternal control: [v1] mapRoutine: context done.TsInternal health(warnable=warming-up): error: Tailscale is starting. Please wait.TsInternal control: [v1] authRoutine: context done.TsInternal control: [v1] mapRoutine: loggedIn=falseTsInternal control: [v1] authRoutine: loggedIn=false; wantLoggedIn=trueTsInternal control: [v1] direct.TryLogin(flags=0)TsInternal control: doLogin(regen=false, hasUrl=false)TsInternal control: control server key from http://124.xxx.xxx.xxx:40000: ts2021=[hj932], legacy=TsInternal control: RegisterReq: onode= node=[1+jVB] fup=false nks=falseTsInternal control: [v1] creating new noise clientTsInternal control: RegisterReq: got response; nodeKeyExpired=false, machineAuthorized=true; authURL=falseTsInternal control: [v1] No AuthURLTsInternal control: [v1] sendStatus: authRoutine-success: loggedIn=true inMapPoll=falseTsInternal control: [v1] restartMap: synced=falseTsInternal control: [v1] mapRoutine: context done.TsInternal [v1] authReconfig: netmap not yet valid. Skipping.TsInternal control: [v1] authRoutine: loggedIn=true; goal=nil paused=falseTsInternal control: [v1] mapRoutine: loggedIn=trueTsInternal control: [v1] PollNetMap: stream=false ep=[]TsInternal control: [v1] PollNetMap: stream=true ep=[]TsInternal control: [v1] successful lite map update in 16msTsInternal control: [vTsInternal health(warnable=not-in-map-poll): okTsInternal control: [v1] new network map (periodic):
+netmap: self: [1+jVB] auth=machine-authorized u=yks [100.64.0.4/32 fd7a:115c:a1e0::4/128]
+2026/04/02 13:11:18.881185 TsInternal control: [v1] mapRoutine: netmap received: loggedIn=true inMapPoll=true
+2026/04/02 13:11:18.881185 TsInternal control: [v1] sendStatus: mapRoutine-got-netmap: loggedIn=true inMapPoll=true
+2026/04/02 13:11:18.918653 TsInternal [v2] netstack: registered IP 100.64.0.4/32
+2026/04/02 13:11:18.918653 TsInternal [v2] netstack: registered IP fd7a:115c:a1e0::4/128
+2026/04/02 13:11:18.918653 TsInternal [v1] magicsock: got updated network map; 3 peers
+2026/04/02 13:11:18.919178 TsInternal active login: yks
+2026/04/02 13:11:18.919178 TsInternal [v1] netmap packet filter: 1 filters
+2026/04/02 13:11:18.919686 TsInternal netmap: suggested exit node: no preferred DERP, try again later
+2026/04/02 13:11:18.919686 TsInternal Switching ipn state NoState -&gt; Starting (WantRunning=true, nm=true)
+2026/04/02 13:11:18.919686 TsInternal magicsock: SetPrivateKey called (init)
+2026/04/02 13:11:18.920209 TsInternal wgengine: Reconfig: configuring userspace WireGuard config (with 0/3 peers)
+2026/04/02 13:11:18.920209 TsInternal wg: [v2] UAPI: Updating private key
+2026/04/02 13:11:18.920209 TsInternal wgengine: Reconfig: configuring router
+2026/04/02 13:11:18.920209 TsInternal [v1] warning: fakeRouter.Set: not implemented.
+2026/04/02 13:11:18.920721 TsInternal wgengine: Reconfig: user dialer
+2026/04/02 13:11:18.920721 TsInternal tsdial: bart table size: 6
+2026/04/02 13:11:18.920721 TsInternal wgengine: Reconfig: configuring DNS
+2026/04/02 13:11:18.920721 TsInternal dns: Set: {DefaultResolvers:[1.1.1.1 1.0.0.1 2606:4700:4700::1111 2606:4700:4700::1001] Routes:{example.com.:[]}+65arpa SearchDomains:[example.com.] Hosts:4}
+2026/04/02 13:11:18.920721 TsInternal dns: Resolvercfg: {Routes:{.:[1.1.1.1 1.0.0.1 2606:4700:4700::1111 2606:4700:4700::1001]} Hosts:4 LocalDomains:[example.com.]+65arpa}
+2026/04/02 13:11:18.920721 TsInternal dns: OScfg: {Hosts:[0x259572f0f470 0x259572f0f440 0x259572f0f4a0 0x259572f0f4d0] Nameservers:[100.100.100.100 fd7a:115c:a1e0::53] SearchDomains:[example.com.] }
+2026/04/02 13:11:18.921243 TsInternal [v1] wgengine: Reconfig done
+2026/04/02 13:11:18.921243 TsInternal [v1] authReconfig: ra=true dns=true 0x02: &lt;nil&gt;
+2026/04/02 13:11:18.921243 TsInternal [v1] initPeerAPIListener: entered
+2026/04/02 13:11:18.921243 TsInternal peerapi: serving on http://100.64.0.4:37067
+2026/04/02 13:11:18.921243 TsInternal peerapi: serving on http://[fd7a:115c:a1e0::4]:37067
+2026/04/02 13:11:18.921757 TsInternal [v1] wgengine: Reconfig done
+2026/04/02 13:11:18.921757 TsInternal [v1] authReconfig: ra=true dns=true 0x02: &lt;nil&gt;
+2026/04/02 13:11:18.921757 TsInternal [v1] initPeerAPIListener: entered
+2026/04/02 13:11:18.921757 TsInternal [v1] initPeerAPIListener: 2 netmap addresses match existing listeners
+2026/04/02 13:11:18.921757 TsInternal control: [v1] HostInfo: {&quot;IPNVersion&quot;:&quot;1.96.4-dev20260401-t7c5fd03a1-dirty&quot;,&quot;BackendLogID&quot;:&quot;070a049b5e5b2f612c08bc0cced07176387bc98fcbb7ce3fca5f607c9e3ab730&quot;,&quot;OS&quot;:&quot;windows&quot;,&quot;OSVersion&quot;:&quot;10.0.19045.6466&quot;,&quot;Package&quot;:&quot;tsnet&quot;,&quot;Hostname&quot;:&quot;tsnet-win-pc&quot;,&quot;GoArch&quot;:&quot;amd64&quot;,&quot;GoArchVar&quot;:&quot;v1&quot;,&quot;GoVersion&quot;:&quot;go1.26.1&quot;,&quot;Services&quot;:[{&quot;Proto&quot;:&quot;peerapi4&quot;,&quot;Port&quot;:37067},{&quot;Proto&quot;:&quot;peerapi6&quot;,&quot;Port&quot;:37067},{&quot;Proto&quot;:&quot;peerapi-dns-proxy&quot;,&quot;Port&quot;:1}],&quot;Userspace&quot;:true,&quot;UserspaceRouter&quot;:true,&quot;AppConnector&quot;:false,&quot;StateEncrypted&quot;:false}
+2026/04/02 13:11:18.921757 TsInternal control: [v1] PollNetMap: stream=false ep=[]
+2026/04/02 13:11:18.934773 TsInternal control: [v1] successful lite map update in 13ms
+2026/04/02 13:11:18.998868 TsInternal monitor: gateway and self IP changed: gw=192.168.2.1 self=192.168.2.188
+2026/04/02 13:11:19.035800 TsInternal control: [vJSON]1{&quot;controltime&quot;:&quot;2026-04-02T05:11:18.993553337Z&quot;}
+2026/04/02 13:11:19.035876 TsInternal control: [v1] mapRoutine: netmap received: loggedIn=true inMapPoll=true
+2026/04/02 13:11:19.035876 TsInternal control: [v1] sendStatus: mapRoutine-got-netmap: loggedIn=true inMapPoll=true
+2026/04/02 13:11:19.036389 TsInternal [v1] netmap packet filter: 1 filters
+2026/04/02 13:11:19.036437 TsInternal [v1] netmap diff: (none)
+2026/04/02 13:11:19.036437 TsInternal netmap: suggested exit node: no preferred DERP, try again later
+2026/04/02 13:11:19.036942 TsInternal [v1] wgengine: Reconfig done
+2026/04/02 13:11:19.036969 TsInternal [v1] authReconfig: ra=true dns=true 0x02: &lt;nil&gt;
+2026/04/02 13:11:19.036969 TsInternal [v1] initPeerAPIListener: entered
+2026/04/02 13:11:19.036969 TsInternal [v1] initPeerAPIListener: 2 netmap addresses match existing listeners
+2026/04/02 13:11:19.264188 TsInternal netcheck: [v1] report: udp=true v6=false v6os=true mapvarydest= portmap= v4a=180.109.81.86:26311 derp=991 derpdist=991v4:13ms
+2026/04/02 13:11:19.264188 TsInternal magicsock: home DERP changing from derp-0 [0ms] to derp-991 [12ms]
+2026/04/02 13:11:19.264188 TsInternal magicsock: home is now derp-991 (tencent-sh)
+2026/04/02 13:11:19.264188 TsInternal magicsock: adding connection to derp-991 for home-keep-alive
+2026/04/02 13:11:19.264965 TsInternal magicsock: 1 active derp conns: derp-991=cr0s,wr0s
+2026/04/02 13:11:19.264965 TsInternal control: NetInfo: NetInfo{varies= ipv6=false ipv6os=true udp=true icmpv4=false derp=#991 portmap= link=&quot;&quot; firewallmode=&quot;&quot;}
+2026/04/02 13:11:19.264965 TsInternal control: [v1] PollNetMap: stream=false ep=[]
+2026/04/02 13:11:19.264965 TsInternal derphttp.Client.Connect: connecting to derp-991 (tencent-sh)
+2026/04/02 13:11:19.278605 TsInternal control: [v1] successful lite map update in 14ms
+2026/04/02 13:11:19.278605 TsInternal health(warnable=no-derp-connection): ok
+2026/04/02 13:11:19.308950 TsInternal health(warnable=warming-up): ok
+2026/04/02 13:11:19.308950 TsInternal Switching ipn state Starting -&gt; Running (WantRunning=true, nm=true)
+2026/04/02 13:11:19.308950 TsInternal health(warnable=no-derp-connection): ok
+2026/04/02 13:11:19.310614 TsInternal localapi: [POST] /localapi/v0/serve-config
+2026/04/02 13:11:19.310614 Tsnet TsnetUp exit TsnetErrorOK ip 100.64.0.4
+2026/04/02 13:11:19.311118 Tsnet TsnetUp exit TsnetErrorOK ip fd7a:115c:a1e0::4
+TsInternal control: [v1] mapRoutine: netmap received: loggedIn=true inMapPoll=trueTsInternal control: [v1] sendStatus: mapRoutine-got-netmap: loggedIn=true inMapPoll=trueTsInternal [v2] netstack: registered IP 100.64.0.4/32TsInternal [v2] netstack: registered IP fd7a:115c:a1e0::4/128TsInternal [v1] magicsock: got updated network map; 3 peersTsInternal active login: yksTsInternal [v1] netmap packet filter: 1 filtersTsInternal netmap: suggested exit node: no preferred DERP, try again laterTsInternal Switching ipn state NoState -&gt; Starting (WantRunning=true, nm=true)TsInternal magicsock: SetPrivateKey called (init)TsInternal wgengine: Reconfig: configuring userspace WireGuard config (with 0/3 peers)TsInternal wg: [v2] UAPI: Updating private keyTsInternal wgengine: Reconfig: configuring routerTsInternal [v1] warning: fakeRouter.Set: not implemented.TsInternal wgengine: Reconfig: user dialerTsInternal tsdial: bart table size: 6TsInternal wgengine: Reconfig: configuring DNSTsInternal dns: Set: {DefaultResolvers:[1.1.1.1 1.0.0.1 2606:4700:4700::1111 2606:4700:4700::1001] Routes:{example.com.:[]}+65arpa SearchDomains:[example.com.] Hosts:4}TsInternal dns: Resolvercfg: {Routes:{.:[1.1.1.1 1.0.0.1 2606:4700:4700::1111 2606:4700:4700::1001]} Hosts:4 LocalDomains:[example.com.]+65arpa}TsInternal dns: OScfg: {Hosts:[0x259572f0f470 0x259572f0f440 0x259572f0f4a0 0x259572f0f4d0] Nameservers:[100.100.100.100 fd7a:115c:a1e0::53] SearchDomains:[example.com.] }TsInternal [v1] wgengine: Reconfig doneTsInternal [v1] authReconfig: ra=true dns=true 0x02: &lt;nil&gt;TsInternal [v1] initPeerAPIListener: enteredTsInternal peerapi: serving on http://100.64.0.4:37067TsInternal peerapi: serving on http://[fd7a:115c:a1e0::4]:37067TsInternal [v1] wgengine: Reconfig doneTsInternal [v1] authReconfig: ra=true dns=true 0x02: &lt;nil&gt;TsInternal [v1] initPeerAPIListener: enteredTsInternal [v1] initPeerAPIListener: 2 netmap addresses match existing listenersTsInternal control: [v1] HostInfo: {&quot;IPNVersion&quot;:&quot;1.96.4-dev20260401-t7c5fd03a1-dirty&quot;,&quot;BackendLogID&quot;:&quot;070a049b5e5b2f612c08bc0cced07176387bc98fcbb7ce3fca5f607c9e3ab730&quot;,&quot;OS&quot;:&quot;windows&quot;,&quot;OSVersion&quot;:&quot;10.0.19045.6466&quot;,&quot;Package&quot;:&quot;tsnet&quot;,&quot;Hostname&quot;:&quot;tsnet-win-pc&quot;,&quot;GoArch&quot;:&quot;amd64&quot;,&quot;GoArchVar&quot;:&quot;v1&quot;,&quot;GoVersion&quot;:&quot;go1.26.1&quot;,&quot;Services&quot;:[{&quot;Proto&quot;:&quot;peerapi4&quot;,&quot;Port&quot;:37067},{&quot;Proto&quot;:&quot;peerapi6&quot;,&quot;Port&quot;:37067},{&quot;Proto&quot;:&quot;peerapi-dns-proxy&quot;,&quot;Port&quot;:1}],&quot;Userspace&quot;:true,&quot;UserspaceRouter&quot;:true,&quot;AppConnector&quot;:false,&quot;StateEncrypted&quot;:false}TsInternal control: [v1] PollNetMap: stream=false ep=[]TsInternal control: [v1] successful lite map update in 13msTsInternal monitor: gateway and self IP changed: gw=192.168.2.1 self=192.168.2.188TsInternal control: [vTsInternal control: [v1] mapRoutine: netmap received: loggedIn=true inMapPoll=trueTsInternal control: [v1] sendStatus: mapRoutine-got-netmap: loggedIn=true inMapPoll=trueTsInternal [v1] netmap packet filter: 1 filtersTsInternal [v1] netmap diff: (none)TsInternal netmap: suggested exit node: no preferred DERP, try again laterTsInternal [v1] wgengine: Reconfig doneTsInternal [v1] authReconfig: ra=true dns=true 0x02: &lt;nil&gt;TsInternal [v1] initPeerAPIListener: enteredTsInternal [v1] initPeerAPIListener: 2 netmap addresses match existing listenersTsInternal netcheck: [v1] report: udp=true v6=false v6os=true mapvarydest= portmap= v4a=180.109.81.86:26311 derp=991 derpdist=991v4:13msTsInternal magicsock: home DERP changing from derp-0 [0ms] to derp-991 [12ms]TsInternal magicsock: home is now derp-991 (tencent-sh)TsInternal magicsock: adding connection to derp-991 for home-keep-aliveTsInternal magicsock: 1 active derp conns: derp-991=cr0s,wr0sTsInternal control: NetInfo: NetInfo{varies= ipv6=false ipv6os=true udp=true icmpv4=false derp=#991 portmap= link=&quot;&quot; firewallmode=&quot;&quot;}TsInternal control: [v1] PollNetMap: stream=false ep=[]TsInternal derphttp.Client.Connect: connecting to derp-991 (tencent-sh)TsInternal control: [v1] successful lite map update in 14msTsInternal health(warnable=no-derp-connection): okTsInternal health(warnable=warming-up): okTsInternal Switching ipn state Starting -&gt; Running (WantRunning=true, nm=true)TsInternal health(warnable=no-derp-connection): okTsInternal localapi: [POST] /localapi/v0/serve-configTsnet TsnetUp exit TsnetErrorOK ip 100.64.0.4Tsnet TsnetUp exit TsnetErrorOK ip fd7a:115c:a1e0::4
+up ret=None cost=0.808s
+
+
+2026/04/02 13:11:19.311142 Tsnet TsnetPing enter ping 100.64.0.1 timeout=5000
+2026/04/02 13:11:19.311142 TsInternal localapi: [POST] /localapi/v0/ping
+2026/04/02 13:11:19.311142 TsInternal ping(100.64.0.1): sending ICMP ping to [dVxV3] server ...
+2026/04/02 13:11:19.311142 TsInternal wgengine: Reconfig: configuring userspace WireGuard config (with 1/3 peers)
+2026/04/02 13:11:19.311653 TsInternal wg: [v2] [dVxV3] - UAPI: Created
+2026/04/02 13:11:19.311653 TsInternal wg: [v2] [dVxV3] - UAPI: Updating endpoint
+2026/04/02 13:11:19.311653 TsInternal wg: [v2] [dVxV3] - UAPI: Removing all allowedips
+2026/04/02 13:11:19.311653 TsInternal wg: [v2] [dVxV3] - Starting
+2026/04/02 13:11:19.311653 TsInternal wg: [v2] [dVxV3] - Sending handshake initiation
+2026/04/02 13:11:19.312170 TsInternal [v1] magicsock: derp route for [dVxV3] set to derp-991 (shared home)
+2026/04/02 13:11:19.321688 TsInternal magicsock: derp-991 connected; connGen=1
+2026/04/02 13:11:19.321688 TsInternal health(warnable=no-derp-connection): ok
+2026/04/02 13:11:19.321688 TsInternal health(warnable=no-derp-connection): ok
+2026/04/02 13:11:19.325829 TsInternal magicsock: endpoints changed: 180.109.81.86:26311 (stun), 172.21.176.1:51746 (local), 192.168.2.188:51746 (local), 192.168.6.151:51746 (local), 192.168.80.1:51746 (local), 192.168.126.1:51746 (local)
+2026/04/02 13:11:19.325829 TsInternal control: [v2] client.newEndpoints([{180.109.81.86:26311 stun} {172.21.176.1:51746 local} {192.168.2.188:51746 local} {192.168.6.151:51746 local} {192.168.80.1:51746 local} {192.168.126.1:51746 local}])
+2026/04/02 13:11:19.325829 TsInternal control: [v1] PollNetMap: stream=false ep=[180.109.81.86:26311 172.21.176.1:51746 192.168.2.188:51746 192.168.6.151:51746 192.168.80.1:51746 192.168.126.1:51746]
+2026/04/02 13:11:19.327374 TsInternal wg: [v2] [dVxV3] - Received handshake response
+2026/04/02 13:11:19.339095 TsInternal control: [v1] successful lite map update in 13ms
+2026/04/02 13:11:19.343344 TsInternal wgengine: got diagnostic ICMP response 160f4f96
+2026/04/02 13:11:19.343866 Tsnet TsnetPing exit 100.64.0.1 TsnetErrorOK pingResult={&quot;IP&quot;:&quot;100.64.0.1&quot;,&quot;NodeIP&quot;:&quot;100.64.0.1&quot;,&quot;NodeName&quot;:&quot;server&quot;,&quot;Err&quot;:&quot;&quot;,&quot;LatencySeconds&quot;:0.0327246,&quot;Endpoint&quot;:&quot;&quot;,&quot;PeerRelay&quot;:&quot;&quot;,&quot;DERPRegionID&quot;:0,&quot;DERPRegionCode&quot;:&quot;&quot;}
+
+Tsnet TsnetPing enter ping 100.64.0.1 timeout=5000TsInternal localapi: [POST] /localapi/v0/pingTsInternal ping(100.64.0.1): sending ICMP ping to [dVxV3] server ...TsInternal wgengine: Reconfig: configuring userspace WireGuard config (with 1/3 peers)TsInternal wg: [v2] [dVxV3] - UAPI: CreatedTsInternal wg: [v2] [dVxV3] - UAPI: Updating endpointTsInternal wg: [v2] [dVxV3] - UAPI: Removing all allowedipsTsInternal wg: [v2] [dVxV3] - StartingTsInternal wg: [v2] [dVxV3] - Sending handshake initiationTsInternal [v1] magicsock: derp route for [dVxV3] set to derp-991 (shared home)TsInternal magicsock: derp-991 connected; connGen=1TsInternal health(warnable=no-derp-connection): okTsInternal health(warnable=no-derp-connection): okTsInternal magicsock: endpoints changed: 180.109.81.86:26311 (stun), 172.21.176.1:51746 (local), 192.168.2.188:51746 (local), 192.168.6.151:51746 (local), 192.168.80.1:51746 (local), 192.168.126.1:51746 (local)TsInternal control: [v2] client.newEndpoints([{180.109.81.86:26311 stun} {172.21.176.1:51746 local} {192.168.2.188:51746 local} {192.168.6.151:51746 local} {192.168.80.1:51746 local} {192.168.126.1:51746 local}])TsInternal control: [v1] PollNetMap: stream=false ep=[180.109.81.86:26311 172.21.176.1:51746 192.168.2.188:51746 192.168.6.151:51746 192.168.80.1:51746 192.168.126.1:51746]TsInternal wg: [v2] [dVxV3] - Received handshake responseTsInternal control: [v1] successful lite map update in 13msTsInternal wgengine: got diagnostic ICMP response 160f4f96Tsnet TsnetPing exit 100.64.0.1 TsnetErrorOK pingResult={&quot;IP&quot;:&quot;100.64.0.1&quot;,&quot;NodeIP&quot;:&quot;100.64.0.1&quot;,&quot;NodeName&quot;:&quot;server&quot;,&quot;Err&quot;:&quot;&quot;,&quot;LatencySeconds&quot;:0.0327246,&quot;Endpoint&quot;:&quot;&quot;,&quot;PeerRelay&quot;:&quot;&quot;,&quot;DERPRegionID&quot;:0,&quot;DERPRegionCode&quot;:&quot;&quot;}
+ping ret=0 cost=0.033s
+
+
+2026/04/02 13:11:19.343866 Tsnet TsnetUninit enter
+2026/04/02 13:11:19.343866 Tsnet TsnetUninit exit close tsnet 0x259572EDED88 pid=22716
+2026/04/02 13:11:19.344376 TsInternal canceling captive portal context
+2026/04/02 13:11:19.344376 TsInternal control: client.Shutdown ...
+2026/04/02 13:11:19.344376 TsInternal control: updateRoutine: exiting
+2026/04/02 13:11:19.344376 TsInternal control: [v1] authRoutine: context done.
+2026/04/02 13:11:19.344376 TsInternal control: [v1] PollNetMap: context canceled
+2026/04/02 13:11:19.344376 TsInternal control: authRoutine: exiting
+2026/04/02 13:11:19.344376 TsInternal control: mapRoutine: exiting
+2026/04/02 13:11:19.344895 TsInternal control: Client.Shutdown done.
+2026/04/02 13:11:19.344895 TsInternal ipnext: work queue shutdown failed: execqueue shut down
+2026/04/02 13:11:19.344895 TsInternal magicsock: closing connection to derp-991 (conn-close), age 0s
+2026/04/02 13:11:19.344895 TsInternal magicsock: 0 active derp conns
+2026/04/02 13:11:19.344895 TsInternal wg: [v2] Routine: receive incoming mkReceiveFunc - stopped
+2026/04/02 13:11:19.344895 TsInternal wg: [v2] Routine: receive incoming mkReceiveFunc - stopped
+2026/04/02 13:11:19.588695 TsInternal netcheck: [v1] report: udp=true v6=false v6os=true mapvarydest= portmap= v4a=180.109.81.86:26311 derp=991 derpdist=991v4:12ms
+2026/04/02 13:11:19.646984 TsInternal [v1] warning: fakeRouter.Close: not implemented.
+2026/04/02 13:11:19.646984 TsInternal wg: [v2] Device closing
+2026/04/02 13:11:19.647538 TsInternal wg: [v2] Routine: receive incoming receiveDERP - stopped
+2026/04/02 13:11:19.647538 TsInternal wg: [v2] [dVxV3] - Stopping
+2026/04/02 13:11:19.648048 TsInternal wg: [v2] Device closed
+Tsnet TsnetUninit enterTsnet TsnetUninit exit close tsnet 0x259572EDED88 pid=22716TsInternal canceling captive portal contextTsInternal control: client.Shutdown ...TsInternal control: updateRoutine: exitingTsInternal control: [v1] authRoutine: context done.TsInternal control: [v1] PollNetMap: context canceledTsInternal control: authRoutine: exitingTsInternal control: mapRoutine: exitingTsInternal control: Client.Shutdown done.TsInternal ipnext: work queue shutdown failed: execqueue shut downTsInternal magicsock: closing connection to derp-991 (conn-close), age 0sTsInternal magicsock: 0 active derp connsTsInternal wg: [v2] Routine: receive incoming mkReceiveFunc - stoppedTsInternal wg: [v2] Routine: receive incoming mkReceiveFunc - stoppedTsInternal netcheck: [v1] report: udp=true v6=false v6os=true mapvarydest= portmap= v4a=180.109.81.86:26311 derp=991 derpdist=991v4:12msTsInternal [v1] warning: fakeRouter.Close: not implemented.TsInternal wg: [v2] Device closingTsInternal wg: [v2] Routine: receive incoming receiveDERP - stoppedTsInternal wg: [v2] [dVxV3] - StoppingTsInternal wg: [v2] Device closed
+2026-04-02 13:11:21.649108
+```
+
+```
+2026/04/02 13:11:18.875885 TsInternal control: [v1] successful lite map update in 16ms
+2026/04/02 13:11:18.880547 TsInternal control: [vJSON]1{&quot;controltime&quot;:&quot;2026-04-02T05:11:18.83839657Z&quot;}
+```
+
+log from headscale 0.28 and tailscale 1.96.4
+```
+PS E:\codes\go\gotsnet\gotsnet&gt; python .\test_tsnet.py
+control url: http://124.xxx.xxx.xxx:40000
+auth key: 3812e96e...
+hostname: tsnet-win-pc
+directory: tsnet-tx-sh
+2026/04/02 13:19:32.528337 Tsnet TsnetInit pid=27944 GOOS=&quot;windows&quot; GOARCH=&quot;amd64&quot; Version=&quot;go1.26.1&quot;
+2026/04/02 13:19:32.534566 Tsnet TsnetInit Executable=&quot;D:\\Python312x64\\python.exe&quot; err=&lt;nil&gt;
+2026/04/02 13:19:32.534566 Tsnet TsnetInit UserConfigDir=&quot;C:\\Users\\admin\\AppData\\Roaming&quot; err=&lt;nil&gt;
+2026/04/02 13:19:32.534566 Tsnet TsnetInit BuildTime=2026-04-01 15:12:09 Git=2026-04-01 15:07:29 +0800 7c5fd03a1f69abf58708a19bd60dcf8462326d07 (HEAD -&gt; master, origin/master)
+2026/04/02 13:19:32.534566 Tsnet TsnetInit tailscale.com(tsnet) module version=v1.96.4
+2026/04/02 13:19:32.535077 Tsnet TsnetInit create tsnet 0x1FD73B216D88
+2026/04/02 13:19:32.535077 Tsnet TsnetSetDir dir: &quot;tsnet-tx-sh&quot;
+2026/04/02 13:19:32.535077 Tsnet TsnetUp enter pid=27944 timeout=10000 url=http://124.xxx.xxx.xxx:40000 key=xxxxxxxx... hostname=tsnet-win-pc
+2026/04/02 13:19:32.726592 TsInternal [v1] using fake (no-op) tun device
+2026/04/02 13:19:32.727594 TsInternal [v1] using fake (no-op) OS network configurator
+2026/04/02 13:19:32.727594 TsInternal [v1] using fake (no-op) DNS configurator
+2026/04/02 13:19:32.727594 TsInternal dns: using dns.noopManager
+2026/04/02 13:19:32.727594 TsInternal link state: interfaces.State{defaultRoute=以太网 (Intel(R) Ethernet Connection (11) I219-V) ifs={Tailscale:[100.64.0.3/32 fd7a:115c:a1e0::3/128 llu6] VMware Network Adapter VMnet1:[192.168.80.1/24 llu6] VMware Network Adapter VMnet8:[192.168.126.1/24 llu6] WLAN 2:[192.168.6.151/24 llu6] vEthernet (WSL):[172.21.176.1/20 llu6] 以太网:[192.168.2.188/24 llu6]} v4=true v6=false}
+2026/04/02 13:19:32.753806 TsInternal magicsock: disco key = d:ee2a32c53a3641d5
+2026/04/02 13:19:32.753806 TsInternal Creating WireGuard device...
+2026/04/02 13:19:32.753806 TsInternal Bringing WireGuard device up...
+2026/04/02 13:19:32.754315 TsInternal wg: [v2] UDP bind has been updated
+2026/04/02 13:19:32.754315 TsInternal wg: [v2] Routine: receive incoming mkReceiveFunc - started
+2026/04/02 13:19:32.754315 TsInternal wg: [v2] Routine: receive incoming mkReceiveFunc - started
+2026/04/02 13:19:32.754315 TsInternal wg: [v2] Interface state was Down, requested Up, now Up
+2026/04/02 13:19:32.754872 TsInternal Bringing router up...
+2026/04/02 13:19:32.754315 TsInternal wg: [v2] Routine: receive incoming receiveDERP - started
+2026/04/02 13:19:32.754872 TsInternal [v1] warning: fakeRouter.Up: not implemented.
+2026/04/02 13:19:32.754872 TsInternal Clearing router settings...
+2026/04/02 13:19:32.754872 TsInternal [v1] warning: fakeRouter.Set: not implemented.
+2026/04/02 13:19:32.755383 TsInternal Starting network monitor...
+2026/04/02 13:19:32.755383 TsInternal Engine created.
+2026/04/02 13:19:32 tsnet running state path tsnet-tx-sh\tailscaled.state
+2026/04/02 13:19:32.756410 TsInternal pm: using backend prefs for &quot;profile-daab&quot;: Prefs{ra=true dns=true want=true statefulFiltering=false url=&quot;http://124.xxx.xxx.xxx:40000&quot; host=&quot;tsnet-win-pc&quot; update=check Persist{o=, n=[1+jVB] u=&quot;yks&quot; ak=-}}
+2026/04/02 13:19:32.758465 TsInternal linkChange: in state NoState; PAC or proxyConfig changed; updating routes
+2026/04/02 13:19:32.758465 TsInternal [v1] netmap packet filter: (not ready yet)
+2026/04/02 13:19:32 tsnet starting with hostname &quot;tsnet-win-pc&quot;, varRoot &quot;tsnet-tx-sh&quot;
+2026/04/02 13:19:32.758982 TsInternal Start
+2026/04/02 13:19:32.758982 TsInternal ipnext: active extensions:
+2026/04/02 13:19:32.758982 TsInternal [vJSON]1{&quot;Hostinfo&quot;:{&quot;IPNVersion&quot;:&quot;1.96.4-dev20260401-t7c5fd03a1-dirty&quot;,&quot;BackendLogID&quot;:&quot;070a049b5e5b2f612c08bc0cced07176387bc98fcbb7ce3fca5f607c9e3ab730&quot;,&quot;OS&quot;:&quot;windows&quot;,&quot;OSVersion&quot;:&quot;10.0.19045.6466&quot;,&quot;Package&quot;:&quot;tsnet&quot;,&quot;Hostname&quot;:&quot;skypc&quot;,&quot;GoArch&quot;:&quot;amd64&quot;,&quot;GoArchVar&quot;:&quot;v1&quot;,&quot;GoVersion&quot;:&quot;go1.26.1&quot;,&quot;Userspace&quot;:true,&quot;UserspaceRouter&quot;:true,&quot;AppConnector&quot;:false,&quot;StateEncrypted&quot;:false}}
+2026/04/02 13:19:32.759492 TsInternal Start: updated prefs: Prefs{ra=true dns=true want=true statefulFiltering=false url=&quot;http://124.xxx.xxx.xxx:40000&quot; host=&quot;tsnet-win-pc&quot; update=check Persist{o=, n=[1+jVB] u=&quot;yks&quot; ak=-}}, reason: [opts.UpdatePrefs]
+2026/04/02 13:19:32.798122 TsInternal Start: serverMode=false
+2026/04/02 13:19:32.798122 TsInternal control: [v1] HostInfo: {&quot;IPNVersion&quot;:&quot;1.96.4-dev20260401-t7c5fd03a1-dirty&quot;,&quot;BackendLogID&quot;:&quot;070a049b5e5b2f612c08bc0cced07176387bc98fcbb7ce3fca5f607c9e3ab730&quot;,&quot;OS&quot;:&quot;windows&quot;,&quot;OSVersion&quot;:&quot;10.0.19045.6466&quot;,&quot;Package&quot;:&quot;tsnet&quot;,&quot;Hostname&quot;:&quot;tsnet-win-pc&quot;,&quot;GoArch&quot;:&quot;amd64&quot;,&quot;GoArchVar&quot;:&quot;v1&quot;,&quot;GoVersion&quot;:&quot;go1.26.1&quot;,&quot;Services&quot;:[{&quot;Proto&quot;:&quot;peerapi-dns-proxy&quot;,&quot;Port&quot;:1}],&quot;Userspace&quot;:true,&quot;UserspaceRouter&quot;:true,&quot;AppConnector&quot;:false,&quot;StateEncrypted&quot;:false}
+2026/04/02 13:19:32.799628 TsInternal control: [v1] authRoutine: loggedIn=false; goal=nil paused=false
+2026/04/02 13:19:32.799668 TsInternal control: [v1] mapRoutine: loggedIn=false
+2026/04/02 13:19:32.799668 TsInternal Backend: logs: be:070a049b5e5b2f612c08bc0cced07176387bc98fcbb7ce3fca5f607c9e3ab730 fe:
+2026/04/02 13:19:32.799668 TsInternal control: client.Login(0)
+2026/04/02 13:19:32 Authkey is set; but state is NoState. Ignoring authkey. Re-run with TSNET_FORCE_LOGIN=1 to force use of authkey.
+2026/04/02 13:19:32.799668 TsInternal control: [v1] mapRoutine: context done.
+2026/04/02 13:19:32.800174 TsInternal control: [v1] mapRoutine: loggedIn=false
+2026/04/02 13:19:32.799668 TsInternal control: [v1] authRoutine: context done.
+2026/04/02 13:19:32.799668 TsInternal health(warnable=warming-up): error: Tailscale is starting. Please wait.
+2026/04/02 13:19:32.800207 TsInternal control: [v1] authRoutine: loggedIn=false; wantLoggedIn=true
+2026/04/02 13:19:32.800207 TsInternal control: [v1] direct.TryLogin(flags=0)
+2026/04/02 13:19:32.800207 TsInternal control: doLogin(regen=false, hasUrl=false)
+2026/04/02 13:19:32.842361 TsInternal control: control server key from http://124.xxx.xxx.xxx:40000: ts2021=[hj932], legacy=
+2026/04/02 13:19:32.842361 TsInternal control: RegisterReq: onode= node=[1+jVB] fup=false nks=false
+2026/04/02 13:19:32.843354 TsInternal control: [v1] creating new noise client
+2026/04/02 13:19:32.941806 TsInternal control: RegisterReq: got response; nodeKeyExpired=false, machineAuthorized=true; authURL=false
+2026/04/02 13:19:32.943059 TsInternal control: [v1] No AuthURL
+2026/04/02 13:19:32.943147 TsInternal control: [v1] sendStatus: authRoutine-success: loggedIn=true inMapPoll=false
+2026/04/02 13:19:32.943147 TsInternal control: [v1] restartMap: synced=false
+2026/04/02 13:19:32.943147 TsInternal [v1] authReconfig: netmap not yet valid. Skipping.
+2026/04/02 13:19:32.943147 TsInternal control: [v1] mapRoutine: context done.
+2026/04/02 13:19:32.943147 TsInternal control: [v1] authRoutine: loggedIn=true; goal=nil paused=false
+2026/04/02 13:19:32.943657 TsInternal control: [v1] PollNetMap: stream=false ep=[]
+2026/04/02 13:19:32.943657 TsInternal control: [v1] mapRoutine: loggedIn=true
+2026/04/02 13:19:32.943657 TsInternal control: [v1] PollNetMap: stream=true ep=[]
+2026/04/02 13:19:33.443057 TsInternal control: [v1] successful lite map update in 499ms
+2026/04/02 13:19:33.944090 TsInternal control: [vJSON]1{&quot;controltime&quot;:&quot;2026-04-02T05:19:33.905026175Z&quot;}
+2026/04/02 13:19:33.944090 TsInternal health(warnable=not-in-map-poll): ok
+2026/04/02 13:19:33.944090 TsInternal control: [v1] new network map (periodic):
+netmap: self: [1+jVB] auth=machine-authorized u=yks [100.64.0.4/32 fd7a:115c:a1e0::4/128]
+
+Tsnet TsnetInit pid=27944 GOOS=&quot;windows&quot; GOARCH=&quot;amd64&quot; Version=&quot;go1.26.1&quot;Tsnet TsnetInit Executable=&quot;D:\\Python312x64\\python.exe&quot; err=&lt;nil&gt;Tsnet TsnetInit UserConfigDir=&quot;C:\\Users\\admin\\AppData\\Roaming&quot; err=&lt;nil&gt;Tsnet TsnetInit BuildTime=2026-04-01 15:12:09 Git=2026-04-01 15:07:29 +0800 7c5fd03a1f69abf58708a19bd60dcf8462326d07 (HEAD -&gt; master, origin/master)Tsnet TsnetInit tailscale.com(tsnet) module version=v1.96.4Tsnet TsnetInit create tsnet 0x1FD73B216D88Tsnet TsnetSetDir dir: &quot;tsnet-tx-sh&quot;Tsnet TsnetUp enter pid=27944 timeout=10000 url=http://124.xxx.xxx.xxx:40000 key=xxxxxxxx... hostname=tsnet-win-pcTsInternal [v1] using fake (no-op) tun deviceTsInternal [v1] using fake (no-op) OS network configuratorTsInternal [v1] using fake (no-op) DNS configuratorTsInternal dns: using dns.noopManagerTsInternal link state: interfaces.State{defaultRoute=以太网 (Intel(R) Ethernet Connection (11) I219-V) ifs={Tailscale:[100.64.0.3/32 fd7a:115c:a1e0::3/128 llu6] VMware Network Adapter VMnet1:[192.168.80.1/24 llu6] VMware Network Adapter VMnet8:[192.168.126.1/24 llu6] WLAN 2:[192.168.6.151/24 llu6] vEthernet (WSL):[172.21.176.1/20 llu6] 以太网:[192.168.2.188/24 llu6]} v4=true v6=false}TsInternal magicsock: disco key = d:ee2a32c53a3641d5TsInternal Creating WireGuard device...TsInternal Bringing WireGuard device up...TsInternal wg: [v2] UDP bind has been updatedTsInternal wg: [v2] Routine: receive incoming mkReceiveFunc - startedTsInternal wg: [v2] Routine: receive incoming mkReceiveFunc - startedTsInternal wg: [v2] Interface state was Down, requested Up, now UpTsInternal Bringing router up...TsInternal wg: [v2] Routine: receive incoming receiveDERP - startedTsInternal [v1] warning: fakeRouter.Up: not implemented.TsInternal Clearing router settings...TsInternal [v1] warning: fakeRouter.Set: not implemented.TsInternal Starting network monitor...TsInternal Engine created.TsInternal pm: using backend prefs for &quot;profile-daab&quot;: Prefs{ra=true dns=true want=true statefulFiltering=false url=&quot;http://124.xxx.xxx.xxx:40000&quot; host=&quot;tsnet-win-pc&quot; update=check Persist{o=, n=[1+jVB] u=&quot;yks&quot; ak=-}}TsInternal linkChange: in state NoState; PAC or proxyConfig changed; updating routesTsInternal [v1] netmap packet filter: (not ready yet)TsInternal StartTsInternal ipnext: active extensions: TsInternal [vTsInternal Start: updated prefs: Prefs{ra=true dns=true want=true statefulFiltering=false url=&quot;http://124.xxx.xxx.xxx:40000&quot; host=&quot;tsnet-win-pc&quot; update=check Persist{o=, n=[1+jVB] u=&quot;yks&quot; ak=-}}, reason: [opts.UpdatePrefs]TsInternal Start: serverMode=falseTsInternal control: [v1] HostInfo: {&quot;IPNVersion&quot;:&quot;1.96.4-dev20260401-t7c5fd03a1-dirty&quot;,&quot;BackendLogID&quot;:&quot;070a049b5e5b2f612c08bc0cced07176387bc98fcbb7ce3fca5f607c9e3ab730&quot;,&quot;OS&quot;:&quot;windows&quot;,&quot;OSVersion&quot;:&quot;10.0.19045.6466&quot;,&quot;Package&quot;:&quot;tsnet&quot;,&quot;Hostname&quot;:&quot;tsnet-win-pc&quot;,&quot;GoArch&quot;:&quot;amd64&quot;,&quot;GoArchVar&quot;:&quot;v1&quot;,&quot;GoVersion&quot;:&quot;go1.26.1&quot;,&quot;Services&quot;:[{&quot;Proto&quot;:&quot;peerapi-dns-proxy&quot;,&quot;Port&quot;:1}],&quot;Userspace&quot;:true,&quot;UserspaceRouter&quot;:true,&quot;AppConnector&quot;:false,&quot;StateEncrypted&quot;:false}TsInternal control: [v1] authRoutine: loggedIn=false; goal=nil paused=falseTsInternal control: [v1] mapRoutine: loggedIn=falseTsInternal Backend: logs: be:070a049b5e5b2f612c08bc0cced07176387bc98fcbb7ce3fca5f607c9e3ab730 fe:TsInternal control: client.Login(0)TsInternal control: [v1] mapRoutine: context done.TsInternal control: [v1] mapRoutine: loggedIn=falseTsInternal control: [v1] authRoutine: context done.TsInternal health(warnable=warming-up): error: Tailscale is starting. Please wait.TsInternal control: [v1] authRoutine: loggedIn=false; wantLoggedIn=trueTsInternal control: [v1] direct.TryLogin(flags=0)TsInternal control: doLogin(regen=false, hasUrl=false)TsInternal control: control server key from http://124.xxx.xxx.xxx:40000: ts2021=[hj932], legacy=TsInternal control: RegisterReq: onode= node=[1+jVB] fup=false nks=falseTsInternal control: [v1] creating new noise clientTsInternal control: RegisterReq: got response; nodeKeyExpired=false, machineAuthorized=true; authURL=falseTsInternal control: [v1] No AuthURLTsInternal control: [v1] sendStatus: authRoutine-success: loggedIn=true inMapPoll=falseTsInternal control: [v1] restartMap: synced=falseTsInternal [v1] authReconfig: netmap not yet valid. Skipping.TsInternal control: [v1] mapRoutine: context done.TsInternal control: [v1] authRoutine: loggedIn=true; goal=nil paused=falseTsInternal control: [v1] PollNetMap: stream=false ep=[]TsInternal control: [v1] mapRoutine: loggedIn=trueTsInternal control: [v1] PollNetMap: stream=true ep=[]TsInternal control: [v1] successful lite map update in 499msTsInternal control: [vTsInternal health(warnable=not-in-map-poll): okTsInternal control: [v1] new network map (periodic):
+netmap: self: [1+jVB] auth=machine-authorized u=yks [100.64.0.4/32 fd7a:115c:a1e0::4/128]
+2026/04/02 13:19:33.944090 TsInternal control: [v1] mapRoutine: netmap received: loggedIn=true inMapPoll=true
+2026/04/02 13:19:33.945358 TsInternal control: [v1] sendStatus: mapRoutine-got-netmap: loggedIn=true inMapPoll=true
+2026/04/02 13:19:33.974703 TsInternal [v2] netstack: registered IP fd7a:115c:a1e0::4/128
+2026/04/02 13:19:33.974703 TsInternal [v2] netstack: registered IP 100.64.0.4/32
+2026/04/02 13:19:33.975213 TsInternal [v1] magicsock: got updated network map; 3 peers
+2026/04/02 13:19:33.975213 TsInternal active login: yks
+2026/04/02 13:19:33.975746 TsInternal [v1] netmap packet filter: 1 filters
+2026/04/02 13:19:33.975746 TsInternal netmap: suggested exit node: no preferred DERP, try again later
+2026/04/02 13:19:33.975746 TsInternal Switching ipn state NoState -&gt; Starting (WantRunning=true, nm=true)
+2026/04/02 13:19:33.976258 TsInternal magicsock: SetPrivateKey called (init)
+2026/04/02 13:19:33.976770 TsInternal wgengine: Reconfig: configuring userspace WireGuard config (with 0/3 peers)
+2026/04/02 13:19:33.976857 TsInternal wg: [v2] UAPI: Updating private key
+2026/04/02 13:19:33.976857 TsInternal wgengine: Reconfig: configuring router
+2026/04/02 13:19:33.976857 TsInternal [v1] warning: fakeRouter.Set: not implemented.
+2026/04/02 13:19:33.977381 TsInternal wgengine: Reconfig: user dialer
+2026/04/02 13:19:33.977381 TsInternal tsdial: bart table size: 6
+2026/04/02 13:19:33.977381 TsInternal wgengine: Reconfig: configuring DNS
+2026/04/02 13:19:33.977884 TsInternal dns: Set: {DefaultResolvers:[1.1.1.1 1.0.0.1 2606:4700:4700::1111 2606:4700:4700::1001] Routes:{example.com.:[]}+65arpa SearchDomains:[example.com.] Hosts:4}
+2026/04/02 13:19:33.977898 TsInternal dns: Resolvercfg: {Routes:{.:[1.1.1.1 1.0.0.1 2606:4700:4700::1111 2606:4700:4700::1001]} Hosts:4 LocalDomains:[example.com.]+65arpa}
+2026/04/02 13:19:33.977898 TsInternal dns: OScfg: {Hosts:[0x1fd73b51f680 0x1fd73b51f650 0x1fd73b51f6b0 0x1fd73b51f6e0] Nameservers:[100.100.100.100 fd7a:115c:a1e0::53] SearchDomains:[example.com.] }
+2026/04/02 13:19:33.977898 TsInternal [v1] wgengine: Reconfig done
+2026/04/02 13:19:33.978410 TsInternal [v1] authReconfig: ra=true dns=true 0x02: &lt;nil&gt;
+2026/04/02 13:19:33.978410 TsInternal [v1] initPeerAPIListener: entered
+2026/04/02 13:19:33.978410 TsInternal peerapi: serving on http://100.64.0.4:37067
+2026/04/02 13:19:33.978410 TsInternal peerapi: serving on http://[fd7a:115c:a1e0::4]:37067
+2026/04/02 13:19:33.978985 TsInternal [v1] wgengine: Reconfig done
+2026/04/02 13:19:33.978985 TsInternal [v1] authReconfig: ra=true dns=true 0x02: &lt;nil&gt;
+2026/04/02 13:19:33.978985 TsInternal [v1] initPeerAPIListener: entered
+2026/04/02 13:19:33.979492 TsInternal [v1] initPeerAPIListener: 2 netmap addresses match existing listeners
+2026/04/02 13:19:33.979492 TsInternal control: [v1] HostInfo: {&quot;IPNVersion&quot;:&quot;1.96.4-dev20260401-t7c5fd03a1-dirty&quot;,&quot;BackendLogID&quot;:&quot;070a049b5e5b2f612c08bc0cced07176387bc98fcbb7ce3fca5f607c9e3ab730&quot;,&quot;OS&quot;:&quot;windows&quot;,&quot;OSVersion&quot;:&quot;10.0.19045.6466&quot;,&quot;Package&quot;:&quot;tsnet&quot;,&quot;Hostname&quot;:&quot;tsnet-win-pc&quot;,&quot;GoArch&quot;:&quot;amd64&quot;,&quot;GoArchVar&quot;:&quot;v1&quot;,&quot;GoVersion&quot;:&quot;go1.26.1&quot;,&quot;Services&quot;:[{&quot;Proto&quot;:&quot;peerapi4&quot;,&quot;Port&quot;:37067},{&quot;Proto&quot;:&quot;peerapi6&quot;,&quot;Port&quot;:37067},{&quot;Proto&quot;:&quot;peerapi-dns-proxy&quot;,&quot;Port&quot;:1}],&quot;Userspace&quot;:true,&quot;UserspaceRouter&quot;:true,&quot;AppConnector&quot;:false,&quot;StateEncrypted&quot;:false}
+2026/04/02 13:19:33.979492 TsInternal control: [v1] PollNetMap: stream=false ep=[]
+2026/04/02 13:19:34.056669 TsInternal monitor: gateway and self IP changed: gw=192.168.2.1 self=192.168.2.188
+2026/04/02 13:19:34.063012 TsInternal control: [vJSON]1{&quot;controltime&quot;:&quot;2026-04-02T05:19:34.02455721Z&quot;}
+2026/04/02 13:19:34.063012 TsInternal control: [v1] mapRoutine: netmap received: loggedIn=true inMapPoll=true
+2026/04/02 13:19:34.063012 TsInternal control: [v1] sendStatus: mapRoutine-got-netmap: loggedIn=true inMapPoll=true
+2026/04/02 13:19:34.063545 TsInternal control: [vJSON]1{&quot;controltime&quot;:&quot;2026-04-02T05:19:34.024593689Z&quot;}
+2026/04/02 13:19:34.063545 TsInternal [v1] netmap diff: (none)
+2026/04/02 13:19:34.063545 TsInternal netmap: suggested exit node: no preferred DERP, try again later
+2026/04/02 13:19:34.063545 TsInternal [v1] wgengine: Reconfig done
+2026/04/02 13:19:34.064057 TsInternal [v1] authReconfig: ra=true dns=true 0x02: &lt;nil&gt;
+2026/04/02 13:19:34.064057 TsInternal [v1] initPeerAPIListener: entered
+2026/04/02 13:19:34.064057 TsInternal [v1] initPeerAPIListener: 2 netmap addresses match existing listeners
+2026/04/02 13:19:34.323734 TsInternal netcheck: [v1] report: udp=true v6=false v6os=true mapvarydest= portmap= v4a=180.109.81.86:27533 derp=991 derpdist=991v4:12ms
+2026/04/02 13:19:34.323734 TsInternal magicsock: home DERP changing from derp-0 [0ms] to derp-991 [12ms]
+2026/04/02 13:19:34.323734 TsInternal magicsock: home is now derp-991 (ali-sh)
+2026/04/02 13:19:34.324243 TsInternal magicsock: adding connection to derp-991 for home-keep-alive
+2026/04/02 13:19:34.324243 TsInternal magicsock: 1 active derp conns: derp-991=cr0s,wr0s
+2026/04/02 13:19:34.324243 TsInternal control: NetInfo: NetInfo{varies= ipv6=false ipv6os=true udp=true icmpv4=false derp=#991 portmap= link=&quot;&quot; firewallmode=&quot;&quot;}
+2026/04/02 13:19:34.324243 TsInternal derphttp.Client.Connect: connecting to derp-991 (ali-sh)
+2026/04/02 13:19:34.367844 TsInternal health(warnable=warming-up): ok
+2026/04/02 13:19:34.367844 TsInternal Switching ipn state Starting -&gt; Running (WantRunning=true, nm=true)
+2026/04/02 13:19:34.368384 TsInternal health(warnable=no-derp-connection): ok
+2026/04/02 13:19:34.369421 TsInternal localapi: [POST] /localapi/v0/serve-config
+2026/04/02 13:19:34.369469 Tsnet TsnetUp exit TsnetErrorOK ip 100.64.0.4
+2026/04/02 13:19:34.369469 Tsnet TsnetUp exit TsnetErrorOK ip fd7a:115c:a1e0::4
+TsInternal control: [v1] mapRoutine: netmap received: loggedIn=true inMapPoll=trueTsInternal control: [v1] sendStatus: mapRoutine-got-netmap: loggedIn=true inMapPoll=trueTsInternal [v2] netstack: registered IP fd7a:115c:a1e0::4/128TsInternal [v2] netstack: registered IP 100.64.0.4/32TsInternal [v1] magicsock: got updated network map; 3 peersTsInternal active login: yksTsInternal [v1] netmap packet filter: 1 filtersTsInternal netmap: suggested exit node: no preferred DERP, try again laterTsInternal Switching ipn state NoState -&gt; Starting (WantRunning=true, nm=true)TsInternal magicsock: SetPrivateKey called (init)TsInternal wgengine: Reconfig: configuring userspace WireGuard config (with 0/3 peers)TsInternal wg: [v2] UAPI: Updating private keyTsInternal wgengine: Reconfig: configuring routerTsInternal [v1] warning: fakeRouter.Set: not implemented.TsInternal wgengine: Reconfig: user dialerTsInternal tsdial: bart table size: 6TsInternal wgengine: Reconfig: configuring DNSTsInternal dns: Set: {DefaultResolvers:[1.1.1.1 1.0.0.1 2606:4700:4700::1111 2606:4700:4700::1001] Routes:{example.com.:[]}+65arpa SearchDomains:[example.com.] Hosts:4}TsInternal dns: Resolvercfg: {Routes:{.:[1.1.1.1 1.0.0.1 2606:4700:4700::1111 2606:4700:4700::1001]} Hosts:4 LocalDomains:[example.com.]+65arpa}TsInternal dns: OScfg: {Hosts:[0x1fd73b51f680 0x1fd73b51f650 0x1fd73b51f6b0 0x1fd73b51f6e0] Nameservers:[100.100.100.100 fd7a:115c:a1e0::53] SearchDomains:[example.com.] }TsInternal [v1] wgengine: Reconfig doneTsInternal [v1] authReconfig: ra=true dns=true 0x02: &lt;nil&gt;TsInternal [v1] initPeerAPIListener: enteredTsInternal peerapi: serving on http://100.64.0.4:37067TsInternal peerapi: serving on http://[fd7a:115c:a1e0::4]:37067TsInternal [v1] wgengine: Reconfig doneTsInternal [v1] authReconfig: ra=true dns=true 0x02: &lt;nil&gt;TsInternal [v1] initPeerAPIListener: enteredTsInternal [v1] initPeerAPIListener: 2 netmap addresses match existing listenersTsInternal control: [v1] HostInfo: {&quot;IPNVersion&quot;:&quot;1.96.4-dev20260401-t7c5fd03a1-dirty&quot;,&quot;BackendLogID&quot;:&quot;070a049b5e5b2f612c08bc0cced07176387bc98fcbb7ce3fca5f607c9e3ab730&quot;,&quot;OS&quot;:&quot;windows&quot;,&quot;OSVersion&quot;:&quot;10.0.19045.6466&quot;,&quot;Package&quot;:&quot;tsnet&quot;,&quot;Hostname&quot;:&quot;tsnet-win-pc&quot;,&quot;GoArch&quot;:&quot;amd64&quot;,&quot;GoArchVar&quot;:&quot;v1&quot;,&quot;GoVersion&quot;:&quot;go1.26.1&quot;,&quot;Services&quot;:[{&quot;Proto&quot;:&quot;peerapi4&quot;,&quot;Port&quot;:37067},{&quot;Proto&quot;:&quot;peerapi6&quot;,&quot;Port&quot;:37067},{&quot;Proto&quot;:&quot;peerapi-dns-proxy&quot;,&quot;Port&quot;:1}],&quot;Userspace&quot;:true,&quot;UserspaceRouter&quot;:true,&quot;AppConnector&quot;:false,&quot;StateEncrypted&quot;:false}TsInternal control: [v1] PollNetMap: stream=false ep=[]TsInternal monitor: gateway and self IP changed: gw=192.168.2.1 self=192.168.2.188TsInternal control: [vTsInternal control: [v1] mapRoutine: netmap received: loggedIn=true inMapPoll=trueTsInternal control: [v1] sendStatus: mapRoutine-got-netmap: loggedIn=true inMapPoll=trueTsInternal control: [vTsInternal [v1] netmap diff: (none)TsInternal netmap: suggested exit node: no preferred DERP, try again laterTsInternal [v1] wgengine: Reconfig doneTsInternal [v1] authReconfig: ra=true dns=true 0x02: &lt;nil&gt;TsInternal [v1] initPeerAPIListener: enteredTsInternal [v1] initPeerAPIListener: 2 netmap addresses match existing listenersTsInternal netcheck: [v1] report: udp=true v6=false v6os=true mapvarydest= portmap= v4a=180.109.81.86:27533 derp=991 derpdist=991v4:12msTsInternal magicsock: home DERP changing from derp-0 [0ms] to derp-991 [12ms]TsInternal magicsock: home is now derp-991 (ali-sh)TsInternal magicsock: adding connection to derp-991 for home-keep-aliveTsInternal magicsock: 1 active derp conns: derp-991=cr0s,wr0sTsInternal control: NetInfo: NetInfo{varies= ipv6=false ipv6os=true udp=true icmpv4=false derp=#991 portmap= link=&quot;&quot; firewallmode=&quot;&quot;}TsInternal derphttp.Client.Connect: connecting to derp-991 (ali-sh)TsInternal health(warnable=warming-up): okTsInternal Switching ipn state Starting -&gt; Running (WantRunning=true, nm=true)TsInternal health(warnable=no-derp-connection): okTsInternal localapi: [POST] /localapi/v0/serve-configTsnet TsnetUp exit TsnetErrorOK ip 100.64.0.4Tsnet TsnetUp exit TsnetErrorOK ip fd7a:115c:a1e0::4
+up ret=None cost=1.835s
+
+
+2026/04/02 13:19:34.370001 Tsnet TsnetPing enter ping 100.64.0.1 timeout=5000
+2026/04/02 13:19:34.370001 TsInternal localapi: [POST] /localapi/v0/ping
+2026/04/02 13:19:34.370540 TsInternal ping(100.64.0.1): sending ICMP ping to [dVxV3] server ...
+2026/04/02 13:19:34.370540 TsInternal wgengine: Reconfig: configuring userspace WireGuard config (with 1/3 peers)
+2026/04/02 13:19:34.371051 TsInternal wg: [v2] [dVxV3] - UAPI: Created
+2026/04/02 13:19:34.371051 TsInternal wg: [v2] [dVxV3] - UAPI: Updating endpoint
+2026/04/02 13:19:34.371051 TsInternal wg: [v2] [dVxV3] - UAPI: Removing all allowedips
+2026/04/02 13:19:34.371648 TsInternal wg: [v2] [dVxV3] - Starting
+2026/04/02 13:19:34.371648 TsInternal wg: [v2] [dVxV3] - Sending handshake initiation
+2026/04/02 13:19:34.372171 TsInternal [v1] magicsock: derp route for [dVxV3] set to derp-991 (shared home)
+2026/04/02 13:19:34.380510 TsInternal magicsock: derp-991 connected; connGen=1
+2026/04/02 13:19:34.380510 TsInternal health(warnable=no-derp-connection): ok
+2026/04/02 13:19:34.381090 TsInternal health(warnable=no-derp-connection): ok
+2026/04/02 13:19:34.385849 TsInternal wg: [v2] [dVxV3] - Received handshake response
+2026/04/02 13:19:34.387940 TsInternal magicsock: endpoints changed: 180.109.81.86:27533 (stun), 172.21.176.1:55162 (local), 192.168.2.188:55162 (local), 192.168.6.151:55162 (local), 192.168.80.1:55162 (local), 192.168.126.1:55162 (local)
+2026/04/02 13:19:34.388458 TsInternal [v1] peer keys: [dVxV3]
+2026/04/02 13:19:34.388458 TsInternal [v1] v1.96.4-dev20260401-t7c5fd03a1-dirty peers: 92/228
+2026/04/02 13:19:34.388458 TsInternal control: [v2] client.newEndpoints([{180.109.81.86:27533 stun} {172.21.176.1:55162 local} {192.168.2.188:55162 local} {192.168.6.151:55162 local} {192.168.80.1:55162 local} {192.168.126.1:55162 local}])
+2026/04/02 13:19:34.397606 TsInternal wgengine: got diagnostic ICMP response 55bc72f5
+2026/04/02 13:19:34.398606 Tsnet TsnetPing exit 100.64.0.1 TsnetErrorOK pingResult={&quot;IP&quot;:&quot;100.64.0.1&quot;,&quot;NodeIP&quot;:&quot;100.64.0.1&quot;,&quot;NodeName&quot;:&quot;server&quot;,&quot;Err&quot;:&quot;&quot;,&quot;LatencySeconds&quot;:0.0270658,&quot;Endpoint&quot;:&quot;&quot;,&quot;PeerRelay&quot;:&quot;&quot;,&quot;DERPRegionID&quot;:0,&quot;DERPRegionCode&quot;:&quot;&quot;}
+
+Tsnet TsnetPing enter ping 100.64.0.1 timeout=5000TsInternal localapi: [POST] /localapi/v0/pingTsInternal ping(100.64.0.1): sending ICMP ping to [dVxV3] server ...TsInternal wgengine: Reconfig: configuring userspace WireGuard config (with 1/3 peers)TsInternal wg: [v2] [dVxV3] - UAPI: CreatedTsInternal wg: [v2] [dVxV3] - UAPI: Updating endpointTsInternal wg: [v2] [dVxV3] - UAPI: Removing all allowedipsTsInternal wg: [v2] [dVxV3] - StartingTsInternal wg: [v2] [dVxV3] - Sending handshake initiationTsInternal [v1] magicsock: derp route for [dVxV3] set to derp-991 (shared home)TsInternal magicsock: derp-991 connected; connGen=1TsInternal health(warnable=no-derp-connection): okTsInternal health(warnable=no-derp-connection): okTsInternal wg: [v2] [dVxV3] - Received handshake responseTsInternal magicsock: endpoints changed: 180.109.81.86:27533 (stun), 172.21.176.1:55162 (local), 192.168.2.188:55162 (local), 192.168.6.151:55162 (local), 192.168.80.1:55162 (local), 192.168.126.1:55162 (local)TsInternal [v1] peer keys: [dVxV3]TsInternal [v1] v1.96.4-dev20260401-t7c5fd03a1-dirty peers: 92/228TsInternal control: [v2] client.newEndpoints([{180.109.81.86:27533 stun} {172.21.176.1:55162 local} {192.168.2.188:55162 local} {192.168.6.151:55162 local} {192.168.80.1:55162 local} {192.168.126.1:55162 local}])TsInternal wgengine: got diagnostic ICMP response 55bc72f5Tsnet TsnetPing exit 100.64.0.1 TsnetErrorOK pingResult={&quot;IP&quot;:&quot;100.64.0.1&quot;,&quot;NodeIP&quot;:&quot;100.64.0.1&quot;,&quot;NodeName&quot;:&quot;server&quot;,&quot;Err&quot;:&quot;&quot;,&quot;LatencySeconds&quot;:0.0270658,&quot;Endpoint&quot;:&quot;&quot;,&quot;PeerRelay&quot;:&quot;&quot;,&quot;DERPRegionID&quot;:0,&quot;DERPRegionCode&quot;:&quot;&quot;}
+ping ret=0 cost=0.029s
+
+
+2026/04/02 13:19:34.398606 Tsnet TsnetUninit enter
+2026/04/02 13:19:34.398606 Tsnet TsnetUninit exit close tsnet 0x1FD73B216D88 pid=27944
+2026/04/02 13:19:34.398606 TsInternal canceling captive portal context
+2026/04/02 13:19:34.399572 TsInternal control: client.Shutdown ...
+2026/04/02 13:19:34.399572 TsInternal control: [v1] authRoutine: context done.
+2026/04/02 13:19:34.399572 TsInternal control: updateRoutine: exiting
+2026/04/02 13:19:34.400127 TsInternal control: [v1] PollNetMap: context canceled
+2026/04/02 13:19:34.400127 TsInternal control: authRoutine: exiting
+2026/04/02 13:19:34.400127 TsInternal control: mapRoutine: exiting
+2026/04/02 13:19:34.400127 TsInternal control: Client.Shutdown done.
+2026/04/02 13:19:34.400655 TsInternal ipnext: work queue shutdown failed: execqueue shut down
+2026/04/02 13:19:34.400655 TsInternal magicsock: closing connection to derp-991 (conn-close), age 0s
+2026/04/02 13:19:34.400655 TsInternal magicsock: 0 active derp conns
+2026/04/02 13:19:34.401199 TsInternal wg: [v2] Routine: receive incoming mkReceiveFunc - stopped
+2026/04/02 13:19:34.401199 TsInternal wg: [v2] Routine: receive incoming mkReceiveFunc - stopped
+2026/04/02 13:19:34.651979 TsInternal netcheck: [v1] report: udp=true v6=false v6os=true mapvarydest= portmap= v4a=180.109.81.86:27533 derp=991 derpdist=991v4:12ms
+2026/04/02 13:19:34.708203 TsInternal [v1] warning: fakeRouter.Close: not implemented.
+2026/04/02 13:19:34.708203 TsInternal wg: [v2] Device closing
+2026/04/02 13:19:34.708203 TsInternal wg: [v2] Routine: receive incoming receiveDERP - stopped
+2026/04/02 13:19:34.708866 TsInternal wg: [v2] [dVxV3] - Stopping
+2026/04/02 13:19:34.708866 TsInternal wg: [v2] Device closed
+Tsnet TsnetUninit enterTsnet TsnetUninit exit close tsnet 0x1FD73B216D88 pid=27944TsInternal canceling captive portal contextTsInternal control: client.Shutdown ...TsInternal control: [v1] authRoutine: context done.TsInternal control: updateRoutine: exitingTsInternal control: [v1] PollNetMap: context canceledTsInternal control: authRoutine: exitingTsInternal control: mapRoutine: exitingTsInternal control: Client.Shutdown done.TsInternal ipnext: work queue shutdown failed: execqueue shut downTsInternal magicsock: closing connection to derp-991 (conn-close), age 0sTsInternal magicsock: 0 active derp connsTsInternal wg: [v2] Routine: receive incoming mkReceiveFunc - stoppedTsInternal wg: [v2] Routine: receive incoming mkReceiveFunc - stoppedTsInternal netcheck: [v1] report: udp=true v6=false v6os=true mapvarydest= portmap= v4a=180.109.81.86:27533 derp=991 derpdist=991v4:12msTsInternal [v1] warning: fakeRouter.Close: not implemented.TsInternal wg: [v2] Device closingTsInternal wg: [v2] Routine: receive incoming receiveDERP - stoppedTsInternal wg: [v2] [dVxV3] - StoppingTsInternal wg: [v2] Device closed
+2026-04-02 13:19:36.709947
+```
+
+The following two lines of logs show an interval of 500ms, while in version 0.25.1 the interval was only 5ms.
+```
+2026/04/02 13:19:33.443057 TsInternal control: [v1] successful lite map update in 499ms
+2026/04/02 13:19:33.944090 TsInternal control: [vJSON]1{&quot;controltime&quot;:&quot;2026-04-02T05:19:33.905026175Z&quot;}
+```
+
+
+### Expected Behavior
+
+Up time doesn&#x27;t increase.
+
+### Steps To Reproduce
+
+1. systemctl stop headscale
+2. update headscale to 0.28
+1. systemctl start headscale
+
+### Environment
+
+```markdown
+- OS: Ubuntu 22.04.5 LTS
+- Headscale version: 0.28
+- Tailscale version: 1.96.4
+- Number of nodes: 4
+
+ubuntu@sh1:~$ tailscale status
+100.64.0.1      server               yks          linux   -
+100.64.0.4      tsnet-win-pc         yks          windows idle, tx 156 rx 244
+100.64.0.2      yks-hypc             yks          windows offline
+100.64.0.3      yks-iqoo-neo9        yks          android offline
+ubuntu@sh1:~$
+```
+
+### Runtime environment
+
+- [ ] Headscale is behind a (reverse) proxy
+- [ ] Headscale runs in a container
+
+### Debug information
+
+I generated the netmap and status files in server(100.64.0.1).
+[status0.28.json](https://github.com/user-attachments/files/26428952/status0.28.json)
+[netmap0.28.json](https://github.com/user-attachments/files/26428953/netmap0.28.json)
+[status0.25.1.json](https://github.com/user-attachments/files/26428951/status0.25.1.json)
+[netmap0.25.1.json](https://github.com/user-attachments/files/26428950/netmap0.25.1.json)</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/3165#issuecomment-4177858591">kradalby</a></h3><p>Created: 2026-04-02T13:26:39Z; updated: 2026-04-02T13:26:39Z</p><pre>This is due to the new NodeStore design which batches up changes and processes them in larger blocks. While for small amount of nodes, this impact is &quot;noticeable&quot; to the extent 1s is noticeable, it should perform significantly better on larger amount of nodes. 
+
+I do not think we will pursue improving this any further for now. </pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/3165#issuecomment-4231727595">ghostdragozn</a></h3><p>Created: 2026-04-12T14:45:17Z; updated: 2026-04-13T06:27:53Z</p><pre>I encountered the same issue when upgrading from version 0.26.0 to 0.28.0. My system has 650 nodes; even when all nodes are offline, the “up” process increased from 20 ms (0.26.0) to 7 seconds (0.28.0). I’m looking into it and it seems the issue might be caused by UpdateNodeFromMapRequest()
+```
+ UpdateNodeFromMapRequest() {
+      NodeStore.UpdateNode()      // ← Trigger batch
+      ↓
+      applyBatch() {
+          snapshotFromNodes(nodes, peersFunc)
+          ↓
+          peersFunc = polMan.BuildPeerMap()  // ← O(n²/2)!
+      }
+  }
+```</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/3165#issuecomment-4703470985">maxpetrusenkoagent</a></h3><p>Created: 2026-06-14T23:51:51Z; updated: 2026-06-14T23:51:51Z</p><pre>&lt;!-- max-agent-unblock-2026-06-14:juanfont/headscale#3165 --&gt;
+I looked at this before attempting a PR. It seems likely related to NodeStore batching and the `tuning.node_store_batch_timeout` path, but there is already overlapping work in #3156 and maintainer comments suggest this may be considered expected tradeoff behavior.
+
+Would maintainers accept a very small PR that extracts only the NodeStore micro-batch latency change from #3156, backed by benchmarks showing improved small-tailnet `Up` latency without regressing larger-tailnet batch throughput?
+
+If yes, I can keep the scope narrow: benchmark/test partial batch flush latency, preserve `node_store_batch_size`, update the tuning comment/docs, and avoid unrelated policy/cache rewrites.
+</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/3165#issuecomment-4761887158">maxpetrusenkoagent</a></h3><p>Created: 2026-06-21T12:05:09Z; updated: 2026-06-21T12:05:09Z</p><pre>&lt;!-- max-agent-unblock-followup:juanfont/headscale#3165:2026-06-14 --&gt;
+Follow-up so I do not open a duplicate or noisy PR.
+
+Current blocker: maintainer accepts narrow micro-batch extraction
+Potential PR direction: benchmarked NodeStore partial-batch latency PR
+
+Question: is this still a useful path to pursue, or should I skip/archive it unless new evidence appears?</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/3165#issuecomment-4764758513">kradalby</a></h3><p>Created: 2026-06-22T04:19:22Z; updated: 2026-06-22T04:19:22Z</p><pre>Please do not run fully autonomous against towards the repo and take up our time in the issue tracker.
+
+Reviewing vibecoded prs from others take more time than doing it ourselves and just adds to our backlog.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/3165#issuecomment-5754345647">github-actions[bot]</a></h3><p>Created: 2026-09-21T01:45:24Z; updated: 2026-09-21T01:45:24Z</p><pre>This issue is stale because it has been open for 90 days with no activity.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/3165#issuecomment-5861887526">github-actions[bot]</a></h3><p>Created: 2026-09-28T01:50:17Z; updated: 2026-09-28T01:50:17Z</p><pre>This issue was closed because it has been inactive for 14 days since being marked as stale.</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2026-04-02T06:25:11Z · labeled · yinkaisheng</summary><pre>{
+  &quot;id&quot;: 24137078612,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz88753USazwAAAAWerpdU&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/24137078612&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;yinkaisheng&quot;,
+    &quot;id&quot;: 5846696,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjU4NDY2OTY=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/5846696?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/yinkaisheng&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/yinkaisheng&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/yinkaisheng/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/yinkaisheng/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/yinkaisheng/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/yinkaisheng/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/yinkaisheng/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/yinkaisheng/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/yinkaisheng/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/yinkaisheng/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/yinkaisheng/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-04-02T06:25:11Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-04-02T06:26:42Z · renamed · yinkaisheng</summary><pre>{
+  &quot;id&quot;: 24137111266,
+  &quot;node_id&quot;: &quot;RTE_lADOEFLz88753USazwAAAAWerxbi&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/24137111266&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;yinkaisheng&quot;,
+    &quot;id&quot;: 5846696,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjU4NDY2OTY=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/5846696?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/yinkaisheng&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/yinkaisheng&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/yinkaisheng/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/yinkaisheng/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/yinkaisheng/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/yinkaisheng/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/yinkaisheng/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/yinkaisheng/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/yinkaisheng/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/yinkaisheng/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/yinkaisheng/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;renamed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-04-02T06:26:42Z&quot;,
+  &quot;rename&quot;: {
+    &quot;from&quot;: &quot;[Bug] &lt;title&gt;Up function takes one second longer than before, after updating headscale from 0.25.1 to 0.28&quot;,
+    &quot;to&quot;: &quot;[Bug] Up function takes one second longer than before, after updating headscale from 0.25.1 to 0.28&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-04-02T10:31:57Z · unsubscribed · mrabino1</summary><pre>{
+  &quot;id&quot;: 24143625655,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz88753USazwAAAAWfEn23&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/24143625655&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mrabino1&quot;,
+    &quot;id&quot;: 4902221,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ5MDIyMjE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4902221?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mrabino1&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mrabino1&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mrabino1/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mrabino1/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mrabino1/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mrabino1/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mrabino1/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mrabino1/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mrabino1/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mrabino1/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mrabino1/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-04-02T10:31:57Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-04-02T13:26:39Z · commented · kradalby</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4177858591&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3165#issuecomment-4177858591&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3165&quot;,
+  &quot;id&quot;: 4177858591,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8875BRAf&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-04-02T13:26:39Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-04-02T13:26:39Z&quot;,
+  &quot;body&quot;: &quot;This is due to the new NodeStore design which batches up changes and processes them in larger blocks. While for small amount of nodes, this impact is \&quot;noticeable\&quot; to the extent 1s is noticeable, it should perform significantly better on larger amount of nodes. \n\nI do not think we will pursue improving this any further for now. &quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4177858591/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-04-12T14:45:17Z · commented · ghostdragozn</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4231727595&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3165#issuecomment-4231727595&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3165&quot;,
+  &quot;id&quot;: 4231727595,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8878Ownr&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;ghostdragozn&quot;,
+    &quot;id&quot;: 25016349,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI1MDE2MzQ5&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/25016349?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ghostdragozn&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ghostdragozn&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ghostdragozn/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ghostdragozn/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ghostdragozn/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ghostdragozn/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ghostdragozn/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ghostdragozn/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ghostdragozn/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ghostdragozn/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ghostdragozn/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-04-12T14:45:17Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-04-13T06:27:53Z&quot;,
+  &quot;body&quot;: &quot;I encountered the same issue when upgrading from version 0.26.0 to 0.28.0. My system has 650 nodes; even when all nodes are offline, the “up” process increased from 20 ms (0.26.0) to 7 seconds (0.28.0). I’m looking into it and it seems the issue might be caused by UpdateNodeFromMapRequest()\n```\n UpdateNodeFromMapRequest() {\n      NodeStore.UpdateNode()      // ← Trigger batch\n      ↓\n      applyBatch() {\n          snapshotFromNodes(nodes, peersFunc)\n          ↓\n          peersFunc = polMan.BuildPeerMap()  // ← O(n²/2)!\n      }\n  }\n```&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4231727595/reactions&quot;,
+    &quot;total_count&quot;: 4,
+    &quot;+1&quot;: 4,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;ghostdragozn&quot;,
+    &quot;id&quot;: 25016349,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI1MDE2MzQ5&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/25016349?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ghostdragozn&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ghostdragozn&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ghostdragozn/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ghostdragozn/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ghostdragozn/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ghostdragozn/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ghostdragozn/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ghostdragozn/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ghostdragozn/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ghostdragozn/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ghostdragozn/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-06-14T23:51:51Z · commented · maxpetrusenkoagent</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4703470985&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3165#issuecomment-4703470985&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3165&quot;,
+  &quot;id&quot;: 4703470985,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABGFlFiQ&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;maxpetrusenkoagent&quot;,
+    &quot;id&quot;: 280464918,
+    &quot;node_id&quot;: &quot;U_kgDOELeOFg&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/280464918?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/maxpetrusenkoagent&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-06-14T23:51:51Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-06-14T23:51:51Z&quot;,
+  &quot;body&quot;: &quot;&lt;!-- max-agent-unblock-2026-06-14:juanfont/headscale#3165 --&gt;\nI looked at this before attempting a PR. It seems likely related to NodeStore batching and the `tuning.node_store_batch_timeout` path, but there is already overlapping work in #3156 and maintainer comments suggest this may be considered expected tradeoff behavior.\n\nWould maintainers accept a very small PR that extracts only the NodeStore micro-batch latency change from #3156, backed by benchmarks showing improved small-tailnet `Up` latency without regressing larger-tailnet batch throughput?\n\nIf yes, I can keep the scope narrow: benchmark/test partial batch flush latency, preserve `node_store_batch_size`, update the tuning comment/docs, and avoid unrelated policy/cache rewrites.\n&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4703470985/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;maxpetrusenkoagent&quot;,
+    &quot;id&quot;: 280464918,
+    &quot;node_id&quot;: &quot;U_kgDOELeOFg&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/280464918?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/maxpetrusenkoagent&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-06-15T14:12:26Z · subscribed · ElSamhaa</summary><pre>{
+  &quot;id&quot;: 26761582672,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz88753USazwAAAAY7HVhQ&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/26761582672&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;ElSamhaa&quot;,
+    &quot;id&quot;: 34912861,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjM0OTEyODYx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/34912861?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ElSamhaa&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ElSamhaa&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ElSamhaa/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ElSamhaa/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ElSamhaa/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ElSamhaa/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ElSamhaa/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ElSamhaa/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ElSamhaa/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ElSamhaa/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ElSamhaa/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-06-15T14:12:26Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-06-21T12:05:09Z · commented · maxpetrusenkoagent</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4761887158&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3165#issuecomment-4761887158&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3165&quot;,
+  &quot;id&quot;: 4761887158,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABG9Shtg&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;maxpetrusenkoagent&quot;,
+    &quot;id&quot;: 280464918,
+    &quot;node_id&quot;: &quot;U_kgDOELeOFg&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/280464918?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/maxpetrusenkoagent&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-06-21T12:05:09Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-06-21T12:05:09Z&quot;,
+  &quot;body&quot;: &quot;&lt;!-- max-agent-unblock-followup:juanfont/headscale#3165:2026-06-14 --&gt;\nFollow-up so I do not open a duplicate or noisy PR.\n\nCurrent blocker: maintainer accepts narrow micro-batch extraction\nPotential PR direction: benchmarked NodeStore partial-batch latency PR\n\nQuestion: is this still a useful path to pursue, or should I skip/archive it unless new evidence appears?&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4761887158/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;maxpetrusenkoagent&quot;,
+    &quot;id&quot;: 280464918,
+    &quot;node_id&quot;: &quot;U_kgDOELeOFg&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/280464918?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/maxpetrusenkoagent&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-06-22T04:19:22Z · commented · kradalby</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4764758513&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3165#issuecomment-4764758513&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3165&quot;,
+  &quot;id&quot;: 4764758513,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABHABx8Q&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-06-22T04:19:22Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-06-22T04:19:22Z&quot;,
+  &quot;body&quot;: &quot;Please do not run fully autonomous against towards the repo and take up our time in the issue tracker.\n\nReviewing vibecoded prs from others take more time than doing it ourselves and just adds to our backlog.&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4764758513/reactions&quot;,
+    &quot;total_count&quot;: 1,
+    &quot;+1&quot;: 1,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-09-21T01:45:24Z · commented · github-actions[bot]</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/5754345647&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3165#issuecomment-5754345647&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3165&quot;,
+  &quot;id&quot;: 5754345647,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABVvxYrw&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-09-21T01:45:24Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-09-21T01:45:24Z&quot;,
+  &quot;body&quot;: &quot;This issue is stale because it has been open for 90 days with no activity.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/5754345647/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: {
+    &quot;id&quot;: 15368,
+    &quot;client_id&quot;: &quot;Iv1.05c79e9ad1f6bdfa&quot;,
+    &quot;slug&quot;: &quot;github-actions&quot;,
+    &quot;node_id&quot;: &quot;MDM6QXBwMTUzNjg=&quot;,
+    &quot;owner&quot;: {
+      &quot;login&quot;: &quot;github&quot;,
+      &quot;id&quot;: 9919,
+      &quot;node_id&quot;: &quot;MDEyOk9yZ2FuaXphdGlvbjk5MTk=&quot;,
+      &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/9919?v=4&quot;,
+      &quot;gravatar_id&quot;: &quot;&quot;,
+      &quot;url&quot;: &quot;https://api.github.com/users/github&quot;,
+      &quot;html_url&quot;: &quot;https://github.com/github&quot;,
+      &quot;followers_url&quot;: &quot;https://api.github.com/users/github/followers&quot;,
+      &quot;following_url&quot;: &quot;https://api.github.com/users/github/following{/other_user}&quot;,
+      &quot;gists_url&quot;: &quot;https://api.github.com/users/github/gists{/gist_id}&quot;,
+      &quot;starred_url&quot;: &quot;https://api.github.com/users/github/starred{/owner}{/repo}&quot;,
+      &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github/subscriptions&quot;,
+      &quot;organizations_url&quot;: &quot;https://api.github.com/users/github/orgs&quot;,
+      &quot;repos_url&quot;: &quot;https://api.github.com/users/github/repos&quot;,
+      &quot;events_url&quot;: &quot;https://api.github.com/users/github/events{/privacy}&quot;,
+      &quot;received_events_url&quot;: &quot;https://api.github.com/users/github/received_events&quot;,
+      &quot;type&quot;: &quot;Organization&quot;,
+      &quot;user_view_type&quot;: &quot;public&quot;,
+      &quot;site_admin&quot;: false
+    },
+    &quot;name&quot;: &quot;GitHub Actions&quot;,
+    &quot;description&quot;: &quot;Automate your workflow from idea to production&quot;,
+    &quot;external_url&quot;: &quot;https://help.github.com/en/actions&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;created_at&quot;: &quot;2018-07-30T09:30:17Z&quot;,
+    &quot;updated_at&quot;: &quot;2026-06-18T16:17:48Z&quot;,
+    &quot;permissions&quot;: {
+      &quot;actions&quot;: &quot;write&quot;,
+      &quot;administration&quot;: &quot;read&quot;,
+      &quot;artifact_metadata&quot;: &quot;write&quot;,
+      &quot;attestations&quot;: &quot;write&quot;,
+      &quot;checks&quot;: &quot;write&quot;,
+      &quot;code_quality&quot;: &quot;write&quot;,
+      &quot;contents&quot;: &quot;write&quot;,
+      &quot;copilot_requests&quot;: &quot;write&quot;,
+      &quot;deployments&quot;: &quot;write&quot;,
+      &quot;discussions&quot;: &quot;write&quot;,
+      &quot;drives&quot;: &quot;write&quot;,
+      &quot;issues&quot;: &quot;write&quot;,
+      &quot;merge_queues&quot;: &quot;write&quot;,
+      &quot;metadata&quot;: &quot;read&quot;,
+      &quot;models&quot;: &quot;read&quot;,
+      &quot;packages&quot;: &quot;write&quot;,
+      &quot;pages&quot;: &quot;write&quot;,
+      &quot;pull_requests&quot;: &quot;write&quot;,
+      &quot;repository_hooks&quot;: &quot;write&quot;,
+      &quot;repository_projects&quot;: &quot;write&quot;,
+      &quot;security_events&quot;: &quot;write&quot;,
+      &quot;statuses&quot;: &quot;write&quot;,
+      &quot;vulnerability_alerts&quot;: &quot;read&quot;
+    },
+    &quot;events&quot;: [
+      &quot;branch_protection_rule&quot;,
+      &quot;check_run&quot;,
+      &quot;check_suite&quot;,
+      &quot;create&quot;,
+      &quot;delete&quot;,
+      &quot;deployment&quot;,
+      &quot;deployment_status&quot;,
+      &quot;discussion&quot;,
+      &quot;discussion_comment&quot;,
+      &quot;fork&quot;,
+      &quot;gollum&quot;,
+      &quot;issues&quot;,
+      &quot;issue_comment&quot;,
+      &quot;label&quot;,
+      &quot;merge_group&quot;,
+      &quot;milestone&quot;,
+      &quot;page_build&quot;,
+      &quot;public&quot;,
+      &quot;pull_request&quot;,
+      &quot;pull_request_review&quot;,
+      &quot;pull_request_review_comment&quot;,
+      &quot;push&quot;,
+      &quot;registry_package&quot;,
+      &quot;release&quot;,
+      &quot;repository&quot;,
+      &quot;repository_dispatch&quot;,
+      &quot;status&quot;,
+      &quot;watch&quot;,
+      &quot;workflow_dispatch&quot;,
+      &quot;workflow_run&quot;
+    ]
+  },
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-09-21T01:45:25Z · labeled · github-actions[bot]</summary><pre>{
+  &quot;id&quot;: 31499420349,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz88753USazwAAAAdVgwK9&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/31499420349&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-21T01:45:25Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;stale&quot;,
+    &quot;color&quot;: &quot;ededed&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-28T01:50:17Z · commented · github-actions[bot]</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/5861887526&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3165#issuecomment-5861887526&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3165&quot;,
+  &quot;id&quot;: 5861887526,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABXWVOJg&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-09-28T01:50:17Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-09-28T01:50:17Z&quot;,
+  &quot;body&quot;: &quot;This issue was closed because it has been inactive for 14 days since being marked as stale.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/5861887526/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: {
+    &quot;id&quot;: 15368,
+    &quot;client_id&quot;: &quot;Iv1.05c79e9ad1f6bdfa&quot;,
+    &quot;slug&quot;: &quot;github-actions&quot;,
+    &quot;node_id&quot;: &quot;MDM6QXBwMTUzNjg=&quot;,
+    &quot;owner&quot;: {
+      &quot;login&quot;: &quot;github&quot;,
+      &quot;id&quot;: 9919,
+      &quot;node_id&quot;: &quot;MDEyOk9yZ2FuaXphdGlvbjk5MTk=&quot;,
+      &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/9919?v=4&quot;,
+      &quot;gravatar_id&quot;: &quot;&quot;,
+      &quot;url&quot;: &quot;https://api.github.com/users/github&quot;,
+      &quot;html_url&quot;: &quot;https://github.com/github&quot;,
+      &quot;followers_url&quot;: &quot;https://api.github.com/users/github/followers&quot;,
+      &quot;following_url&quot;: &quot;https://api.github.com/users/github/following{/other_user}&quot;,
+      &quot;gists_url&quot;: &quot;https://api.github.com/users/github/gists{/gist_id}&quot;,
+      &quot;starred_url&quot;: &quot;https://api.github.com/users/github/starred{/owner}{/repo}&quot;,
+      &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github/subscriptions&quot;,
+      &quot;organizations_url&quot;: &quot;https://api.github.com/users/github/orgs&quot;,
+      &quot;repos_url&quot;: &quot;https://api.github.com/users/github/repos&quot;,
+      &quot;events_url&quot;: &quot;https://api.github.com/users/github/events{/privacy}&quot;,
+      &quot;received_events_url&quot;: &quot;https://api.github.com/users/github/received_events&quot;,
+      &quot;type&quot;: &quot;Organization&quot;,
+      &quot;user_view_type&quot;: &quot;public&quot;,
+      &quot;site_admin&quot;: false
+    },
+    &quot;name&quot;: &quot;GitHub Actions&quot;,
+    &quot;description&quot;: &quot;Automate your workflow from idea to production&quot;,
+    &quot;external_url&quot;: &quot;https://help.github.com/en/actions&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;created_at&quot;: &quot;2018-07-30T09:30:17Z&quot;,
+    &quot;updated_at&quot;: &quot;2026-06-18T16:17:48Z&quot;,
+    &quot;permissions&quot;: {
+      &quot;actions&quot;: &quot;write&quot;,
+      &quot;administration&quot;: &quot;read&quot;,
+      &quot;artifact_metadata&quot;: &quot;write&quot;,
+      &quot;attestations&quot;: &quot;write&quot;,
+      &quot;checks&quot;: &quot;write&quot;,
+      &quot;code_quality&quot;: &quot;write&quot;,
+      &quot;contents&quot;: &quot;write&quot;,
+      &quot;copilot_requests&quot;: &quot;write&quot;,
+      &quot;deployments&quot;: &quot;write&quot;,
+      &quot;discussions&quot;: &quot;write&quot;,
+      &quot;drives&quot;: &quot;write&quot;,
+      &quot;issues&quot;: &quot;write&quot;,
+      &quot;merge_queues&quot;: &quot;write&quot;,
+      &quot;metadata&quot;: &quot;read&quot;,
+      &quot;models&quot;: &quot;read&quot;,
+      &quot;packages&quot;: &quot;write&quot;,
+      &quot;pages&quot;: &quot;write&quot;,
+      &quot;pull_requests&quot;: &quot;write&quot;,
+      &quot;repository_hooks&quot;: &quot;write&quot;,
+      &quot;repository_projects&quot;: &quot;write&quot;,
+      &quot;security_events&quot;: &quot;write&quot;,
+      &quot;statuses&quot;: &quot;write&quot;,
+      &quot;vulnerability_alerts&quot;: &quot;read&quot;
+    },
+    &quot;events&quot;: [
+      &quot;branch_protection_rule&quot;,
+      &quot;check_run&quot;,
+      &quot;check_suite&quot;,
+      &quot;create&quot;,
+      &quot;delete&quot;,
+      &quot;deployment&quot;,
+      &quot;deployment_status&quot;,
+      &quot;discussion&quot;,
+      &quot;discussion_comment&quot;,
+      &quot;fork&quot;,
+      &quot;gollum&quot;,
+      &quot;issues&quot;,
+      &quot;issue_comment&quot;,
+      &quot;label&quot;,
+      &quot;merge_group&quot;,
+      &quot;milestone&quot;,
+      &quot;page_build&quot;,
+      &quot;public&quot;,
+      &quot;pull_request&quot;,
+      &quot;pull_request_review&quot;,
+      &quot;pull_request_review_comment&quot;,
+      &quot;push&quot;,
+      &quot;registry_package&quot;,
+      &quot;release&quot;,
+      &quot;repository&quot;,
+      &quot;repository_dispatch&quot;,
+      &quot;status&quot;,
+      &quot;watch&quot;,
+      &quot;workflow_dispatch&quot;,
+      &quot;workflow_run&quot;
+    ]
+  },
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-09-28T01:50:18Z · closed · github-actions[bot]</summary><pre>{
+  &quot;id&quot;: 31956936403,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz88753USazwAAAAdwyCbT&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/31956936403&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-28T01:50:18Z&quot;,
+  &quot;state_reason&quot;: &quot;not_planned&quot;,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

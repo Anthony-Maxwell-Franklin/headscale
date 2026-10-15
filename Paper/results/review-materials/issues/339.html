@@ -1,0 +1,363 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #339: Trusted self-signed certificate can&#x27;t be used connecting to OIDC server </title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #339: Trusted self-signed certificate can&#x27;t be used connecting to OIDC server </h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/339">Original issue #339</a></p><p>Created: 2022-02-20T06:45:03Z; updated: 2024-11-01T18:08:21Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>**Issue description**
+Getting &#x27;x509: certificate signed by unknown authority&#x27; from headscale although the cert is self signed it is trusted by OS
+**To Reproduce**
+Use self-signed certificate for auth with DEX (probably does not matter which OIDC server to use)
+I looked how to disable this by setting InsecureSkipVerify  but seems it indeed buried inside oidc.NewProvider at oidc.go:44. May be attached file can help to get some more light .
+
+**Context info**
+
+&lt;!-- Please add relevant information about your system. For example:
+- Version of headscale used: headscale_0.12.4_linux_amd64
+- Version of tailscale client: 1.21.1
+- OS: Ubuntu 20.04
+- Kernel version : 5.13.0-28-generic
+- The relevant config parameters you used
+- Log output
+[failed_tls.txt](https://github.com/juanfont/headscale/files/8103527/failed_tls.txt)
+Attached correspondence from discord as well:
+![issue](https://user-images.githubusercontent.com/24719762/154831807-8199818d-15a5-439b-9fa6-8bc4069577a5.png)
+
+As a workaround it is possible to use CA signed certificate.
+--&gt;
+</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/339#issuecomment-1094955759">mpldr</a></h3><p>Created: 2022-04-11T11:50:49Z; updated: 2022-04-11T11:50:49Z</p><pre>Unfortunately TOFU is very uncommon for HTTP. What OS are you using and how have you added your CA Cert?</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/339#issuecomment-1240392893">kradalby</a></h3><p>Created: 2022-09-08T08:25:18Z; updated: 2022-09-08T08:25:18Z</p><pre>I do not think we can prioritise this issue, going to close for now.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/339#issuecomment-2452345430">baumheld</a></h3><p>Created: 2024-11-01T18:08:19Z; updated: 2024-11-01T18:08:19Z</p><pre>Facing the same dead end. I wanted to try out headscale locally on my machine using docker. Additionally I wanted to use my OIDC provider authelia
+
+In my docker compose I configure these 3 services
+- Headscale (VPN)
+- traefik (reverse proxy)
+- authelia (OIDC provider)
+
+For local testing I use a self signed developer cert. I bake them into docker Images using this
+
+### Headscale Dockerfile
+```
+FROM alpine AS cert-builder
+
+# Install self signed cert inside a dummy container
+RUN apk --quiet --update-cache add ca-certificates 
+COPY ./certs/rootCA.pem /usr/local/share/ca-certificates/rootCA.crt
+RUN update-ca-certificates
+
+FROM headscale/headscale:latest-debug
+
+# Copy self signed cert over to headscale
+COPY --from=cert-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY ./certs/public.crt /certs/public.crt
+COPY ./certs/private.key /certs/private.key
+```
+
+### Authelia Dockerfile
+```
+FROM authelia/authelia:latest
+
+# Install self signed cert
+RUN apk --quiet --update-cache add ca-certificates 
+COPY ./certs/rootCA.pem /usr/local/share/ca-certificates/rootCA.crt
+COPY ./certs/private.key /certs/private.key
+COPY ./certs/public.crt /certs/public.crt
+RUN update-ca-certificates
+```
+
+But in the end headscale complains like stated by OP with `x509: certificate signed by unknown authority` in its logs when trying to spin up and connect a tailscale client to headscale
+
+I&#x27;m stuck :(</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2022-02-20T06:45:03Z · labeled · axlev</summary><pre>{
+  &quot;id&quot;: 6106836651,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz885EPljTzwAAAAFr_u6r&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/6106836651&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;axlev&quot;,
+    &quot;id&quot;: 24719762,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI0NzE5NzYy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/24719762?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/axlev&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/axlev&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/axlev/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/axlev/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/axlev/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/axlev/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/axlev/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/axlev/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/axlev/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/axlev/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/axlev/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2022-02-20T06:45:03Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2022-04-11T11:50:49Z · commented · mpldr</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1094955759&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/339#issuecomment-1094955759&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/339&quot;,
+  &quot;id&quot;: 1094955759,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885BQ7Lv&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;mpldr&quot;,
+    &quot;id&quot;: 33086936,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjMzMDg2OTM2&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/33086936?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mpldr&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mpldr&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mpldr/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mpldr/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mpldr/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mpldr/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mpldr/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mpldr/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mpldr/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mpldr/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mpldr/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2022-04-11T11:50:49Z&quot;,
+  &quot;updated_at&quot;: &quot;2022-04-11T11:50:49Z&quot;,
+  &quot;body&quot;: &quot;Unfortunately TOFU is very uncommon for HTTP. What OS are you using and how have you added your CA Cert?&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1094955759/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mpldr&quot;,
+    &quot;id&quot;: 33086936,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjMzMDg2OTM2&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/33086936?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mpldr&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mpldr&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mpldr/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mpldr/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mpldr/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mpldr/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mpldr/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mpldr/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mpldr/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mpldr/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mpldr/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2022-09-08T08:25:18Z · commented · kradalby</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1240392893&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/339#issuecomment-1240392893&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/339&quot;,
+  &quot;id&quot;: 1240392893,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885J7uS9&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2022-09-08T08:25:18Z&quot;,
+  &quot;updated_at&quot;: &quot;2022-09-08T08:25:18Z&quot;,
+  &quot;body&quot;: &quot;I do not think we can prioritise this issue, going to close for now.&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1240392893/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2022-09-08T08:25:18Z · closed · kradalby</summary><pre>{
+  &quot;id&quot;: 7345340452,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz885EPljTzwAAAAG10QAk&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/7345340452&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2022-09-08T08:25:18Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-11-01T18:08:19Z · commented · baumheld</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2452345430&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/339#issuecomment-2452345430&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/339&quot;,
+  &quot;id&quot;: 2452345430,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886SK9JW&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;baumheld&quot;,
+    &quot;id&quot;: 141740877,
+    &quot;node_id&quot;: &quot;U_kgDOCHLLTQ&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/141740877?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/baumheld&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/baumheld&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/baumheld/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/baumheld/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/baumheld/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/baumheld/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/baumheld/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/baumheld/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/baumheld/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/baumheld/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/baumheld/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-11-01T18:08:19Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-11-01T18:08:19Z&quot;,
+  &quot;body&quot;: &quot;Facing the same dead end. I wanted to try out headscale locally on my machine using docker. Additionally I wanted to use my OIDC provider authelia\r\n\r\nIn my docker compose I configure these 3 services\r\n- Headscale (VPN)\r\n- traefik (reverse proxy)\r\n- authelia (OIDC provider)\r\n\r\nFor local testing I use a self signed developer cert. I bake them into docker Images using this\r\n\r\n### Headscale Dockerfile\r\n```\r\nFROM alpine AS cert-builder\r\n\r\n# Install self signed cert inside a dummy container\r\nRUN apk --quiet --update-cache add ca-certificates \r\nCOPY ./certs/rootCA.pem /usr/local/share/ca-certificates/rootCA.crt\r\nRUN update-ca-certificates\r\n\r\nFROM headscale/headscale:latest-debug\r\n\r\n# Copy self signed cert over to headscale\r\nCOPY --from=cert-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt\r\nCOPY ./certs/public.crt /certs/public.crt\r\nCOPY ./certs/private.key /certs/private.key\r\n```\r\n\r\n### Authelia Dockerfile\r\n```\r\nFROM authelia/authelia:latest\r\n\r\n# Install self signed cert\r\nRUN apk --quiet --update-cache add ca-certificates \r\nCOPY ./certs/rootCA.pem /usr/local/share/ca-certificates/rootCA.crt\r\nCOPY ./certs/private.key /certs/private.key\r\nCOPY ./certs/public.crt /certs/public.crt\r\nRUN update-ca-certificates\r\n```\r\n\r\nBut in the end headscale complains like stated by OP with `x509: certificate signed by unknown authority` in its logs when trying to spin up and connect a tailscale client to headscale\r\n\r\nI&#x27;m stuck :(&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2452345430/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;baumheld&quot;,
+    &quot;id&quot;: 141740877,
+    &quot;node_id&quot;: &quot;U_kgDOCHLLTQ&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/141740877?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/baumheld&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/baumheld&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/baumheld/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/baumheld/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/baumheld/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/baumheld/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/baumheld/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/baumheld/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/baumheld/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/baumheld/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/baumheld/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-06-06T14:34:11Z · subscribed · LEI</summary><pre>{
+  &quot;id&quot;: 18023923210,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz885EPljTzwAAAAQyTz4K&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/18023923210&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;LEI&quot;,
+    &quot;id&quot;: 4112243,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQxMTIyNDM=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4112243?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/LEI&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/LEI&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/LEI/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/LEI/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/LEI/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/LEI/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/LEI/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/LEI/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/LEI/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/LEI/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/LEI/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-06-06T14:34:11Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

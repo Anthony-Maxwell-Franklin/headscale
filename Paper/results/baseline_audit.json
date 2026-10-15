@@ -1,0 +1,43 @@
+{
+  "scope": "Compare Python reconstruction with published coursework tables; PowerShell runtime unavailable",
+  "passed": [
+    "Five-stage commit counts",
+    "Five-stage case-insensitive author counts",
+    "Five-stage file touch totals",
+    "Five-stage rounded file and author HHI",
+    "Five-stage M4B cached issue sample counts"
+  ],
+  "differences": [
+    {
+      "stage": "Expansion",
+      "metric": "M4A sample count",
+      "report": 156,
+      "python": 157,
+      "status": "Requires commit-event audit; M4A is not a research repair metric"
+    },
+    {
+      "stage": "Expansion",
+      "metric": "M4A mean days",
+      "report": 8.36,
+      "python": 8.34
+    },
+    {
+      "stage": "Expansion",
+      "metric": "M4A median days",
+      "report": 0.76,
+      "python": 0.77
+    }
+  ],
+  "confirmed_legacy_defects": [
+    "PowerShell odd-sample Get-Median rounds n/2 when casting to int; Start M3 mathematical median rounds to 4.03, report value is 4.04."
+  ],
+  "overall": "Partial parity confirmed; full parity remains unproven.",
+  "resolved": [
+    {
+      "stage": "Expansion",
+      "metric": "M3 handoff percent",
+      "cause": "PowerShell case-insensitive file-path keys merge docs/TLS.md with docs/tls.md and analogous pairs",
+      "reproduced_percent": 42.22
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "status": "Exploratory component validation; specified before execution, not a preregistration",
+  "selection": "All sampled final-closure commits with an exact matched merged PR and a locally available official commit. This selects two cases from five final-closure pointers.",
+  "sampling_scope": "Purposive, source-available cases; no repair-prevalence or general maintenance-effect estimate",
+  "go_toolchain": "go1.24.0",
+  "conditions": [
+    "Use official repair commit and its first parent in isolated source archives",
+    "Require identical go.mod and go.sum within each pair",
+    "Run identical regression oracles on both variants and preserve normal-case controls",
+    "Treat build failures and missing test executions as inconclusive, not reproduced defects",
+    "Keep actual human coding forms unchanged"
+  ],
+  "cases": [
+    {
+      "issue": 2121,
+      "pr": 2127,
+      "fixed_commit": "064c46f2a5889a328627673f153a01c26812c945",
+      "parent_commit": "64319f79ff1934865805fc73be2228dddce0ec80",
+      "package": "./hscontrol/db",
+      "oracle_source": "Researcher component fixture based on the report's two-user laptop/server rename scenario",
+      "fixture": "repair_fixtures/research_2121_test.go",
+      "fixture_destination": "hscontrol/db/research_2121_test.go",
+      "run_pattern": "^TestResearchRename2121$",
+      "regression_tests": ["TestResearchRename2121/duplicate_name"],
+      "control_tests": ["TestResearchRename2121/unique_name"],
+      "claim_boundary": "RenameNode rejects a duplicate given name without changing the node; DNS resolution on the original Debian/Tailscale deployment is not replayed"
+    },
+    {
+      "issue": 2181,
+      "pr": 2556,
+      "fixed_commit": "d810597414df46826671eef3d0605eba9a5a0a5f",
+      "parent_commit": "93afb03f6756983d85fe3f39666d21430a886dae",
+      "package": "./hscontrol/policy",
+      "oracle_source": "Exact upstream regression test file from the repair commit, applied unchanged to both variants",
+      "fixture_git_path": "hscontrol/policy/policy_test.go",
+      "fixture_destination": "hscontrol/policy/policy_test.go",
+      "run_pattern": "^TestFilterNodesByACL$/(subnet-router-with-only-route-smaller-mask-2181|node-to-subnet-router-with-only-route-smaller-mask-2181|subnet-router-with-only-route)$",
+      "regression_tests": [
+        "TestFilterNodesByACL/subnet-router-with-only-route-smaller-mask-2181",
+        "TestFilterNodesByACL/node-to-subnet-router-with-only-route-smaller-mask-2181"
+      ],
+      "control_tests": ["TestFilterNodesByACL/subnet-router-with-only-route"],
+      "claim_boundary": "FilterNodesByACL peer visibility for a /32 ACL within a /16 advertised route; original Kubernetes subnet-router traffic and PostgreSQL access are not replayed"
+    }
+  ]
+}

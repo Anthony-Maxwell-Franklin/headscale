@@ -1,0 +1,149 @@
+Venue and contribution assessment — 14 October 2026
+
+Working target: a regular research article in Journal of Systems and Software
+(JSS), subject to reassessment after validation. This is a preparation choice,
+not an executed submission or an estimate of acceptance probability.
+
+Verified venue classification
+The current CCF software-engineering directory lists JSS, Information and
+Software Technology (IST), and Empirical Software Engineering (ESE/EMSE) as B.
+CCF identifies its seventh edition as published on 31 March 2026. This supports
+pursuing the CCF B route. Current CAS/JCR quartiles have not been verified from
+authoritative classification data; no current Q2 claim is made. A quartile
+claim must specify its system, year and subject category.
+Sources:
+https://www.ccf.org.cn/Academic_Evaluation/TCSE_SS_PDL/
+https://www.ccf.org.cn/Academic_Evaluation/By_category/
+
+JSS fit
+The publisher includes maintenance, open-source development, metrics and
+empirical methods in scope, and welcomes negative results. Claims still require
+evidence and a contribution to software-engineering knowledge. Its Open Science
+material review assesses availability/usability separately from article
+acceptance. This manuscript is prepared as regular empirical research.
+Source:
+https://shop.elsevier.com/journals/journal-of-systems-and-software/0164-1212
+
+IST fit and current risk
+The 2026 editors' discussion emphasizes scope, novelty/impact and methodological
+quality, and identifies insufficient validation and premature work as rejection
+risks. My assessment of this manuscript is that another repository showing
+concentrated roles and non-repair closures is insufficient by itself. A specific
+process explanation and its boundaries need validation, or a transparent
+comparative design must establish the finding's wider applicability.
+Source:
+https://www.sciencedirect.com/science/article/abs/pii/S0950584926001862
+DOI: 10.1016/j.infsof.2026.108197
+
+EMSE preparation requirements
+The official guidance permits mathematical LaTeX submissions, specifies a
+150–250-word abstract and 4–6 keywords, and requires data availability and
+relevant declarations. Corresponding authorship must be settled. Author–year
+references are requested; the current numeric style has not been adapted.
+Source:
+https://link.springer.com/journal/10664/submission-guidelines
+
+Verification limits
+Direct access to the full JSS and IST author guides returned HTTP 403. Their
+unread details are not treated as verified requirements. JSS scope and the IST
+editorial were available from the publisher; the EMSE guide was readable. Final
+format and upload details need checking once the target is settled.
+
+Boundaries of the candidate contribution
+Headscale-specific search now verifies a 2024 VPN benchmark study and a 2025
+repository-mining thesis lead. The manuscript cannot claim the first academic
+study of Headscale. Bus Factor In Practice (ICSE-SEIP 2022) is also a direct
+precedent for considering low-authorship reviewers. The detailed overlap and
+search-access limits are in literature_overlap_assessment.txt.
+1. Review-aware ownership already distinguishes authoring and reviewing.
+   Matching PR populations, fractional review credit and artifact-scope
+   sensitivity apply this distinction; they do not introduce it.
+2. Large-scale CODEOWNERS research already examines review dynamics. One
+   static ownership file cannot establish policy effects. Lulla et al.'s
+   August 2026 version is cited as an author preprint.
+3. Issue misclassification and bot closure have direct precedents. Missing
+   commit links cannot establish absence of repair.
+4. Linåker et al.'s recent OSS-health study combines practitioner interviews,
+   framework comparison and an industrial application, and considers governance
+   concentration and context. Role separation alone is not a new health framework.
+   The narrower proposed explanation requires tracing component-responsibility
+   evidence through a maintenance decision to the observed treatment.
+Selected primary sources:
+https://doi.org/10.1145/2884781.2884852
+https://arxiv.org/abs/2512.05551v2
+https://www.microsoft.com/en-us/research/publication/its-not-a-bug-its-a-feature-how-misclassification-impacts-bug-prediction/
+https://link.springer.com/article/10.1007/s10664-026-10846-y
+
+Current decision
+The data and computational checks support substantive review, but do not prove
+the proposed mechanism or sufficient novelty. Human coding is deferred at the
+author's request. Continue manuscript preparation while retaining semantic
+validation, corresponding authorship and final declarations as unfinished work.
+
+Conference assessment after the scoped literature search
+CCF B remains a defensible research target, conditional on establishing an
+additional validated contribution. The present working draft does not yet
+establish readiness for a B-conference research full paper. This is an assessment
+of the evidence and contribution, not an acceptance-probability estimate.
+
+The current official CCF software-engineering directory places both ESEM and
+ICSME in category B. Its catalog guidance applies to Full/Regular papers; a
+short paper, demo or accompanying workshop cannot be assumed to meet this goal.
+The official directory's complete table was returned through indexed search;
+direct browser retrieval of the CCF page failed during this check.
+
+ESEM's technical main track is the preferred fit for the present emphasis on
+empirical measurement and validity. Its 2026 call explicitly includes case
+studies, replication and negative results, while requiring fully developed
+research, rigorous methods and clear value beyond existing knowledge. Thus,
+neither a single case nor a concentration estimate whose interval includes one
+automatically rules out a contribution. Artifact completeness alone does not
+establish that value.
+Source:
+https://conf.researchr.org/track/eseiw-2026/eseiw-2026-esem---technical-track
+
+ICSME's research track is a second fit if the work establishes a substantive
+maintenance-process explanation. Its criteria explicitly assess originality,
+importance, soundness, evaluation, related-work comparison and replicability.
+Sources:
+https://conf.researchr.org/track/icsme-2026/icsme-2026-papers
+https://www.ccf.org.cn/Academic_Evaluation/TCSE_SS_PDL/
+https://www.ccf.org.cn/Academic_Evaluation/By_category/
+These 2026 editions have already concluded. Their calls establish recent scope
+and standards; no future-cycle deadline or submission availability is assumed.
+
+The verified Headscale VPN-performance paper does not answer our maintenance
+questions. However, Bus Factor In Practice directly precedes review-aware
+interpretation, and has practitioner ground truth. Finding low-authorship
+reviewers in another repository is insufficient as the main novelty claim.
+
+The strongest candidate question is how component-responsibility boundaries and
+different maintenance roles alter conclusions drawn from repository indicators.
+To establish its value, the study needs:
+1. Actual, declared human validation of responsibility and treatment outcomes.
+   This stage remains deferred; prepared packets and extracted events are not
+   completed validation.
+2. Evidence connecting the affected component to an explicit maintenance
+   decision and observed treatment, with ambiguous and contradictory cases.
+   Quantify how validated interpretation changes a clearly defined conventional
+   measurement or substantive conclusion; do not claim causal policy effects.
+3. A contribution beyond known pitfalls, supported either by a deeply validated,
+   bounded case explanation or by purposeful comparative/triangulating evidence.
+   If the case only reproduces established observations, additional comparable
+   cases may help test applicability, but more repositories cannot create
+   novelty by themselves.
+
+Proceed with the B-conference objective while treating contribution validation
+as the priority. More commits, charts, model variants or manuscript pages alone
+would not resolve the current gap.
+
+Evidence update, 15 October 2026
+Two source-available repair commits now have executed component regression
+checks against their official first parents, with the oracle and dependency
+manifests held constant within each pair. Target failures occur before and
+passes after the repair, with normal-case controls passing in both variants.
+Actual assertion diagnostics are checked; a cached rerun reproduces the same
+outcomes. This strengthens the server-repair examples beyond commit pointers.
+It does not establish population repair prevalence, the proposed broader
+responsibility-routing explanation, or a new method contribution. Human coding
+and the conference contribution assessment remain substantive unfinished work.

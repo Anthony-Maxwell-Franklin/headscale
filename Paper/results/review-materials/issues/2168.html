@@ -1,0 +1,442 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #2168: [Bug] authURL is empty when using GitHub as an OIDC server</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #2168: [Bug] authURL is empty when using GitHub as an OIDC server</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/2168">Original issue #2168</a></p><p>Created: 2024-10-03T11:12:10Z; updated: 2025-12-17T13:58:47Z; observed state: open; reason: None</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [X] This is not a support request
+
+### Is there an existing issue for this?
+
+- [X] I have searched the existing issues
+
+### Current Behavior
+
+Headscale redirects to empty [authURL](https://github.com/juanfont/headscale/blob/95150401612ec5143f5d9d44bcfa8730bcf94bba/hscontrol/oidc.go#L169C2-L169C9)
+
+```
+2024-10-03T11:08:53Z DBG Redirecting to ?client_id=123&amp;domain_hint=...
+```
+
+### Expected Behavior
+
+Headscale should redirect to &quot;https://github.com/login/oauth/authorize&quot;
+
+### Steps To Reproduce
+
+1. Create an OAuth app in GitHub developer settings
+2. Set up Headscale to use GitHub as an OIDC server:
+
+```yaml
+oidc:
+  only_start_if_oidc_is_available: true
+  issuer: &quot;https://token.actions.githubusercontent.com&quot;
+  client_id: &quot;123&quot;
+  client_secret: &quot;123&quot;
+```
+
+3. Try to login
+
+### Environment
+
+```markdown
+- OS: Ubuntu 24.04
+- Headscale version: 0.23.0
+```
+
+
+### Runtime environment
+
+- [ ] Headscale is behind a (reverse) proxy
+- [X] Headscale runs in a container
+
+### Anything else?
+
+_No response_</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/2168#issuecomment-2391170537">maxpain</a></h3><p>Created: 2024-10-03T11:23:02Z; updated: 2024-10-03T11:23:02Z</p><pre>It seems https://token.actions.githubusercontent.com/.well-known/openid-configuration doesn&#x27;t contain `authorization_endpoint` field</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2168#issuecomment-2393431112">kradalby</a></h3><p>Created: 2024-10-04T10:57:19Z; updated: 2024-10-04T10:57:19Z</p><pre>I am not sure why they do not provide `authorization_endpoint`, but I thought that was a part of the OIDC standard requirements (feel free to correct). Some searching dont seem to make me any cleverer. 
+
+We do not support non-compliant providers, so if that is the case for Github, I suppose we do not support it.
+
+If someone have more insights on their requirements/quirks, that would be helpful</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2168#issuecomment-2393542030">oneingan</a></h3><p>Created: 2024-10-04T11:59:33Z; updated: 2024-10-04T12:00:51Z</p><pre>Using Jenkins OIDC provider here, this is the openid-cofniguration:
+
+```json
+{
+  &quot;issuer&quot;: &quot;https://jenkins.example.com/oidc&quot;,
+  &quot;jwks_uri&quot;: &quot;https://jenkins.example.com/oidc/jwks&quot;,
+  &quot;response_types_supported&quot;: [
+    &quot;code&quot;
+  ],
+  &quot;subject_types_supported&quot;: [
+    &quot;public&quot;
+  ],
+  &quot;id_token_signing_alg_values_supported&quot;: [
+    &quot;RS256&quot;
+  ],
+  &quot;authorization_endpoint&quot;: &quot;https://unimplemented&quot;,
+  &quot;token_endpoint&quot;: &quot;https://unimplemented&quot;
+}
+```
+
+Im using this provider with AWS, step-ca and grafana without issues</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2024-10-03T11:12:10Z · labeled · maxpain</summary><pre>{
+  &quot;id&quot;: 14502749000,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz886Y0BdzzwAAAANgbmNI&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/14502749000&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;maxpain&quot;,
+    &quot;id&quot;: 5875582,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjU4NzU1ODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/5875582?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/maxpain&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/maxpain&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/maxpain/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/maxpain/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/maxpain/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/maxpain/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/maxpain/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/maxpain/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/maxpain/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/maxpain/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/maxpain/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-10-03T11:12:10Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-10-03T11:23:02Z · commented · maxpain</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2391170537&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2168#issuecomment-2391170537&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2168&quot;,
+  &quot;id&quot;: 2391170537,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886Ohl3p&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;maxpain&quot;,
+    &quot;id&quot;: 5875582,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjU4NzU1ODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/5875582?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/maxpain&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/maxpain&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/maxpain/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/maxpain/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/maxpain/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/maxpain/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/maxpain/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/maxpain/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/maxpain/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/maxpain/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/maxpain/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-10-03T11:23:02Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-10-03T11:23:02Z&quot;,
+  &quot;body&quot;: &quot;It seems https://token.actions.githubusercontent.com/.well-known/openid-configuration doesn&#x27;t contain `authorization_endpoint` field&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2391170537/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;maxpain&quot;,
+    &quot;id&quot;: 5875582,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjU4NzU1ODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/5875582?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/maxpain&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/maxpain&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/maxpain/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/maxpain/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/maxpain/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/maxpain/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/maxpain/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/maxpain/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/maxpain/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/maxpain/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/maxpain/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-10-04T10:57:19Z · commented · kradalby</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2393431112&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2168#issuecomment-2393431112&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2168&quot;,
+  &quot;id&quot;: 2393431112,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886OqNxI&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-10-04T10:57:19Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-10-04T10:57:19Z&quot;,
+  &quot;body&quot;: &quot;I am not sure why they do not provide `authorization_endpoint`, but I thought that was a part of the OIDC standard requirements (feel free to correct). Some searching dont seem to make me any cleverer. \r\n\r\nWe do not support non-compliant providers, so if that is the case for Github, I suppose we do not support it.\r\n\r\nIf someone have more insights on their requirements/quirks, that would be helpful&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2393431112/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-10-04T10:57:30Z · labeled · kradalby</summary><pre>{
+  &quot;id&quot;: 14517440231,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz886Y0BdzzwAAAANhTo7n&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/14517440231&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-10-04T10:57:30Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;no-stale-bot&quot;,
+    &quot;color&quot;: &quot;6ECABC&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-10-04T11:59:33Z · commented · oneingan</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2393542030&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2168#issuecomment-2393542030&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2168&quot;,
+  &quot;id&quot;: 2393542030,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886Oqo2O&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;oneingan&quot;,
+    &quot;id&quot;: 810075,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMDA3NQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/810075?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/oneingan&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/oneingan&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/oneingan/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/oneingan/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/oneingan/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/oneingan/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/oneingan/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/oneingan/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/oneingan/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/oneingan/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/oneingan/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-10-04T11:59:33Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-10-04T12:00:51Z&quot;,
+  &quot;body&quot;: &quot;Using Jenkins OIDC provider here, this is the openid-cofniguration:\r\n\r\n```json\r\n{\r\n  \&quot;issuer\&quot;: \&quot;https://jenkins.example.com/oidc\&quot;,\r\n  \&quot;jwks_uri\&quot;: \&quot;https://jenkins.example.com/oidc/jwks\&quot;,\r\n  \&quot;response_types_supported\&quot;: [\r\n    \&quot;code\&quot;\r\n  ],\r\n  \&quot;subject_types_supported\&quot;: [\r\n    \&quot;public\&quot;\r\n  ],\r\n  \&quot;id_token_signing_alg_values_supported\&quot;: [\r\n    \&quot;RS256\&quot;\r\n  ],\r\n  \&quot;authorization_endpoint\&quot;: \&quot;https://unimplemented\&quot;,\r\n  \&quot;token_endpoint\&quot;: \&quot;https://unimplemented\&quot;\r\n}\r\n```\r\n\r\nIm using this provider with AWS, step-ca and grafana without issues&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2393542030/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;oneingan&quot;,
+    &quot;id&quot;: 810075,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMDA3NQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/810075?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/oneingan&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/oneingan&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/oneingan/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/oneingan/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/oneingan/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/oneingan/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/oneingan/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/oneingan/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/oneingan/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/oneingan/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/oneingan/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-11-05T21:47:44Z · unsubscribed · tescolopio</summary><pre>{
+  &quot;id&quot;: 15128592302,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz886Y0BdzzwAAAAOFu_-u&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/15128592302&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;tescolopio&quot;,
+    &quot;id&quot;: 162474789,
+    &quot;node_id&quot;: &quot;U_kgDOCa8rJQ&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/162474789?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/tescolopio&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/tescolopio&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/tescolopio/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/tescolopio/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/tescolopio/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/tescolopio/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/tescolopio/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/tescolopio/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/tescolopio/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/tescolopio/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/tescolopio/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-11-05T21:47:44Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-12-17T13:58:47Z · milestoned · kradalby</summary><pre>{
+  &quot;id&quot;: 21618188012,
+  &quot;node_id&quot;: &quot;MIE_lADOEFLz886Y0BdzzwAAAAUIi17s&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/21618188012&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;milestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-12-17T13:58:47Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.33.0&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-06-22T13:56:52Z · referenced · maxpetrusenkoagent</summary><pre>{
+  &quot;id&quot;: 27044947490,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz886Y0BdzzwAAAAZMASYi&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/27044947490&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;maxpetrusenkoagent&quot;,
+    &quot;id&quot;: 280464918,
+    &quot;node_id&quot;: &quot;U_kgDOELeOFg&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/280464918?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/maxpetrusenkoagent&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/maxpetrusenkoagent/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;8c5b6372789388faf0bbbb28b0ae5b2a5d42fb0e&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/maxpetrusenkoagent/headscale/commits/8c5b6372789388faf0bbbb28b0ae5b2a5d42fb0e&quot;,
+  &quot;created_at&quot;: &quot;2026-06-22T13:56:52Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><article><h3><a href="https://api.github.com/repos/maxpetrusenkoagent/headscale/commits/8c5b6372789388faf0bbbb28b0ae5b2a5d42fb0e">8c5b6372789388faf0bbbb28b0ae5b2a5d42fb0e</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/27044947490">referenced</a> · 2026-06-22T13:56:52Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article></body></html>

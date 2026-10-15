@@ -1,0 +1,848 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #2629: [Bug] Please link &quot;Create a backup of your database.&quot; to relevant documentation.</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #2629: [Bug] Please link &quot;Create a backup of your database.&quot; to relevant documentation.</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/2629">Original issue #2629</a></p><p>Created: 2025-05-26T23:30:45Z; updated: 2026-03-02T22:43:49Z; observed state: closed; reason: not_planned</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+Please link the **bold** instruction to **Create a backup of your database** to relevant documentation (add docs if they don&#x27;t exist) on:
+https://github.com/juanfont/headscale/blob/main/docs/setup/upgrade.md
+
+I found the config in:
+```yaml
+database:
+  sqlite:
+    path: /var/lib/headscale/db.sqlite
+```
+and copied it to my home directory with:
+```
+sudo systemctl stop headscale
+sudo cp /var/lib/headscale/db.sqlite headscale-backup-$(date +%Y%m%d).sqlite
+```
+... do upgrade ...
+```
+sudo systemctl start headscale
+```
+
+It consumed 15-20 minutes + frustration + time to write up this issue and switch contexts to figure out how to do this, when a few lines of documentation could have just told me how to do it.
+
+My philosophy is that, if we each only help ourselves, we have only one person helping us. But when we help others, we potentially have millions of others helping us. I know which world I would rather live in, but I&#x27;m afraid our current society oddly values the former over the latter. 😃 I mean, when we document our own code (I am never offended by documentation that is written to be &quot;fool proof&quot;), we free others&#x27; energy so that they can focus on contributing back to our own projects in return.
+
+Thank you.
+
+### Expected Behavior
+
+I expected a link to docs on how to backup the database.
+
+### Steps To Reproduce
+
+Read the docs on how to do an upgrade and find there is no reference on how to backup.
+
+### Environment
+
+```markdown
+- OS: Debian GNU/Linux 12 (bookworm)
+- Headscale version: v0.25.1 (I need to upgrade, hence this issue)
+- Tailscale version: N/A
+```
+
+### Runtime environment
+
+- [ ] Headscale is behind a (reverse) proxy
+- [ ] Headscale runs in a container
+
+### Debug information
+
+Not relevant to the issue.</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/2629#issuecomment-3218605751">github-actions[bot]</a></h3><p>Created: 2025-08-25T02:09:33Z; updated: 2025-08-25T02:09:33Z</p><pre>This issue is stale because it has been open for 90 days with no activity.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2629#issuecomment-3240665046">github-actions[bot]</a></h3><p>Created: 2025-09-01T02:11:45Z; updated: 2025-09-01T02:11:45Z</p><pre>This issue was closed because it has been inactive for 14 days since being marked as stale.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2629#issuecomment-3534219781">thfi</a></h3><p>Created: 2025-11-14T19:18:39Z; updated: 2025-11-14T19:18:39Z</p><pre>For anyone looking for an automated solution to backup the database: I addressed backup&#x27;ing the database the follow way. As headscale is started and stopped via systemd, add an override configuration that copies the database to another file each time the service is stopped. In the example below, the backup&#x27;s filename contains the file&#x27;s MD5 checksum to avoid having multiple copies of the same database and the headscale version number in case there are incompatible changes across versions. File properties like modification dates are kept when copying, allowing to identify old copies that one can delete.
+
+1. Create the file `/etc/systemd/system/headscale.service.d/backup-config.conf` as follows:
+    ```
+    [Service]
+    ExecStopPost=/usr/bin/bash -c &#x27;cp --verbose --preserve=all /var/lib/headscale/db.sqlite /var/lib/headscale/&quot;$(headscale version|grep -Po --color=NEVER &quot;(?&lt;=v?)[01](\\.[0-9]+)+&quot;|head -n1)&quot;-&quot;$(md5sum &lt;&quot;/var/lib/headscale/db.sqlite&quot;|cut -f1 -d &quot; &quot;)&quot;-db.sqlite&#x27;
+    ```
+2. Tell systemd to reload the updated configuration: `systemctl daemon-reload`</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2629#issuecomment-3987391621">thfi</a></h3><p>Created: 2026-03-02T22:43:49Z; updated: 2026-03-02T22:43:49Z</p><pre>Just tested with the latest stable version:
+
+$ headscale version
+headscale version v0.28.0
+commit: 97fa117c48a58bee3941e5e8b4393873501afe14
+build time: 2026-02-04T20:26:22Z
+built with: go1.25.5 linux/amd64
+
+$ headscale version|grep -Po --color=NEVER 
+&quot;(?&lt;=v?)[01](\\.[0-9]+)+&quot;|head -n1
+0.28.0
+
+
+I suspect your problem is more related to `grep`. The version I am using 
+GNU grep 3.11, where `grep -P` uses &quot;PCRE2 10.46 2025-08-27&quot;
+
+Removing `(?&lt;=v?)` from regular expression the seems to work as well, 
+returning the same version string. Test if that works better for you.
+
+
+On 27.02.26 00:20, Tom Grushka wrote:
+&gt; *tgrushka* left a comment (juanfont/headscale#2629) &lt;https://github.com/ 
+&gt; juanfont/headscale/issues/2629#issuecomment-3969814965&gt;
+&gt; 
+&gt; Thank you, @thfi &lt;https://github.com/thfi&gt; . The lookbehind regex in 
+&gt; your example did not work for me, as I got:
+&gt; |grep: lookbehind assertion is not fixed length|
+&gt; 
+&gt; Maybe it was for a beta or pre-release version?
+&gt; 
+&gt; This version works for me. You had a great idea to do this in a separate 
+&gt; systemd &quot;add-on&quot; file that doesn&#x27;t get overwritten by the package:
+&gt; 
+&gt; |[Service] ExecStopPost=/usr/bin/bash -c &#x27;cp --verbose --preserve=all / 
+&gt; var/lib/headscale/db.sqlite /var/lib/headscale/backup-$(headscale 
+&gt; version)-$(md5sum &lt; /var/lib/headscale/db.sqlite | cut -f1 -d &quot; &quot;)- 
+&gt; db.sqlite&#x27; |
+&gt; 
+&gt; This yields filenames like:
+&gt; |backup-0.26.0-43d67d794fcd3dc4f1bcc84f527dec47-db.sqlite|
+&gt; 
+&gt; —
+&gt; Reply to this email directly, view it on GitHub &lt;https://github.com/ 
+&gt; juanfont/headscale/issues/2629#issuecomment-3969814965&gt;, or unsubscribe 
+&gt; &lt;https://github.com/notifications/unsubscribe-auth/ 
+&gt; AARIZIZOAEQQSPOFJRXDQT34N55U7AVCNFSM6AAAAAB56R363GVHI2DSMVQWIX3LMV43OSLTON2WKQ3PNVWWK3TUHMZTSNRZHAYTIOJWGU&gt;.
+&gt; You are receiving this because you were mentioned.Message ID: &lt;juanfont/ 
+&gt; ***@***.***&gt;
+&gt; 
+
+</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2025-05-26T23:30:46Z · labeled · tgrushka</summary><pre>{
+  &quot;id&quot;: 17820173948,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz8864TzZ_zwAAAAQmKkZ8&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/17820173948&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;tgrushka&quot;,
+    &quot;id&quot;: 89836285,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjg5ODM2Mjg1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/89836285?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/tgrushka&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/tgrushka&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/tgrushka/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/tgrushka/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/tgrushka/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/tgrushka/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/tgrushka/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/tgrushka/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/tgrushka/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/tgrushka/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/tgrushka/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-05-26T23:30:46Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-05-27T04:02:38Z · unsubscribed · mrabino1</summary><pre>{
+  &quot;id&quot;: 17821988606,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz8864TzZ_zwAAAAQmRfb-&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/17821988606&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mrabino1&quot;,
+    &quot;id&quot;: 4902221,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ5MDIyMjE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4902221?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mrabino1&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mrabino1&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mrabino1/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mrabino1/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mrabino1/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mrabino1/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mrabino1/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mrabino1/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mrabino1/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mrabino1/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mrabino1/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-05-27T04:02:38Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-08-25T02:09:33Z · commented · github-actions[bot]</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3218605751&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2629#issuecomment-3218605751&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2629&quot;,
+  &quot;id&quot;: 3218605751,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886_2Aa3&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-08-25T02:09:33Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-08-25T02:09:33Z&quot;,
+  &quot;body&quot;: &quot;This issue is stale because it has been open for 90 days with no activity.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3218605751/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: {
+    &quot;id&quot;: 15368,
+    &quot;client_id&quot;: &quot;Iv1.05c79e9ad1f6bdfa&quot;,
+    &quot;slug&quot;: &quot;github-actions&quot;,
+    &quot;node_id&quot;: &quot;MDM6QXBwMTUzNjg=&quot;,
+    &quot;owner&quot;: {
+      &quot;login&quot;: &quot;github&quot;,
+      &quot;id&quot;: 9919,
+      &quot;node_id&quot;: &quot;MDEyOk9yZ2FuaXphdGlvbjk5MTk=&quot;,
+      &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/9919?v=4&quot;,
+      &quot;gravatar_id&quot;: &quot;&quot;,
+      &quot;url&quot;: &quot;https://api.github.com/users/github&quot;,
+      &quot;html_url&quot;: &quot;https://github.com/github&quot;,
+      &quot;followers_url&quot;: &quot;https://api.github.com/users/github/followers&quot;,
+      &quot;following_url&quot;: &quot;https://api.github.com/users/github/following{/other_user}&quot;,
+      &quot;gists_url&quot;: &quot;https://api.github.com/users/github/gists{/gist_id}&quot;,
+      &quot;starred_url&quot;: &quot;https://api.github.com/users/github/starred{/owner}{/repo}&quot;,
+      &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github/subscriptions&quot;,
+      &quot;organizations_url&quot;: &quot;https://api.github.com/users/github/orgs&quot;,
+      &quot;repos_url&quot;: &quot;https://api.github.com/users/github/repos&quot;,
+      &quot;events_url&quot;: &quot;https://api.github.com/users/github/events{/privacy}&quot;,
+      &quot;received_events_url&quot;: &quot;https://api.github.com/users/github/received_events&quot;,
+      &quot;type&quot;: &quot;Organization&quot;,
+      &quot;user_view_type&quot;: &quot;public&quot;,
+      &quot;site_admin&quot;: false
+    },
+    &quot;name&quot;: &quot;GitHub Actions&quot;,
+    &quot;description&quot;: &quot;Automate your workflow from idea to production&quot;,
+    &quot;external_url&quot;: &quot;https://help.github.com/en/actions&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;created_at&quot;: &quot;2018-07-30T09:30:17Z&quot;,
+    &quot;updated_at&quot;: &quot;2026-06-18T16:17:48Z&quot;,
+    &quot;permissions&quot;: {
+      &quot;actions&quot;: &quot;write&quot;,
+      &quot;administration&quot;: &quot;read&quot;,
+      &quot;artifact_metadata&quot;: &quot;write&quot;,
+      &quot;attestations&quot;: &quot;write&quot;,
+      &quot;checks&quot;: &quot;write&quot;,
+      &quot;code_quality&quot;: &quot;write&quot;,
+      &quot;contents&quot;: &quot;write&quot;,
+      &quot;copilot_requests&quot;: &quot;write&quot;,
+      &quot;deployments&quot;: &quot;write&quot;,
+      &quot;discussions&quot;: &quot;write&quot;,
+      &quot;drives&quot;: &quot;write&quot;,
+      &quot;issues&quot;: &quot;write&quot;,
+      &quot;merge_queues&quot;: &quot;write&quot;,
+      &quot;metadata&quot;: &quot;read&quot;,
+      &quot;models&quot;: &quot;read&quot;,
+      &quot;packages&quot;: &quot;write&quot;,
+      &quot;pages&quot;: &quot;write&quot;,
+      &quot;pull_requests&quot;: &quot;write&quot;,
+      &quot;repository_hooks&quot;: &quot;write&quot;,
+      &quot;repository_projects&quot;: &quot;write&quot;,
+      &quot;security_events&quot;: &quot;write&quot;,
+      &quot;statuses&quot;: &quot;write&quot;,
+      &quot;vulnerability_alerts&quot;: &quot;read&quot;
+    },
+    &quot;events&quot;: [
+      &quot;branch_protection_rule&quot;,
+      &quot;check_run&quot;,
+      &quot;check_suite&quot;,
+      &quot;create&quot;,
+      &quot;delete&quot;,
+      &quot;deployment&quot;,
+      &quot;deployment_status&quot;,
+      &quot;discussion&quot;,
+      &quot;discussion_comment&quot;,
+      &quot;fork&quot;,
+      &quot;gollum&quot;,
+      &quot;issues&quot;,
+      &quot;issue_comment&quot;,
+      &quot;label&quot;,
+      &quot;merge_group&quot;,
+      &quot;milestone&quot;,
+      &quot;page_build&quot;,
+      &quot;public&quot;,
+      &quot;pull_request&quot;,
+      &quot;pull_request_review&quot;,
+      &quot;pull_request_review_comment&quot;,
+      &quot;push&quot;,
+      &quot;registry_package&quot;,
+      &quot;release&quot;,
+      &quot;repository&quot;,
+      &quot;repository_dispatch&quot;,
+      &quot;status&quot;,
+      &quot;watch&quot;,
+      &quot;workflow_dispatch&quot;,
+      &quot;workflow_run&quot;
+    ]
+  },
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-08-25T02:09:33Z · labeled · github-actions[bot]</summary><pre>{
+  &quot;id&quot;: 19313065879,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz8864TzZ_zwAAAAR_Jf-X&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/19313065879&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-08-25T02:09:33Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;stale&quot;,
+    &quot;color&quot;: &quot;ededed&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-09-01T02:11:45Z · commented · github-actions[bot]</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3240665046&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2629#issuecomment-3240665046&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2629&quot;,
+  &quot;id&quot;: 3240665046,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz887BKJ_W&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-09-01T02:11:45Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-09-01T02:11:45Z&quot;,
+  &quot;body&quot;: &quot;This issue was closed because it has been inactive for 14 days since being marked as stale.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3240665046/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: {
+    &quot;id&quot;: 15368,
+    &quot;client_id&quot;: &quot;Iv1.05c79e9ad1f6bdfa&quot;,
+    &quot;slug&quot;: &quot;github-actions&quot;,
+    &quot;node_id&quot;: &quot;MDM6QXBwMTUzNjg=&quot;,
+    &quot;owner&quot;: {
+      &quot;login&quot;: &quot;github&quot;,
+      &quot;id&quot;: 9919,
+      &quot;node_id&quot;: &quot;MDEyOk9yZ2FuaXphdGlvbjk5MTk=&quot;,
+      &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/9919?v=4&quot;,
+      &quot;gravatar_id&quot;: &quot;&quot;,
+      &quot;url&quot;: &quot;https://api.github.com/users/github&quot;,
+      &quot;html_url&quot;: &quot;https://github.com/github&quot;,
+      &quot;followers_url&quot;: &quot;https://api.github.com/users/github/followers&quot;,
+      &quot;following_url&quot;: &quot;https://api.github.com/users/github/following{/other_user}&quot;,
+      &quot;gists_url&quot;: &quot;https://api.github.com/users/github/gists{/gist_id}&quot;,
+      &quot;starred_url&quot;: &quot;https://api.github.com/users/github/starred{/owner}{/repo}&quot;,
+      &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github/subscriptions&quot;,
+      &quot;organizations_url&quot;: &quot;https://api.github.com/users/github/orgs&quot;,
+      &quot;repos_url&quot;: &quot;https://api.github.com/users/github/repos&quot;,
+      &quot;events_url&quot;: &quot;https://api.github.com/users/github/events{/privacy}&quot;,
+      &quot;received_events_url&quot;: &quot;https://api.github.com/users/github/received_events&quot;,
+      &quot;type&quot;: &quot;Organization&quot;,
+      &quot;user_view_type&quot;: &quot;public&quot;,
+      &quot;site_admin&quot;: false
+    },
+    &quot;name&quot;: &quot;GitHub Actions&quot;,
+    &quot;description&quot;: &quot;Automate your workflow from idea to production&quot;,
+    &quot;external_url&quot;: &quot;https://help.github.com/en/actions&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;created_at&quot;: &quot;2018-07-30T09:30:17Z&quot;,
+    &quot;updated_at&quot;: &quot;2026-06-18T16:17:48Z&quot;,
+    &quot;permissions&quot;: {
+      &quot;actions&quot;: &quot;write&quot;,
+      &quot;administration&quot;: &quot;read&quot;,
+      &quot;artifact_metadata&quot;: &quot;write&quot;,
+      &quot;attestations&quot;: &quot;write&quot;,
+      &quot;checks&quot;: &quot;write&quot;,
+      &quot;code_quality&quot;: &quot;write&quot;,
+      &quot;contents&quot;: &quot;write&quot;,
+      &quot;copilot_requests&quot;: &quot;write&quot;,
+      &quot;deployments&quot;: &quot;write&quot;,
+      &quot;discussions&quot;: &quot;write&quot;,
+      &quot;drives&quot;: &quot;write&quot;,
+      &quot;issues&quot;: &quot;write&quot;,
+      &quot;merge_queues&quot;: &quot;write&quot;,
+      &quot;metadata&quot;: &quot;read&quot;,
+      &quot;models&quot;: &quot;read&quot;,
+      &quot;packages&quot;: &quot;write&quot;,
+      &quot;pages&quot;: &quot;write&quot;,
+      &quot;pull_requests&quot;: &quot;write&quot;,
+      &quot;repository_hooks&quot;: &quot;write&quot;,
+      &quot;repository_projects&quot;: &quot;write&quot;,
+      &quot;security_events&quot;: &quot;write&quot;,
+      &quot;statuses&quot;: &quot;write&quot;,
+      &quot;vulnerability_alerts&quot;: &quot;read&quot;
+    },
+    &quot;events&quot;: [
+      &quot;branch_protection_rule&quot;,
+      &quot;check_run&quot;,
+      &quot;check_suite&quot;,
+      &quot;create&quot;,
+      &quot;delete&quot;,
+      &quot;deployment&quot;,
+      &quot;deployment_status&quot;,
+      &quot;discussion&quot;,
+      &quot;discussion_comment&quot;,
+      &quot;fork&quot;,
+      &quot;gollum&quot;,
+      &quot;issues&quot;,
+      &quot;issue_comment&quot;,
+      &quot;label&quot;,
+      &quot;merge_group&quot;,
+      &quot;milestone&quot;,
+      &quot;page_build&quot;,
+      &quot;public&quot;,
+      &quot;pull_request&quot;,
+      &quot;pull_request_review&quot;,
+      &quot;pull_request_review_comment&quot;,
+      &quot;push&quot;,
+      &quot;registry_package&quot;,
+      &quot;release&quot;,
+      &quot;repository&quot;,
+      &quot;repository_dispatch&quot;,
+      &quot;status&quot;,
+      &quot;watch&quot;,
+      &quot;workflow_dispatch&quot;,
+      &quot;workflow_run&quot;
+    ]
+  },
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-09-01T02:11:46Z · closed · github-actions[bot]</summary><pre>{
+  &quot;id&quot;: 19432544752,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz8864TzZ_zwAAAASGRRnw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/19432544752&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-09-01T02:11:46Z&quot;,
+  &quot;state_reason&quot;: &quot;not_planned&quot;,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-11-14T18:36:34Z · subscribed · thfi</summary><pre>{
+  &quot;id&quot;: 20950151223,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz8864TzZ_zwAAAATgufA3&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/20950151223&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;thfi&quot;,
+    &quot;id&quot;: 2264227,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIyNjQyMjc=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/2264227?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thfi&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thfi&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thfi/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thfi/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thfi/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thfi/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thfi/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thfi/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thfi/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thfi/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thfi/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-11-14T18:36:34Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-11-14T19:18:39Z · commented · thfi</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3534219781&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2629#issuecomment-3534219781&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2629&quot;,
+  &quot;id&quot;: 3534219781,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz887Sp-oF&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;thfi&quot;,
+    &quot;id&quot;: 2264227,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIyNjQyMjc=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/2264227?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thfi&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thfi&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thfi/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thfi/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thfi/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thfi/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thfi/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thfi/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thfi/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thfi/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thfi/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-11-14T19:18:39Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-11-14T19:18:39Z&quot;,
+  &quot;body&quot;: &quot;For anyone looking for an automated solution to backup the database: I addressed backup&#x27;ing the database the follow way. As headscale is started and stopped via systemd, add an override configuration that copies the database to another file each time the service is stopped. In the example below, the backup&#x27;s filename contains the file&#x27;s MD5 checksum to avoid having multiple copies of the same database and the headscale version number in case there are incompatible changes across versions. File properties like modification dates are kept when copying, allowing to identify old copies that one can delete.\n\n1. Create the file `/etc/systemd/system/headscale.service.d/backup-config.conf` as follows:\n    ```\n    [Service]\n    ExecStopPost=/usr/bin/bash -c &#x27;cp --verbose --preserve=all /var/lib/headscale/db.sqlite /var/lib/headscale/\&quot;$(headscale version|grep -Po --color=NEVER \&quot;(?&lt;=v?)[01](\\\\.[0-9]+)+\&quot;|head -n1)\&quot;-\&quot;$(md5sum &lt;\&quot;/var/lib/headscale/db.sqlite\&quot;|cut -f1 -d \&quot; \&quot;)\&quot;-db.sqlite&#x27;\n    ```\n2. Tell systemd to reload the updated configuration: `systemctl daemon-reload`&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3534219781/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;thfi&quot;,
+    &quot;id&quot;: 2264227,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIyNjQyMjc=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/2264227?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thfi&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thfi&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thfi/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thfi/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thfi/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thfi/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thfi/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thfi/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thfi/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thfi/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thfi/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-02-26T23:20:27Z · mentioned · thfi</summary><pre>{
+  &quot;id&quot;: 23119989358,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz8864TzZ_zwAAAAViDwpu&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/23119989358&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;thfi&quot;,
+    &quot;id&quot;: 2264227,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIyNjQyMjc=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/2264227?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thfi&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thfi&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thfi/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thfi/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thfi/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thfi/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thfi/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thfi/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thfi/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thfi/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thfi/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-02-26T23:20:27Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-02-26T23:20:27Z · subscribed · thfi</summary><pre>{
+  &quot;id&quot;: 23119989370,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz8864TzZ_zwAAAAViDwp6&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/23119989370&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;thfi&quot;,
+    &quot;id&quot;: 2264227,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIyNjQyMjc=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/2264227?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thfi&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thfi&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thfi/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thfi/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thfi/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thfi/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thfi/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thfi/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thfi/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thfi/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thfi/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-02-26T23:20:27Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-03-02T22:43:49Z · commented · thfi</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3987391621&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2629#issuecomment-3987391621&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2629&quot;,
+  &quot;id&quot;: 3987391621,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz887tqsSF&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;thfi&quot;,
+    &quot;id&quot;: 2264227,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIyNjQyMjc=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/2264227?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thfi&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thfi&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thfi/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thfi/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thfi/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thfi/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thfi/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thfi/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thfi/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thfi/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thfi/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-03-02T22:43:49Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-03-02T22:43:49Z&quot;,
+  &quot;body&quot;: &quot;Just tested with the latest stable version:\n\n$ headscale version\nheadscale version v0.28.0\ncommit: 97fa117c48a58bee3941e5e8b4393873501afe14\nbuild time: 2026-02-04T20:26:22Z\nbuilt with: go1.25.5 linux/amd64\n\n$ headscale version|grep -Po --color=NEVER \n\&quot;(?&lt;=v?)[01](\\\\.[0-9]+)+\&quot;|head -n1\n0.28.0\n\n\nI suspect your problem is more related to `grep`. The version I am using \nGNU grep 3.11, where `grep -P` uses \&quot;PCRE2 10.46 2025-08-27\&quot;\n\nRemoving `(?&lt;=v?)` from regular expression the seems to work as well, \nreturning the same version string. Test if that works better for you.\n\n\nOn 27.02.26 00:20, Tom Grushka wrote:\n&gt; *tgrushka* left a comment (juanfont/headscale#2629) &lt;https://github.com/ \n&gt; juanfont/headscale/issues/2629#issuecomment-3969814965&gt;\n&gt; \n&gt; Thank you, @thfi &lt;https://github.com/thfi&gt; . The lookbehind regex in \n&gt; your example did not work for me, as I got:\n&gt; |grep: lookbehind assertion is not fixed length|\n&gt; \n&gt; Maybe it was for a beta or pre-release version?\n&gt; \n&gt; This version works for me. You had a great idea to do this in a separate \n&gt; systemd \&quot;add-on\&quot; file that doesn&#x27;t get overwritten by the package:\n&gt; \n&gt; |[Service] ExecStopPost=/usr/bin/bash -c &#x27;cp --verbose --preserve=all / \n&gt; var/lib/headscale/db.sqlite /var/lib/headscale/backup-$(headscale \n&gt; version)-$(md5sum &lt; /var/lib/headscale/db.sqlite | cut -f1 -d \&quot; \&quot;)- \n&gt; db.sqlite&#x27; |\n&gt; \n&gt; This yields filenames like:\n&gt; |backup-0.26.0-43d67d794fcd3dc4f1bcc84f527dec47-db.sqlite|\n&gt; \n&gt; —\n&gt; Reply to this email directly, view it on GitHub &lt;https://github.com/ \n&gt; juanfont/headscale/issues/2629#issuecomment-3969814965&gt;, or unsubscribe \n&gt; &lt;https://github.com/notifications/unsubscribe-auth/ \n&gt; AARIZIZOAEQQSPOFJRXDQT34N55U7AVCNFSM6AAAAAB56R363GVHI2DSMVQWIX3LMV43OSLTON2WKQ3PNVWWK3TUHMZTSNRZHAYTIOJWGU&gt;.\n&gt; You are receiving this because you were mentioned.Message ID: &lt;juanfont/ \n&gt; ***@***.***&gt;\n&gt; \n\n&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3987391621/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;thfi&quot;,
+    &quot;id&quot;: 2264227,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIyNjQyMjc=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/2264227?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thfi&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thfi&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thfi/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thfi/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thfi/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thfi/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thfi/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thfi/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thfi/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thfi/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thfi/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-03-02T22:43:50Z · mentioned · thfi</summary><pre>{
+  &quot;id&quot;: 23208240900,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz8864TzZ_zwAAAAVnUacE&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/23208240900&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;thfi&quot;,
+    &quot;id&quot;: 2264227,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIyNjQyMjc=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/2264227?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thfi&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thfi&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thfi/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thfi/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thfi/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thfi/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thfi/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thfi/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thfi/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thfi/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thfi/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-03-02T22:43:50Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-03-02T22:43:50Z · subscribed · thfi</summary><pre>{
+  &quot;id&quot;: 23208240919,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz8864TzZ_zwAAAAVnUacX&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/23208240919&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;thfi&quot;,
+    &quot;id&quot;: 2264227,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIyNjQyMjc=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/2264227?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thfi&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thfi&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thfi/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thfi/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thfi/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thfi/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thfi/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thfi/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thfi/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thfi/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thfi/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-03-02T22:43:50Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

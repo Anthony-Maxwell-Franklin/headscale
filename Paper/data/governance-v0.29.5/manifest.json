@@ -1,0 +1,18 @@
+{
+  "tag": "v0.29.5",
+  "files": [
+    {
+      "path": "CONTRIBUTING.md",
+      "file": "CONTRIBUTING.md.txt",
+      "sha256": "f272d545c3d726777e5d5d85efe309c6455152dfbbc17ccf2ed18433a4c27f32",
+      "url": "https://github.com/juanfont/headscale/blob/v0.29.5/CONTRIBUTING.md"
+    },
+    {
+      "path": ".github/CODEOWNERS",
+      "file": "CODEOWNERS.txt",
+      "sha256": "6cb8e8d972b6050e61fa8a5f27f4d8fb20a804199b277ff018052d34ee188861",
+      "url": "https://github.com/juanfont/headscale/blob/v0.29.5/.github/CODEOWNERS"
+    }
+  ],
+  "interpretation": "Declared contribution/ownership policy; branch enforcement and historical effects are not established"
+}

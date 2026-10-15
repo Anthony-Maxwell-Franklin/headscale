@@ -1,0 +1,69 @@
+{
+  "scanned_files": 17698,
+  "expanded_bytes_checked": 309645315,
+  "findings": [
+    {
+      "file": "Paper/data/pr-files-2026-10-13/pulls/1444/files/page_0002.json",
+      "types": [
+        "private_key"
+      ]
+    },
+    {
+      "file": "Paper/data/pr-files-2026-10-13/pulls/388/files/page_0001.json",
+      "types": [
+        "private_key"
+      ]
+    },
+    {
+      "file": "Paper/data/pr-files-2026-10-13/pulls/801/files/page_0001.json",
+      "types": [
+        "private_key"
+      ]
+    }
+  ],
+  "public_test_fixture_exceptions": [
+    {
+      "api_page": "Paper/data/pr-files-2026-10-13/pulls/1444/files/page_0002.json",
+      "upstream_path": "integration_test/etc_embedded_derp/tls/server.key",
+      "public_blob_sha1": "8a2df34be514dc4a02d02a9070a2a393fce2e698",
+      "blob_sha256": "869deb1c4d0d2b84a56fbc95221590427488f1c5c9cc7ef8f9a850d8aa5ae6d8",
+      "status": "removed",
+      "reason": "Public upstream integration-test TLS fixture; patch lines verified against upstream Git object"
+    },
+    {
+      "api_page": "Paper/data/pr-files-2026-10-13/pulls/1444/files/page_0002.json",
+      "upstream_path": "integration_test/etc_oidc/tls/server.key",
+      "public_blob_sha1": "8a2df34be514dc4a02d02a9070a2a393fce2e698",
+      "blob_sha256": "869deb1c4d0d2b84a56fbc95221590427488f1c5c9cc7ef8f9a850d8aa5ae6d8",
+      "status": "removed",
+      "reason": "Public upstream integration-test TLS fixture; patch lines verified against upstream Git object"
+    },
+    {
+      "api_page": "Paper/data/pr-files-2026-10-13/pulls/388/files/page_0001.json",
+      "upstream_path": "integration_test/etc_embedded_derp/tls/server.key",
+      "public_blob_sha1": "8a2df34be514dc4a02d02a9070a2a393fce2e698",
+      "blob_sha256": "869deb1c4d0d2b84a56fbc95221590427488f1c5c9cc7ef8f9a850d8aa5ae6d8",
+      "status": "added",
+      "reason": "Public upstream integration-test TLS fixture; patch lines verified against upstream Git object"
+    },
+    {
+      "api_page": "Paper/data/pr-files-2026-10-13/pulls/801/files/page_0001.json",
+      "upstream_path": "integration_test/etc_oidc/tls/server.key",
+      "public_blob_sha1": "8a2df34be514dc4a02d02a9070a2a393fce2e698",
+      "blob_sha256": "869deb1c4d0d2b84a56fbc95221590427488f1c5c9cc7ef8f9a850d8aa5ae6d8",
+      "status": "added",
+      "reason": "Public upstream integration-test TLS fixture; patch lines verified against upstream Git object"
+    }
+  ],
+  "unresolved_findings": [],
+  "checked_at_utc": "2026-10-15T10:58:49.957741+00:00",
+  "scope": "Initial research-branch candidate files; ZIP entries and extracted PDF text included",
+  "patterns_checked": [
+    "configured GitHub credential exact value",
+    "GitHub token prefixes",
+    "Tailscale auth/API keys",
+    "AWS access-key IDs",
+    "PEM private-key headers"
+  ],
+  "limitations": "Pattern scan and exact configured-credential comparison; not an exhaustive detector of every possible secret format"
+}

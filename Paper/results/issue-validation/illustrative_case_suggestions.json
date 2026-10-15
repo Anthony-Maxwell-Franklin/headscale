@@ -1,0 +1,43 @@
+{
+  "reviewer": "assistant",
+  "status": "Provisional suggestions, not independent human coding",
+  "cases": [
+    {
+      "issue": 1636,
+      "responsibility_locus": "server_defect_report",
+      "closure_outcome": "stale_or_administrative",
+      "basis": [
+        "https://github.com/juanfont/headscale/issues/1636#issuecomment-1998759942"
+      ]
+    },
+    {
+      "issue": 1313,
+      "responsibility_locus": "deployment_or_configuration",
+      "closure_outcome": "configuration_resolution_supported",
+      "basis": [
+        "https://github.com/juanfont/headscale/issues/1313#issuecomment-1496765421",
+        "https://github.com/juanfont/headscale/issues/1313#issuecomment-1498385259"
+      ]
+    },
+    {
+      "issue": 2121,
+      "responsibility_locus": "server_defect_report",
+      "closure_outcome": "server_repair_supported",
+      "basis": [
+        "https://github.com/juanfont/headscale/commit/064c46f2a5889a328627673f153a01c26812c945"
+      ],
+      "patch_sha256": "c7f32e26ded67add83698011979257ab608cb202fe4a907d1b507dd8a6bae911",
+      "interpretation": "Explicit Fixes reference and inspected uniqueness-validation/test changes; no runtime test claimed"
+    },
+    {
+      "issue": 2355,
+      "responsibility_locus": "client_or_upstream_report",
+      "closure_outcome": "stale_or_administrative",
+      "basis": [
+        "https://github.com/juanfont/headscale/issues/2355#issuecomment-2716315879",
+        "https://github.com/juanfont/headscale/issues/2355#issuecomment-2982810949"
+      ],
+      "interpretation": "Discussion attributes behaviour to client-side connection handling; upstream fix correctness not independently tested"
+    }
+  ]
+}

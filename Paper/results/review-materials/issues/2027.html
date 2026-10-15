@@ -1,0 +1,1253 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #2027: [Bug] tailscale on ios cannot connect to the postgresql server</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #2027: [Bug] tailscale on ios cannot connect to the postgresql server</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/2027">Original issue #2027</a></p><p>Created: 2024-07-24T04:41:24Z; updated: 2024-09-03T07:27:32Z; observed state: closed; reason: not_planned</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [X] This is not a support request
+
+### Is there an existing issue for this?
+
+- [X] I have searched the existing issues
+
+### Current Behavior
+
+After I switched my headscale&#x27;s database from sqlite to postgresql, I used my iPhone to reconnect, and then he prompted the following problem and could not connect correctly, which did not appear on sqlite&#x27;s headscale.
+![IMG_1713](https://github.com/user-attachments/assets/841121fa-c829-4db6-8511-541a3c040556)
+
+
+### Expected Behavior
+
+Can connect to the server normally
+
+### Steps To Reproduce
+
+install headscale and postgresql in ubuntu22, configure the configuration file and start it, then use tailscale of iPhone to connect to the headscale server
+
+### Environment
+
+```markdown
+- OS: ubuntu 22.04
+- Headscale version: v0.23.0-beta1
+- Tailscale version: v1.70.0
+```
+
+
+### Runtime environment
+
+- [X] Headscale is behind a (reverse) proxy
+- [ ] Headscale runs in a container
+
+### Anything else?
+
+_No response_</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/2027#issuecomment-2253903096">panteparak</a></h3><p>Created: 2024-07-27T07:27:11Z; updated: 2024-07-27T07:27:11Z</p><pre>which Headscale version are you running? I&#x27;ve just migrated SQLite to Postgres with a few hiccups on DB side, but solvable by running a few SQL commands.
+
+Can you outline a few more details as listed below?
+
+- Outline migration steps/tools used to migrate SQLite to Postgres and what versions are they running on?
+- Show us the current SQL Database Schema. There are a few incompatible fields between SQLite and Postgres
+- Run headscale with `DEBUG` Log Level and show us the logs
+- Which Reverse Proxy are you running and the configurations are you using</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2027#issuecomment-2254366958">wangzhijie0602</a></h3><p>Created: 2024-07-28T06:54:13Z; updated: 2024-07-28T06:54:13Z</p><pre>I&#x27;m glad you can reply to me, I will provide you with more information next
+
+First of all, I didn&#x27;t migrate from SQLite to Postgres. I directly created an empty Postgres and rejoined it using the tailscale client. I wanted to test Postgres first, so I didn&#x27;t have time to migrate my SQLite yet.
+
+I created two new servers to reproduce the problem. What follows is a description based on the new environment.
+
+**Next I will introduce my environment below**
+
+For server side
+
+ - System: ubuntu 22.04 LTS
+ - headscale: [v0.23.0-beta1](https://github.com/juanfont/headscale/releases/tag/v0.23.0-beta1)
+ - Postgres : 14
+
+For client
+
+Client 1:
+
+ - System: ios 17.5.1
+ - tailscale: v1.70.0
+
+Client 2:
+
+- System: ubuntu 22.04 LTS
+- tailscale: v1.70.0
+
+**The following is my headscale config file**
+
+```yaml
+---
+# headscale will look for a configuration file named `config.yaml` (or `config.json`) in the following order:
+#
+# - `/etc/headscale`
+# - `~/.headscale`
+# - current working directory
+
+# The url clients will connect to.
+# Typically this will be a domain like:
+#
+# https://myheadscale.example.com:443
+#
+server_url: http://116.62.188.235:8080
+
+# Address to listen to / bind to on the server
+#
+# For production:
+# listen_addr: 0.0.0.0:8080
+listen_addr: 0.0.0.0:8080
+
+# Address to listen to /metrics, you may want
+# to keep this endpoint private to your internal
+# network
+#
+metrics_listen_addr: 127.0.0.1:9090
+
+# Address to listen for gRPC.
+# gRPC is used for controlling a headscale server
+# remotely with the CLI
+# Note: Remote access _only_ works if you have
+# valid certificates.
+#
+# For production:
+# grpc_listen_addr: 0.0.0.0:50443
+grpc_listen_addr: 127.0.0.1:50443
+
+# Allow the gRPC admin interface to run in INSECURE
+# mode. This is not recommended as the traffic will
+# be unencrypted. Only enable if you know what you
+# are doing.
+grpc_allow_insecure: false
+
+# The Noise section includes specific configuration for the
+# TS2021 Noise protocol
+noise:
+  # The Noise private key is used to encrypt the
+  # traffic between headscale and Tailscale clients when
+  # using the new Noise-based protocol.
+  private_key_path: /var/lib/headscale/noise_private.key
+
+# List of IP prefixes to allocate tailaddresses from.
+# Each prefix consists of either an IPv4 or IPv6 address,
+# and the associated prefix length, delimited by a slash.
+# It must be within IP ranges supported by the Tailscale
+# client - i.e., subnets of 100.64.0.0/10 and fd7a:115c:a1e0::/48.
+# See below:
+# IPv6: https://github.com/tailscale/tailscale/blob/22ebb25e833264f58d7c3f534a8b166894a89536/net/tsaddr/tsaddr.go#LL81C52-L81C71
+# IPv4: https://github.com/tailscale/tailscale/blob/22ebb25e833264f58d7c3f534a8b166894a89536/net/tsaddr/tsaddr.go#L33
+# Any other range is NOT supported, and it will cause unexpected issues.
+prefixes:
+  v6: fd7a:115c:a1e0::/48
+  v4: 100.64.0.0/10
+
+  # Strategy used for allocation of IPs to nodes, available options:
+  # - sequential (default): assigns the next free IP from the previous given IP.
+  # - random: assigns the next free IP from a pseudo-random IP generator (crypto/rand).
+  allocation: sequential
+
+# DERP is a relay system that Tailscale uses when a direct
+# connection cannot be established.
+# https://tailscale.com/blog/how-tailscale-works/#encrypted-tcp-relays-derp
+#
+# headscale needs a list of DERP servers that can be presented
+# to the clients.
+derp:
+  server:
+    # If enabled, runs the embedded DERP server and merges it into the rest of the DERP config
+    # The Headscale server_url defined above MUST be using https, DERP requires TLS to be in place
+    enabled: false
+
+    # Region ID to use for the embedded DERP server.
+    # The local DERP prevails if the region ID collides with other region ID coming from
+    # the regular DERP config.
+    region_id: 999
+
+    # Region code and name are displayed in the Tailscale UI to identify a DERP region
+    region_code: &quot;headscale&quot;
+    region_name: &quot;Headscale Embedded DERP&quot;
+
+    # Listens over UDP at the configured address for STUN connections - to help with NAT traversal.
+    # When the embedded DERP server is enabled stun_listen_addr MUST be defined.
+    #
+    # For more details on how this works, check this great article: https://tailscale.com/blog/how-tailscale-works/
+    stun_listen_addr: &quot;0.0.0.0:3478&quot;
+
+    # Private key used to encrypt the traffic between headscale DERP
+    # and Tailscale clients.
+    # The private key file will be autogenerated if it&#x27;s missing.
+    #
+    private_key_path: /var/lib/headscale/derp_server_private.key
+
+    # This flag can be used, so the DERP map entry for the embedded DERP server is not written automatically,
+    # it enables the creation of your very own DERP map entry using a locally available file with the parameter DERP.paths
+    # If you enable the DERP server and set this to false, it is required to add the DERP server to the DERP map using DERP.paths
+    automatically_add_embedded_derp_region: true
+
+    # For better connection stability (especially when using an Exit-Node and DNS is not working),
+    # it is possible to optionally add the public IPv4 and IPv6 address to the Derp-Map using:
+    ipv4: 1.2.3.4
+    ipv6: 2001:db8::1
+
+  # List of externally available DERP maps encoded in JSON
+  urls:
+    - https://controlplane.tailscale.com/derpmap/default
+
+  # Locally available DERP map files encoded in YAML
+  #
+  # This option is mostly interesting for people hosting
+  # their own DERP servers:
+  # https://tailscale.com/kb/1118/custom-derp-servers/
+  #
+  # paths:
+  #   - /etc/headscale/derp-example.yaml
+  paths: []
+
+  # If enabled, a worker will be set up to periodically
+  # refresh the given sources and update the derpmap
+  # will be set up.
+  auto_update_enabled: true
+
+  # How often should we check for DERP updates?
+  update_frequency: 24h
+
+# Disables the automatic check for headscale updates on startup
+disable_check_updates: false
+
+# Time before an inactive ephemeral node is deleted?
+ephemeral_node_inactivity_timeout: 30m
+
+database:
+  type: postgres
+
+  # # SQLite config
+  # sqlite:
+  #   path: /var/lib/headscale/db.sqlite
+
+  #   # Enable WAL mode for SQLite. This is recommended for production environments.
+  #   # https://www.sqlite.org/wal.html
+  #   write_ahead_log: true
+
+  # Postgres config
+  postgres:
+    # If using a Unix socket to connect to Postgres, set the socket path in the &#x27;host&#x27; field and leave &#x27;port&#x27; blank.
+    host: localhost
+    port: 5432
+    name: headscale
+    user: foo
+    pass: bar
+    max_open_conns: 10
+    max_idle_conns: 10
+    conn_max_idle_time_secs: 3600
+
+    # If other &#x27;sslmode&#x27; is required instead of &#x27;require(true)&#x27; and &#x27;disabled(false)&#x27;, set the &#x27;sslmode&#x27; you need
+    # in the &#x27;ssl&#x27; field. Refers to https://www.postgresql.org/docs/current/libpq-ssl.html Table 34.1.
+    ssl: false
+
+### TLS configuration
+#
+## Let&#x27;s encrypt / ACME
+#
+# headscale supports automatically requesting and setting up
+# TLS for a domain with Let&#x27;s Encrypt.
+#
+# URL to ACME directory
+acme_url: https://acme-v02.api.letsencrypt.org/directory
+
+# Email to register with ACME provider
+acme_email: &quot;&quot;
+
+# Domain name to request a TLS certificate for:
+tls_letsencrypt_hostname: &quot;&quot;
+
+# Path to store certificates and metadata needed by
+# letsencrypt
+# For production:
+tls_letsencrypt_cache_dir: /var/lib/headscale/cache
+
+# Type of ACME challenge to use, currently supported types:
+# HTTP-01 or TLS-ALPN-01
+# See [docs/tls.md](docs/tls.md) for more information
+tls_letsencrypt_challenge_type: HTTP-01
+# When HTTP-01 challenge is chosen, letsencrypt must set up a
+# verification endpoint, and it will be listening on:
+# :http = port 80
+tls_letsencrypt_listen: &quot;:http&quot;
+
+## Use already defined certificates:
+tls_cert_path: &quot;&quot;
+tls_key_path: &quot;&quot;
+
+log:
+  # Output formatting for logs: text or json
+  format: text
+  level: debug
+
+## Policy
+# headscale supports Tailscale&#x27;s ACL policies.
+# Please have a look to their KB to better
+# understand the concepts: https://tailscale.com/kb/1018/acls/
+policy:
+  # The mode can be &quot;file&quot; or &quot;database&quot; that defines
+  # where the ACL policies are stored and read from.
+  mode: file
+  # If the mode is set to &quot;file&quot;, the
+  # path to a file containing ACL policies.
+  # The file can be in YAML or HuJSON format.
+  path: &quot;&quot;
+
+## DNS
+#
+# headscale supports Tailscale&#x27;s DNS configuration and MagicDNS.
+# Please have a look to their KB to better understand the concepts:
+#
+# - https://tailscale.com/kb/1054/dns/
+# - https://tailscale.com/kb/1081/magicdns/
+# - https://tailscale.com/blog/2021-09-private-dns-with-magicdns/
+#
+dns_config:
+  # Whether to prefer using Headscale provided DNS or use local.
+  override_local_dns: true
+
+  # List of DNS servers to expose to clients.
+  nameservers:
+    - 1.1.1.1
+
+  # NextDNS (see https://tailscale.com/kb/1218/nextdns/).
+  # &quot;abc123&quot; is example NextDNS ID, replace with yours.
+  #
+  # With metadata sharing:
+  # nameservers:
+  #   - https://dns.nextdns.io/abc123
+  #
+  # Without metadata sharing:
+  # nameservers:
+  #   - 2a07:a8c0::ab:c123
+  #   - 2a07:a8c1::ab:c123
+
+  # Split DNS (see https://tailscale.com/kb/1054/dns/),
+  # list of search domains and the DNS to query for each one.
+  #
+  # restricted_nameservers:
+  #   foo.bar.com:
+  #     - 1.1.1.1
+  #   darp.headscale.net:
+  #     - 1.1.1.1
+  #     - 8.8.8.8
+
+  # Search domains to inject.
+  domains: []
+
+  # Extra DNS records
+  # so far only A-records are supported (on the tailscale side)
+  # See https://github.com/juanfont/headscale/blob/main/docs/dns-records.md#Limitations
+  # extra_records:
+  #   - name: &quot;grafana.myvpn.example.com&quot;
+  #     type: &quot;A&quot;
+  #     value: &quot;100.64.0.3&quot;
+  #
+  #   # you can also put it in one line
+  #   - { name: &quot;prometheus.myvpn.example.com&quot;, type: &quot;A&quot;, value: &quot;100.64.0.3&quot; }
+
+  # Whether to use [MagicDNS](https://tailscale.com/kb/1081/magicdns/).
+  # Only works if there is at least a nameserver defined.
+  magic_dns: true
+
+  # DEPRECATED
+  # Use the username as part of the DNS name for nodes, with this option enabled:
+  # node1.username.example.com
+  # while when this is disabled:
+  # node1.example.com
+  # This is a legacy option as Headscale has have this wrongly implemented
+  # while in upstream Tailscale, the username is not included.
+  use_username_in_magic_dns: false
+
+  # Defines the base domain to create the hostnames for MagicDNS.
+  # `base_domain` must be a FQDNs, without the trailing dot.
+  # The FQDN of the hosts will be
+  # `hostname.user.base_domain` (e.g., _myhost.myuser.example.com_).
+  base_domain: example.com
+
+# Unix socket used for the CLI to connect without authentication
+# Note: for production you will want to set this to something like:
+unix_socket: /var/run/headscale/headscale.sock
+unix_socket_permission: &quot;0770&quot;
+#
+# headscale supports experimental OpenID connect support,
+# it is still being tested and might have some bugs, please
+# help us test it.
+# OpenID Connect
+# oidc:
+#   only_start_if_oidc_is_available: true
+#   issuer: &quot;https://your-oidc.issuer.com/path&quot;
+#   client_id: &quot;your-oidc-client-id&quot;
+#   client_secret: &quot;your-oidc-client-secret&quot;
+#   # Alternatively, set `client_secret_path` to read the secret from the file.
+#   # It resolves environment variables, making integration to systemd&#x27;s
+#   # `LoadCredential` straightforward:
+#   client_secret_path: &quot;${CREDENTIALS_DIRECTORY}/oidc_client_secret&quot;
+#   # client_secret and client_secret_path are mutually exclusive.
+#
+#   # The amount of time from a node is authenticated with OpenID until it
+#   # expires and needs to reauthenticate.
+#   # Setting the value to &quot;0&quot; will mean no expiry.
+#   expiry: 180d
+#
+#   # Use the expiry from the token received from OpenID when the user logged
+#   # in, this will typically lead to frequent need to reauthenticate and should
+#   # only been enabled if you know what you are doing.
+#   # Note: enabling this will cause `oidc.expiry` to be ignored.
+#   use_expiry_from_token: false
+#
+#   # Customize the scopes used in the OIDC flow, defaults to &quot;openid&quot;, &quot;profile&quot; and &quot;email&quot; and add custom query
+#   # parameters to the Authorize Endpoint request. Scopes default to &quot;openid&quot;, &quot;profile&quot; and &quot;email&quot;.
+#
+#   scope: [&quot;openid&quot;, &quot;profile&quot;, &quot;email&quot;, &quot;custom&quot;]
+#   extra_params:
+#     domain_hint: example.com
+#
+#   # List allowed principal domains and/or users. If an authenticated user&#x27;s domain is not in this list, the
+#   # authentication request will be rejected.
+#
+#   allowed_domains:
+#     - example.com
+#   # Note: Groups from keycloak have a leading &#x27;/&#x27;
+#   allowed_groups:
+#     - /headscale
+#   allowed_users:
+#     - alice@example.com
+#
+#   # If `strip_email_domain` is set to `true`, the domain part of the username email address will be removed.
+#   # This will transform `first-name.last-name@example.com` to the user `first-name.last-name`
+#   # If `strip_email_domain` is set to `false` the domain part will NOT be removed resulting to the following
+#   user: `first-name.last-name.example.com`
+#
+#   strip_email_domain: true
+
+# Logtail configuration
+# Logtail is Tailscales logging and auditing infrastructure, it allows the control panel
+# to instruct tailscale nodes to log their activity to a remote server.
+logtail:
+  # Enable logtail for this headscales clients.
+  # As there is currently no support for overriding the log server in headscale, this is
+  # disabled by default. Enabling this will make your clients send logs to Tailscale Inc.
+  enabled: false
+
+# Enabling this option makes devices prefer a random port for WireGuard traffic over the
+# default static port 41641. This option is intended as a workaround for some buggy
+# firewall devices. See https://tailscale.com/kb/1181/firewalls/ for more information.
+randomize_client_port: true
+
+```
+
+**The following is my debug log after starting the headscale server**
+
+```txt
+root@iZbp1db1jr2xfl77stpy0xZ:~# headscale serve
+2024-07-28T13:48:45+08:00 INF Opening database database=postgres path=&quot;host=localhost dbname=headscale user=foo&quot;
+2024-07-28T13:48:46+08:00 DBG Loading DERPMap from path func=GetDERPMap url=https://controlplane.tailscale.com/derpmap/default
+2024-07-28T13:48:46+08:00 INF Setting up a DERPMap update worker frequency=86400000
+2024-07-28T13:48:46+08:00 INF listening and serving HTTP on: 0.0.0.0:8080
+2024-07-28T13:48:46+08:00 INF listening and serving debug and metrics on: 127.0.0.1:9090
+2024-07-28T13:55:28+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T13:55:28+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Node not found in database, creating new expiry=-62135596800 followup= machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=
+2024-07-28T13:55:28+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup= machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=
+2024-07-28T13:55:29+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T13:55:34+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=
+2024-07-28T13:55:34+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T13:55:39+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=
+2024-07-28T13:55:39+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T13:55:44+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=
+2024-07-28T13:55:44+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T13:55:49+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=
+2024-07-28T13:55:50+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T13:55:55+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=
+2024-07-28T13:55:55+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T13:56:00+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=
+2024-07-28T13:56:01+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T13:56:06+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=
+2024-07-28T13:56:06+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T13:56:11+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=
+2024-07-28T13:56:12+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T13:56:17+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=
+2024-07-28T13:56:18+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T13:56:22+08:00 DBG Registering node from API/CLI or auth callback expiresAt=&lt;nil&gt; machine_key=[LHXNY] registrationMethod=cli userName=test
+2024-07-28T13:56:22+08:00 DBG Registering node machine_key=[LHXNY] node=localhost node_key=[b8IwI] user=test
+2024-07-28T13:56:23+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=
+2024-07-28T13:56:25+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T13:56:25+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=localhost
+2024-07-28T13:56:25+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=localhost
+2024-07-28T13:56:25+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc0005f7380, chan: 0xc00054bbc0 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T13:56:46+08:00 DBG Registering node from API/CLI or auth callback expiresAt=&lt;nil&gt; machine_key=[LHXNY] registrationMethod=cli userName=test
+2024-07-28T13:56:52+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc0005f7380, chan: 0xc00054bbc0 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T13:56:53+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T13:56:53+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=localhost
+2024-07-28T13:56:53+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=localhost
+2024-07-28T13:56:53+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc0005f6480, chan: 0xc00054b0e0 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T13:56:53+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc0005f7680, chan: 0xc000104d80 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T13:56:53+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc0005f6480, chan: 0xc00054b0e0 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T13:56:53+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T13:56:53+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:641 &gt; We have the OldNodeKey in the database. This is a key refresh node=localhost
+2024-07-28T13:56:53+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:682 &gt; Node key successfully refreshed node=localhost node_key=[02gJr] old_node_key=[b8IwI]
+2024-07-28T13:56:53+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc0005f7680, chan: 0xc000104d80 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T13:56:53+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc0005f7980, chan: 0xc00009bf20 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T14:01:40+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc0005f7980, chan: 0xc00009bf20 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T14:01:43+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:01:43+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=localhost
+2024-07-28T14:01:43+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=localhost
+2024-07-28T14:01:43+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc0005f6480, chan: 0xc000bd4960 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T14:01:44+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc0005f6480, chan: 0xc000bd4960 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T14:01:44+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000686300, chan: 0xc00057c6c0 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T14:01:44+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:01:44+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:641 &gt; We have the OldNodeKey in the database. This is a key refresh node=localhost
+2024-07-28T14:01:44+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:682 &gt; Node key successfully refreshed node=localhost node_key=[J0Y32] old_node_key=[02gJr]
+2024-07-28T14:01:44+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc0005f7380, chan: 0xc000776180 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T14:01:44+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc000686300, chan: 0xc00057c6c0 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T14:12:34+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc0005f7380, chan: 0xc000776180 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T14:12:40+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:12:40+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=localhost
+2024-07-28T14:12:40+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=localhost
+2024-07-28T14:12:40+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000686600, chan: 0xc000104720 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T14:12:40+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc000686600, chan: 0xc000104720 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T14:12:40+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000002300, chan: 0xc000499260 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T14:12:40+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:12:40+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:641 &gt; We have the OldNodeKey in the database. This is a key refresh node=localhost
+2024-07-28T14:12:40+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:682 &gt; Node key successfully refreshed node=localhost node_key=[vVshz] old_node_key=[J0Y32]
+2024-07-28T14:12:40+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000002480, chan: 0xc0001304e0 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T14:12:40+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc000002300, chan: 0xc000499260 node=localhost node.id=1 omitPeers=false readOnly=false stream=true
+2024-07-28T14:25:37+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:25:37+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Node not found in database, creating new expiry=-62135596800 followup= machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=
+2024-07-28T14:25:37+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e expiry=-62135596800 followup= machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=
+2024-07-28T14:25:37+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:25:42+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=
+2024-07-28T14:25:42+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:25:47+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=
+2024-07-28T14:25:47+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:25:52+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=
+2024-07-28T14:25:52+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:25:53+08:00 DBG Registering node from API/CLI or auth callback expiresAt=&lt;nil&gt; machine_key=[4eaGW] registrationMethod=cli userName=test
+2024-07-28T14:25:53+08:00 DBG Registering node machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] user=test
+2024-07-28T14:25:57+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=
+2024-07-28T14:25:57+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:25:57+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=iZbp128wzc2zwaz21j6x3rZ
+2024-07-28T14:25:57+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=iZbp128wzc2zwaz21j6x3rZ
+2024-07-28T14:25:57+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000686a80, chan: 0xc000499bc0 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true
+2024-07-28T14:26:44+08:00 DBG Registering node from API/CLI or auth callback expiresAt=&lt;nil&gt; machine_key=[4eaGW] registrationMethod=cli userName=test
+2024-07-28T14:26:52+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:26:52+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc000686a80, chan: 0xc000499bc0 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true
+2024-07-28T14:26:52+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=iZbp128wzc2zwaz21j6x3rZ
+2024-07-28T14:26:52+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=iZbp128wzc2zwaz21j6x3rZ
+2024-07-28T14:26:52+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc0005f7b00, chan: 0xc0004b6840 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true
+2024-07-28T14:26:59+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:26:59+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc0005f7b00, chan: 0xc0004b6840 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true
+2024-07-28T14:26:59+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=iZbp128wzc2zwaz21j6x3rZ
+2024-07-28T14:26:59+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=iZbp128wzc2zwaz21j6x3rZ
+2024-07-28T14:26:59+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000686900, chan: 0xc00057d320 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true
+2024-07-28T14:27:04+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc000686900, chan: 0xc00057d320 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true
+2024-07-28T14:27:06+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:27:06+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=iZbp128wzc2zwaz21j6x3rZ
+2024-07-28T14:27:06+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=iZbp128wzc2zwaz21j6x3rZ
+2024-07-28T14:27:06+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000002300, chan: 0xc000c3d5c0 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true
+2024-07-28T14:27:06+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:27:06+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc000002300, chan: 0xc000c3d5c0 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true
+2024-07-28T14:27:06+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=iZbp128wzc2zwaz21j6x3rZ
+2024-07-28T14:27:06+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=iZbp128wzc2zwaz21j6x3rZ
+2024-07-28T14:27:06+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000686300, chan: 0xc000776720 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true
+2024-07-28T14:27:31+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:27:31+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc000686300, chan: 0xc000776720 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true
+2024-07-28T14:27:31+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=iZbp128wzc2zwaz21j6x3rZ
+2024-07-28T14:27:31+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=iZbp128wzc2zwaz21j6x3rZ
+2024-07-28T14:27:31+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000686d80, chan: 0xc00057dbc0 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true
+2024-07-28T14:27:37+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc000686d80, chan: 0xc00057dbc0 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true
+2024-07-28T14:29:03+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:29:03+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=iZbp128wzc2zwaz21j6x3rZ
+2024-07-28T14:29:03+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=iZbp128wzc2zwaz21j6x3rZ
+2024-07-28T14:29:03+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000686480, chan: 0xc000bd4de0 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true
+2024-07-28T14:29:42+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:29:42+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc000686480, chan: 0xc000bd4de0 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true
+2024-07-28T14:29:42+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=iZbp128wzc2zwaz21j6x3rZ
+2024-07-28T14:29:42+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=iZbp128wzc2zwaz21j6x3rZ
+2024-07-28T14:29:42+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000686a80, chan: 0xc0004b6ae0 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true
+2024-07-28T14:30:02+08:00 ERR ../home/runner/work/headscale/headscale/hscontrol/poll.go:719 &gt; Could not get machine from db error=&quot;record not found&quot; node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true
+2024/07/28 14:30:02 http2: panic serving 120.26.193.183:52916: runtime error: invalid memory address or nil pointer dereference
+goroutine 3669 [running]:
+golang.org/x/net/http2.(*serverConn).runHandler.func1()
+        /home/runner/go/pkg/mod/golang.org/x/net@v0.25.0/http2/server.go:2363 +0x145
+panic({0x1cf2040?, 0x337e5a0?})
+        /nix/store/3v17dij8rvg7q99009swxg52995r7s22-go-1.22.5/share/go/src/runtime/panic.go:770 +0x132
+github.com/juanfont/headscale/hscontrol.(*mapSession).serveLongPoll.func1()
+        /home/runner/work/headscale/headscale/hscontrol/poll.go:207 +0x90
+github.com/juanfont/headscale/hscontrol.(*mapSession).serveLongPoll(0xc000686a80)
+        /home/runner/work/headscale/headscale/hscontrol/poll.go:291 +0x1254
+github.com/juanfont/headscale/hscontrol.(*noiseServer).NoisePollNetMapHandler(0xc0006b3a70, {0x2380150, 0xc000121568}, 0xc0000abd40)
+        /home/runner/work/headscale/headscale/hscontrol/noise.go:240 +0x365
+net/http.HandlerFunc.ServeHTTP(0x7fc66366f108?, {0x2380150?, 0xc000121568?}, 0x69ec60?)
+        /nix/store/3v17dij8rvg7q99009swxg52995r7s22-go-1.22.5/share/go/src/net/http/server.go:2171 +0x29
+github.com/juanfont/headscale/hscontrol.prometheusMiddleware.func1({0x2380150, 0xc000121568}, 0xc0000abd40)
+        /home/runner/work/headscale/headscale/hscontrol/metrics.go:87 +0x143
+net/http.HandlerFunc.ServeHTTP(0xc0000abc20?, {0x2380150?, 0xc000121568?}, 0xc0004cc808?)
+        /nix/store/3v17dij8rvg7q99009swxg52995r7s22-go-1.22.5/share/go/src/net/http/server.go:2171 +0x29
+github.com/gorilla/mux.(*Router).ServeHTTP(0xc0005263c0, {0x2380150, 0xc000121568}, 0xc00055aa20)
+        /home/runner/go/pkg/mod/github.com/gorilla/mux@v1.8.1/mux.go:212 +0x1e2
+golang.org/x/net/http2.(*serverConn).runHandler(0x44975d?, 0xc000603fd0?, 0xb9a885?, 0xc000c31200?)
+        /home/runner/go/pkg/mod/golang.org/x/net@v0.25.0/http2/server.go:2370 +0xbb
+created by golang.org/x/net/http2.(*serverConn).scheduleHandler in goroutine 3655
+        /home/runner/go/pkg/mod/golang.org/x/net@v0.25.0/http2/server.go:2305 +0x21d
+2024-07-28T14:30:02+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap
+2024-07-28T14:30:02+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap
+2024-07-28T14:30:02+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap
+2024-07-28T14:30:03+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap
+2024-07-28T14:30:03+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap
+2024-07-28T14:30:03+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap
+2024-07-28T14:30:04+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap
+2024-07-28T14:30:04+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap
+2024-07-28T14:30:05+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap
+2024-07-28T14:30:06+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap
+2024-07-28T14:30:07+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap
+2024-07-28T14:30:08+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap
+2024-07-28T14:30:09+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:30:09+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Node not found in database, creating new expiry=-62135596800 followup= machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=
+2024-07-28T14:30:09+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e expiry=-62135596800 followup= machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=
+2024-07-28T14:30:09+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:30:14+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=
+2024-07-28T14:30:14+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:30:19+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=
+2024-07-28T14:30:20+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:30:24+08:00 DBG Registering node from API/CLI or auth callback expiresAt=&lt;nil&gt; machine_key=[4eaGW] registrationMethod=cli userName=test
+2024-07-28T14:30:24+08:00 DBG Registering node machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] user=test
+2024-07-28T14:30:25+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=
+2024-07-28T14:30:25+08:00 DBG New noise client cap_ver=102 handler=/key
+2024-07-28T14:30:25+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=iZbp128wzc2zwaz21j6x3rZ
+2024-07-28T14:30:25+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=iZbp128wzc2zwaz21j6x3rZ
+2024-07-28T14:30:25+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc0005f7380, chan: 0xc000d50ae0 node=iZbp128wzc2zwaz21j6x3rZ node.id=3 omitPeers=false readOnly=false stream=true
+2024-07-28T14:33:16+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc0005f7380, chan: 0xc000d50ae0 node=iZbp128wzc2zwaz21j6x3rZ node.id=3 omitPeers=false readOnly=false stream=true
+```
+
+Here I removed the reverse proxy and used IP to connect directly. The derp server uses the official derp server. It still has the same problem as before, so I infer that this problem has nothing to do with the reverse proxy.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2027#issuecomment-2254368727">wangzhijie0602</a></h3><p>Created: 2024-07-28T07:01:29Z; updated: 2024-07-28T07:01:29Z</p><pre>Here I added two new clients. In fact, the two new clients were not fully connected. I exported my Postgres database file.
+
+Here I first list the performance of the two clients
+Client 1:
+After connecting, the following is displayed
+![5a4d73c7bb3040a803556e1d94f7d5b](https://github.com/user-attachments/assets/f9f3d9db-8a4d-460a-b9c5-82507fe1b3e8)
+
+Client 2:
+It stays in this interface after connecting.
+![250844e7bd4ae5425f3449af3d611a4](https://github.com/user-attachments/assets/3f34f708-92ff-4da0-9d2d-c338cac6590b)
+
+The following content is the content of the server after I deleted the nodes on the server after the first connection failed on the Linux client.
+![d5e81ef9cd4b4b8e3355dbc831fbeee](https://github.com/user-attachments/assets/7a660080-d35d-4c87-9d2a-eedb2edfda1d)
+</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2027#issuecomment-2254369046">wangzhijie0602</a></h3><p>Created: 2024-07-28T07:02:40Z; updated: 2024-07-28T07:02:40Z</p><pre>Next is the sql dump file I exported containing the information of the two clients.
+[headscale_backup.zip](https://github.com/user-attachments/files/16402488/headscale_backup.zip)
+</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2027#issuecomment-2254369552">wangzhijie0602</a></h3><p>Created: 2024-07-28T07:04:49Z; updated: 2024-07-28T07:04:49Z</p><pre>The server information that appears in the above content is the test server I created. I released it after the test was completed. Now these server IPs no longer belong to me.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2027#issuecomment-2254370776">wangzhijie0602</a></h3><p>Created: 2024-07-28T07:09:23Z; updated: 2024-07-28T07:09:23Z</p><pre>Here are the steps I took when creating the database
+
+sudo -u postgres psql
+CREATE USER foo WITH PASSWORD &#x27;bar&#x27;;
+CREATE DATABASE headscale;
+GRANT ALL PRIVILEGES ON DATABASE headscale TO foo;
+\q
+</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2027#issuecomment-2322748330">mpoindexter</a></h3><p>Created: 2024-08-31T03:22:04Z; updated: 2024-08-31T03:22:04Z</p><pre>I think this is a duplicate of #764 </pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2027#issuecomment-2325791442">kradalby</a></h3><p>Created: 2024-09-03T07:27:32Z; updated: 2024-09-03T07:27:32Z</p><pre>Yes, likely, I will close as duplicate, we can open if not.</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2024-07-24T04:41:24Z · labeled · wangzhijie0602</summary><pre>{
+  &quot;id&quot;: 13624526127,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz886Qoq1BzwAAAAMsFcUv&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/13624526127&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;wangzhijie0602&quot;,
+    &quot;id&quot;: 46142484,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ2MTQyNDg0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/46142484?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/wangzhijie0602&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/wangzhijie0602&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-07-24T04:41:24Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-07-27T07:27:11Z · commented · panteparak</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2253903096&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2027#issuecomment-2253903096&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2027&quot;,
+  &quot;id&quot;: 2253903096,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886GV9T4&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;panteparak&quot;,
+    &quot;id&quot;: 16161996,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE2MTYxOTk2&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/16161996?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/panteparak&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/panteparak&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/panteparak/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/panteparak/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/panteparak/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/panteparak/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/panteparak/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/panteparak/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/panteparak/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/panteparak/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/panteparak/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-07-27T07:27:11Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-07-27T07:27:11Z&quot;,
+  &quot;body&quot;: &quot;which Headscale version are you running? I&#x27;ve just migrated SQLite to Postgres with a few hiccups on DB side, but solvable by running a few SQL commands.\r\n\r\nCan you outline a few more details as listed below?\r\n\r\n- Outline migration steps/tools used to migrate SQLite to Postgres and what versions are they running on?\r\n- Show us the current SQL Database Schema. There are a few incompatible fields between SQLite and Postgres\r\n- Run headscale with `DEBUG` Log Level and show us the logs\r\n- Which Reverse Proxy are you running and the configurations are you using&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2253903096/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;panteparak&quot;,
+    &quot;id&quot;: 16161996,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE2MTYxOTk2&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/16161996?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/panteparak&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/panteparak&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/panteparak/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/panteparak/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/panteparak/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/panteparak/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/panteparak/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/panteparak/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/panteparak/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/panteparak/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/panteparak/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-07-28T06:54:13Z · commented · wangzhijie0602</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2254366958&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2027#issuecomment-2254366958&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2027&quot;,
+  &quot;id&quot;: 2254366958,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886GXuju&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;wangzhijie0602&quot;,
+    &quot;id&quot;: 46142484,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ2MTQyNDg0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/46142484?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/wangzhijie0602&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/wangzhijie0602&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-07-28T06:54:13Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-07-28T06:54:13Z&quot;,
+  &quot;body&quot;: &quot;I&#x27;m glad you can reply to me, I will provide you with more information next\r\n\r\nFirst of all, I didn&#x27;t migrate from SQLite to Postgres. I directly created an empty Postgres and rejoined it using the tailscale client. I wanted to test Postgres first, so I didn&#x27;t have time to migrate my SQLite yet.\r\n\r\nI created two new servers to reproduce the problem. What follows is a description based on the new environment.\r\n\r\n**Next I will introduce my environment below**\r\n\r\nFor server side\r\n\r\n - System: ubuntu 22.04 LTS\r\n - headscale: [v0.23.0-beta1](https://github.com/juanfont/headscale/releases/tag/v0.23.0-beta1)\r\n - Postgres : 14\r\n\r\nFor client\r\n\r\nClient 1:\r\n\r\n - System: ios 17.5.1\r\n - tailscale: v1.70.0\r\n\r\nClient 2:\r\n\r\n- System: ubuntu 22.04 LTS\r\n- tailscale: v1.70.0\r\n\r\n**The following is my headscale config file**\r\n\r\n```yaml\r\n---\r\n# headscale will look for a configuration file named `config.yaml` (or `config.json`) in the following order:\r\n#\r\n# - `/etc/headscale`\r\n# - `~/.headscale`\r\n# - current working directory\r\n\r\n# The url clients will connect to.\r\n# Typically this will be a domain like:\r\n#\r\n# https://myheadscale.example.com:443\r\n#\r\nserver_url: http://116.62.188.235:8080\r\n\r\n# Address to listen to / bind to on the server\r\n#\r\n# For production:\r\n# listen_addr: 0.0.0.0:8080\r\nlisten_addr: 0.0.0.0:8080\r\n\r\n# Address to listen to /metrics, you may want\r\n# to keep this endpoint private to your internal\r\n# network\r\n#\r\nmetrics_listen_addr: 127.0.0.1:9090\r\n\r\n# Address to listen for gRPC.\r\n# gRPC is used for controlling a headscale server\r\n# remotely with the CLI\r\n# Note: Remote access _only_ works if you have\r\n# valid certificates.\r\n#\r\n# For production:\r\n# grpc_listen_addr: 0.0.0.0:50443\r\ngrpc_listen_addr: 127.0.0.1:50443\r\n\r\n# Allow the gRPC admin interface to run in INSECURE\r\n# mode. This is not recommended as the traffic will\r\n# be unencrypted. Only enable if you know what you\r\n# are doing.\r\ngrpc_allow_insecure: false\r\n\r\n# The Noise section includes specific configuration for the\r\n# TS2021 Noise protocol\r\nnoise:\r\n  # The Noise private key is used to encrypt the\r\n  # traffic between headscale and Tailscale clients when\r\n  # using the new Noise-based protocol.\r\n  private_key_path: /var/lib/headscale/noise_private.key\r\n\r\n# List of IP prefixes to allocate tailaddresses from.\r\n# Each prefix consists of either an IPv4 or IPv6 address,\r\n# and the associated prefix length, delimited by a slash.\r\n# It must be within IP ranges supported by the Tailscale\r\n# client - i.e., subnets of 100.64.0.0/10 and fd7a:115c:a1e0::/48.\r\n# See below:\r\n# IPv6: https://github.com/tailscale/tailscale/blob/22ebb25e833264f58d7c3f534a8b166894a89536/net/tsaddr/tsaddr.go#LL81C52-L81C71\r\n# IPv4: https://github.com/tailscale/tailscale/blob/22ebb25e833264f58d7c3f534a8b166894a89536/net/tsaddr/tsaddr.go#L33\r\n# Any other range is NOT supported, and it will cause unexpected issues.\r\nprefixes:\r\n  v6: fd7a:115c:a1e0::/48\r\n  v4: 100.64.0.0/10\r\n\r\n  # Strategy used for allocation of IPs to nodes, available options:\r\n  # - sequential (default): assigns the next free IP from the previous given IP.\r\n  # - random: assigns the next free IP from a pseudo-random IP generator (crypto/rand).\r\n  allocation: sequential\r\n\r\n# DERP is a relay system that Tailscale uses when a direct\r\n# connection cannot be established.\r\n# https://tailscale.com/blog/how-tailscale-works/#encrypted-tcp-relays-derp\r\n#\r\n# headscale needs a list of DERP servers that can be presented\r\n# to the clients.\r\nderp:\r\n  server:\r\n    # If enabled, runs the embedded DERP server and merges it into the rest of the DERP config\r\n    # The Headscale server_url defined above MUST be using https, DERP requires TLS to be in place\r\n    enabled: false\r\n\r\n    # Region ID to use for the embedded DERP server.\r\n    # The local DERP prevails if the region ID collides with other region ID coming from\r\n    # the regular DERP config.\r\n    region_id: 999\r\n\r\n    # Region code and name are displayed in the Tailscale UI to identify a DERP region\r\n    region_code: \&quot;headscale\&quot;\r\n    region_name: \&quot;Headscale Embedded DERP\&quot;\r\n\r\n    # Listens over UDP at the configured address for STUN connections - to help with NAT traversal.\r\n    # When the embedded DERP server is enabled stun_listen_addr MUST be defined.\r\n    #\r\n    # For more details on how this works, check this great article: https://tailscale.com/blog/how-tailscale-works/\r\n    stun_listen_addr: \&quot;0.0.0.0:3478\&quot;\r\n\r\n    # Private key used to encrypt the traffic between headscale DERP\r\n    # and Tailscale clients.\r\n    # The private key file will be autogenerated if it&#x27;s missing.\r\n    #\r\n    private_key_path: /var/lib/headscale/derp_server_private.key\r\n\r\n    # This flag can be used, so the DERP map entry for the embedded DERP server is not written automatically,\r\n    # it enables the creation of your very own DERP map entry using a locally available file with the parameter DERP.paths\r\n    # If you enable the DERP server and set this to false, it is required to add the DERP server to the DERP map using DERP.paths\r\n    automatically_add_embedded_derp_region: true\r\n\r\n    # For better connection stability (especially when using an Exit-Node and DNS is not working),\r\n    # it is possible to optionally add the public IPv4 and IPv6 address to the Derp-Map using:\r\n    ipv4: 1.2.3.4\r\n    ipv6: 2001:db8::1\r\n\r\n  # List of externally available DERP maps encoded in JSON\r\n  urls:\r\n    - https://controlplane.tailscale.com/derpmap/default\r\n\r\n  # Locally available DERP map files encoded in YAML\r\n  #\r\n  # This option is mostly interesting for people hosting\r\n  # their own DERP servers:\r\n  # https://tailscale.com/kb/1118/custom-derp-servers/\r\n  #\r\n  # paths:\r\n  #   - /etc/headscale/derp-example.yaml\r\n  paths: []\r\n\r\n  # If enabled, a worker will be set up to periodically\r\n  # refresh the given sources and update the derpmap\r\n  # will be set up.\r\n  auto_update_enabled: true\r\n\r\n  # How often should we check for DERP updates?\r\n  update_frequency: 24h\r\n\r\n# Disables the automatic check for headscale updates on startup\r\ndisable_check_updates: false\r\n\r\n# Time before an inactive ephemeral node is deleted?\r\nephemeral_node_inactivity_timeout: 30m\r\n\r\ndatabase:\r\n  type: postgres\r\n\r\n  # # SQLite config\r\n  # sqlite:\r\n  #   path: /var/lib/headscale/db.sqlite\r\n\r\n  #   # Enable WAL mode for SQLite. This is recommended for production environments.\r\n  #   # https://www.sqlite.org/wal.html\r\n  #   write_ahead_log: true\r\n\r\n  # Postgres config\r\n  postgres:\r\n    # If using a Unix socket to connect to Postgres, set the socket path in the &#x27;host&#x27; field and leave &#x27;port&#x27; blank.\r\n    host: localhost\r\n    port: 5432\r\n    name: headscale\r\n    user: foo\r\n    pass: bar\r\n    max_open_conns: 10\r\n    max_idle_conns: 10\r\n    conn_max_idle_time_secs: 3600\r\n\r\n    # If other &#x27;sslmode&#x27; is required instead of &#x27;require(true)&#x27; and &#x27;disabled(false)&#x27;, set the &#x27;sslmode&#x27; you need\r\n    # in the &#x27;ssl&#x27; field. Refers to https://www.postgresql.org/docs/current/libpq-ssl.html Table 34.1.\r\n    ssl: false\r\n\r\n### TLS configuration\r\n#\r\n## Let&#x27;s encrypt / ACME\r\n#\r\n# headscale supports automatically requesting and setting up\r\n# TLS for a domain with Let&#x27;s Encrypt.\r\n#\r\n# URL to ACME directory\r\nacme_url: https://acme-v02.api.letsencrypt.org/directory\r\n\r\n# Email to register with ACME provider\r\nacme_email: \&quot;\&quot;\r\n\r\n# Domain name to request a TLS certificate for:\r\ntls_letsencrypt_hostname: \&quot;\&quot;\r\n\r\n# Path to store certificates and metadata needed by\r\n# letsencrypt\r\n# For production:\r\ntls_letsencrypt_cache_dir: /var/lib/headscale/cache\r\n\r\n# Type of ACME challenge to use, currently supported types:\r\n# HTTP-01 or TLS-ALPN-01\r\n# See [docs/tls.md](docs/tls.md) for more information\r\ntls_letsencrypt_challenge_type: HTTP-01\r\n# When HTTP-01 challenge is chosen, letsencrypt must set up a\r\n# verification endpoint, and it will be listening on:\r\n# :http = port 80\r\ntls_letsencrypt_listen: \&quot;:http\&quot;\r\n\r\n## Use already defined certificates:\r\ntls_cert_path: \&quot;\&quot;\r\ntls_key_path: \&quot;\&quot;\r\n\r\nlog:\r\n  # Output formatting for logs: text or json\r\n  format: text\r\n  level: debug\r\n\r\n## Policy\r\n# headscale supports Tailscale&#x27;s ACL policies.\r\n# Please have a look to their KB to better\r\n# understand the concepts: https://tailscale.com/kb/1018/acls/\r\npolicy:\r\n  # The mode can be \&quot;file\&quot; or \&quot;database\&quot; that defines\r\n  # where the ACL policies are stored and read from.\r\n  mode: file\r\n  # If the mode is set to \&quot;file\&quot;, the\r\n  # path to a file containing ACL policies.\r\n  # The file can be in YAML or HuJSON format.\r\n  path: \&quot;\&quot;\r\n\r\n## DNS\r\n#\r\n# headscale supports Tailscale&#x27;s DNS configuration and MagicDNS.\r\n# Please have a look to their KB to better understand the concepts:\r\n#\r\n# - https://tailscale.com/kb/1054/dns/\r\n# - https://tailscale.com/kb/1081/magicdns/\r\n# - https://tailscale.com/blog/2021-09-private-dns-with-magicdns/\r\n#\r\ndns_config:\r\n  # Whether to prefer using Headscale provided DNS or use local.\r\n  override_local_dns: true\r\n\r\n  # List of DNS servers to expose to clients.\r\n  nameservers:\r\n    - 1.1.1.1\r\n\r\n  # NextDNS (see https://tailscale.com/kb/1218/nextdns/).\r\n  # \&quot;abc123\&quot; is example NextDNS ID, replace with yours.\r\n  #\r\n  # With metadata sharing:\r\n  # nameservers:\r\n  #   - https://dns.nextdns.io/abc123\r\n  #\r\n  # Without metadata sharing:\r\n  # nameservers:\r\n  #   - 2a07:a8c0::ab:c123\r\n  #   - 2a07:a8c1::ab:c123\r\n\r\n  # Split DNS (see https://tailscale.com/kb/1054/dns/),\r\n  # list of search domains and the DNS to query for each one.\r\n  #\r\n  # restricted_nameservers:\r\n  #   foo.bar.com:\r\n  #     - 1.1.1.1\r\n  #   darp.headscale.net:\r\n  #     - 1.1.1.1\r\n  #     - 8.8.8.8\r\n\r\n  # Search domains to inject.\r\n  domains: []\r\n\r\n  # Extra DNS records\r\n  # so far only A-records are supported (on the tailscale side)\r\n  # See https://github.com/juanfont/headscale/blob/main/docs/dns-records.md#Limitations\r\n  # extra_records:\r\n  #   - name: \&quot;grafana.myvpn.example.com\&quot;\r\n  #     type: \&quot;A\&quot;\r\n  #     value: \&quot;100.64.0.3\&quot;\r\n  #\r\n  #   # you can also put it in one line\r\n  #   - { name: \&quot;prometheus.myvpn.example.com\&quot;, type: \&quot;A\&quot;, value: \&quot;100.64.0.3\&quot; }\r\n\r\n  # Whether to use [MagicDNS](https://tailscale.com/kb/1081/magicdns/).\r\n  # Only works if there is at least a nameserver defined.\r\n  magic_dns: true\r\n\r\n  # DEPRECATED\r\n  # Use the username as part of the DNS name for nodes, with this option enabled:\r\n  # node1.username.example.com\r\n  # while when this is disabled:\r\n  # node1.example.com\r\n  # This is a legacy option as Headscale has have this wrongly implemented\r\n  # while in upstream Tailscale, the username is not included.\r\n  use_username_in_magic_dns: false\r\n\r\n  # Defines the base domain to create the hostnames for MagicDNS.\r\n  # `base_domain` must be a FQDNs, without the trailing dot.\r\n  # The FQDN of the hosts will be\r\n  # `hostname.user.base_domain` (e.g., _myhost.myuser.example.com_).\r\n  base_domain: example.com\r\n\r\n# Unix socket used for the CLI to connect without authentication\r\n# Note: for production you will want to set this to something like:\r\nunix_socket: /var/run/headscale/headscale.sock\r\nunix_socket_permission: \&quot;0770\&quot;\r\n#\r\n# headscale supports experimental OpenID connect support,\r\n# it is still being tested and might have some bugs, please\r\n# help us test it.\r\n# OpenID Connect\r\n# oidc:\r\n#   only_start_if_oidc_is_available: true\r\n#   issuer: \&quot;https://your-oidc.issuer.com/path\&quot;\r\n#   client_id: \&quot;your-oidc-client-id\&quot;\r\n#   client_secret: \&quot;your-oidc-client-secret\&quot;\r\n#   # Alternatively, set `client_secret_path` to read the secret from the file.\r\n#   # It resolves environment variables, making integration to systemd&#x27;s\r\n#   # `LoadCredential` straightforward:\r\n#   client_secret_path: \&quot;${CREDENTIALS_DIRECTORY}/oidc_client_secret\&quot;\r\n#   # client_secret and client_secret_path are mutually exclusive.\r\n#\r\n#   # The amount of time from a node is authenticated with OpenID until it\r\n#   # expires and needs to reauthenticate.\r\n#   # Setting the value to \&quot;0\&quot; will mean no expiry.\r\n#   expiry: 180d\r\n#\r\n#   # Use the expiry from the token received from OpenID when the user logged\r\n#   # in, this will typically lead to frequent need to reauthenticate and should\r\n#   # only been enabled if you know what you are doing.\r\n#   # Note: enabling this will cause `oidc.expiry` to be ignored.\r\n#   use_expiry_from_token: false\r\n#\r\n#   # Customize the scopes used in the OIDC flow, defaults to \&quot;openid\&quot;, \&quot;profile\&quot; and \&quot;email\&quot; and add custom query\r\n#   # parameters to the Authorize Endpoint request. Scopes default to \&quot;openid\&quot;, \&quot;profile\&quot; and \&quot;email\&quot;.\r\n#\r\n#   scope: [\&quot;openid\&quot;, \&quot;profile\&quot;, \&quot;email\&quot;, \&quot;custom\&quot;]\r\n#   extra_params:\r\n#     domain_hint: example.com\r\n#\r\n#   # List allowed principal domains and/or users. If an authenticated user&#x27;s domain is not in this list, the\r\n#   # authentication request will be rejected.\r\n#\r\n#   allowed_domains:\r\n#     - example.com\r\n#   # Note: Groups from keycloak have a leading &#x27;/&#x27;\r\n#   allowed_groups:\r\n#     - /headscale\r\n#   allowed_users:\r\n#     - alice@example.com\r\n#\r\n#   # If `strip_email_domain` is set to `true`, the domain part of the username email address will be removed.\r\n#   # This will transform `first-name.last-name@example.com` to the user `first-name.last-name`\r\n#   # If `strip_email_domain` is set to `false` the domain part will NOT be removed resulting to the following\r\n#   user: `first-name.last-name.example.com`\r\n#\r\n#   strip_email_domain: true\r\n\r\n# Logtail configuration\r\n# Logtail is Tailscales logging and auditing infrastructure, it allows the control panel\r\n# to instruct tailscale nodes to log their activity to a remote server.\r\nlogtail:\r\n  # Enable logtail for this headscales clients.\r\n  # As there is currently no support for overriding the log server in headscale, this is\r\n  # disabled by default. Enabling this will make your clients send logs to Tailscale Inc.\r\n  enabled: false\r\n\r\n# Enabling this option makes devices prefer a random port for WireGuard traffic over the\r\n# default static port 41641. This option is intended as a workaround for some buggy\r\n# firewall devices. See https://tailscale.com/kb/1181/firewalls/ for more information.\r\nrandomize_client_port: true\r\n\r\n```\r\n\r\n**The following is my debug log after starting the headscale server**\r\n\r\n```txt\r\nroot@iZbp1db1jr2xfl77stpy0xZ:~# headscale serve\r\n2024-07-28T13:48:45+08:00 INF Opening database database=postgres path=\&quot;host=localhost dbname=headscale user=foo\&quot;\r\n2024-07-28T13:48:46+08:00 DBG Loading DERPMap from path func=GetDERPMap url=https://controlplane.tailscale.com/derpmap/default\r\n2024-07-28T13:48:46+08:00 INF Setting up a DERPMap update worker frequency=86400000\r\n2024-07-28T13:48:46+08:00 INF listening and serving HTTP on: 0.0.0.0:8080\r\n2024-07-28T13:48:46+08:00 INF listening and serving debug and metrics on: 127.0.0.1:9090\r\n2024-07-28T13:55:28+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T13:55:28+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Node not found in database, creating new expiry=-62135596800 followup= machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=\r\n2024-07-28T13:55:28+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup= machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=\r\n2024-07-28T13:55:29+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T13:55:34+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=\r\n2024-07-28T13:55:34+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T13:55:39+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=\r\n2024-07-28T13:55:39+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T13:55:44+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=\r\n2024-07-28T13:55:44+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T13:55:49+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=\r\n2024-07-28T13:55:50+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T13:55:55+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=\r\n2024-07-28T13:55:55+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T13:56:00+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=\r\n2024-07-28T13:56:01+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T13:56:06+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=\r\n2024-07-28T13:56:06+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T13:56:11+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=\r\n2024-07-28T13:56:12+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T13:56:17+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=\r\n2024-07-28T13:56:18+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T13:56:22+08:00 DBG Registering node from API/CLI or auth callback expiresAt=&lt;nil&gt; machine_key=[LHXNY] registrationMethod=cli userName=test\r\n2024-07-28T13:56:22+08:00 DBG Registering node machine_key=[LHXNY] node=localhost node_key=[b8IwI] user=test\r\n2024-07-28T13:56:23+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:2c75cd632751c84596e13328e9315867895df95a7299fe6f486583cd0eb65d25 machine_key=[LHXNY] node=localhost node_key=[b8IwI] node_key_old=\r\n2024-07-28T13:56:25+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T13:56:25+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=localhost\r\n2024-07-28T13:56:25+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=localhost\r\n2024-07-28T13:56:25+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc0005f7380, chan: 0xc00054bbc0 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T13:56:46+08:00 DBG Registering node from API/CLI or auth callback expiresAt=&lt;nil&gt; machine_key=[LHXNY] registrationMethod=cli userName=test\r\n2024-07-28T13:56:52+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc0005f7380, chan: 0xc00054bbc0 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T13:56:53+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T13:56:53+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=localhost\r\n2024-07-28T13:56:53+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=localhost\r\n2024-07-28T13:56:53+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc0005f6480, chan: 0xc00054b0e0 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T13:56:53+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc0005f7680, chan: 0xc000104d80 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T13:56:53+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc0005f6480, chan: 0xc00054b0e0 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T13:56:53+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T13:56:53+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:641 &gt; We have the OldNodeKey in the database. This is a key refresh node=localhost\r\n2024-07-28T13:56:53+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:682 &gt; Node key successfully refreshed node=localhost node_key=[02gJr] old_node_key=[b8IwI]\r\n2024-07-28T13:56:53+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc0005f7680, chan: 0xc000104d80 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T13:56:53+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc0005f7980, chan: 0xc00009bf20 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:01:40+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc0005f7980, chan: 0xc00009bf20 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:01:43+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:01:43+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=localhost\r\n2024-07-28T14:01:43+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=localhost\r\n2024-07-28T14:01:43+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc0005f6480, chan: 0xc000bd4960 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:01:44+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc0005f6480, chan: 0xc000bd4960 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:01:44+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000686300, chan: 0xc00057c6c0 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:01:44+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:01:44+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:641 &gt; We have the OldNodeKey in the database. This is a key refresh node=localhost\r\n2024-07-28T14:01:44+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:682 &gt; Node key successfully refreshed node=localhost node_key=[J0Y32] old_node_key=[02gJr]\r\n2024-07-28T14:01:44+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc0005f7380, chan: 0xc000776180 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:01:44+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc000686300, chan: 0xc00057c6c0 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:12:34+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc0005f7380, chan: 0xc000776180 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:12:40+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:12:40+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=localhost\r\n2024-07-28T14:12:40+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=localhost\r\n2024-07-28T14:12:40+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000686600, chan: 0xc000104720 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:12:40+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc000686600, chan: 0xc000104720 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:12:40+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000002300, chan: 0xc000499260 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:12:40+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:12:40+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:641 &gt; We have the OldNodeKey in the database. This is a key refresh node=localhost\r\n2024-07-28T14:12:40+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:682 &gt; Node key successfully refreshed node=localhost node_key=[vVshz] old_node_key=[J0Y32]\r\n2024-07-28T14:12:40+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000002480, chan: 0xc0001304e0 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:12:40+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc000002300, chan: 0xc000499260 node=localhost node.id=1 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:25:37+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:25:37+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Node not found in database, creating new expiry=-62135596800 followup= machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=\r\n2024-07-28T14:25:37+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e expiry=-62135596800 followup= machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=\r\n2024-07-28T14:25:37+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:25:42+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=\r\n2024-07-28T14:25:42+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:25:47+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=\r\n2024-07-28T14:25:47+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:25:52+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=\r\n2024-07-28T14:25:52+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:25:53+08:00 DBG Registering node from API/CLI or auth callback expiresAt=&lt;nil&gt; machine_key=[4eaGW] registrationMethod=cli userName=test\r\n2024-07-28T14:25:53+08:00 DBG Registering node machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] user=test\r\n2024-07-28T14:25:57+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=\r\n2024-07-28T14:25:57+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:25:57+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=iZbp128wzc2zwaz21j6x3rZ\r\n2024-07-28T14:25:57+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=iZbp128wzc2zwaz21j6x3rZ\r\n2024-07-28T14:25:57+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000686a80, chan: 0xc000499bc0 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:26:44+08:00 DBG Registering node from API/CLI or auth callback expiresAt=&lt;nil&gt; machine_key=[4eaGW] registrationMethod=cli userName=test\r\n2024-07-28T14:26:52+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:26:52+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc000686a80, chan: 0xc000499bc0 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:26:52+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=iZbp128wzc2zwaz21j6x3rZ\r\n2024-07-28T14:26:52+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=iZbp128wzc2zwaz21j6x3rZ\r\n2024-07-28T14:26:52+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc0005f7b00, chan: 0xc0004b6840 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:26:59+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:26:59+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc0005f7b00, chan: 0xc0004b6840 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:26:59+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=iZbp128wzc2zwaz21j6x3rZ\r\n2024-07-28T14:26:59+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=iZbp128wzc2zwaz21j6x3rZ\r\n2024-07-28T14:26:59+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000686900, chan: 0xc00057d320 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:27:04+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc000686900, chan: 0xc00057d320 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:27:06+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:27:06+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=iZbp128wzc2zwaz21j6x3rZ\r\n2024-07-28T14:27:06+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=iZbp128wzc2zwaz21j6x3rZ\r\n2024-07-28T14:27:06+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000002300, chan: 0xc000c3d5c0 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:27:06+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:27:06+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc000002300, chan: 0xc000c3d5c0 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:27:06+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=iZbp128wzc2zwaz21j6x3rZ\r\n2024-07-28T14:27:06+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=iZbp128wzc2zwaz21j6x3rZ\r\n2024-07-28T14:27:06+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000686300, chan: 0xc000776720 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:27:31+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:27:31+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc000686300, chan: 0xc000776720 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:27:31+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=iZbp128wzc2zwaz21j6x3rZ\r\n2024-07-28T14:27:31+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=iZbp128wzc2zwaz21j6x3rZ\r\n2024-07-28T14:27:31+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000686d80, chan: 0xc00057dbc0 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:27:37+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc000686d80, chan: 0xc00057dbc0 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:29:03+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:29:03+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=iZbp128wzc2zwaz21j6x3rZ\r\n2024-07-28T14:29:03+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=iZbp128wzc2zwaz21j6x3rZ\r\n2024-07-28T14:29:03+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000686480, chan: 0xc000bd4de0 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:29:42+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:29:42+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc000686480, chan: 0xc000bd4de0 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:29:42+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=iZbp128wzc2zwaz21j6x3rZ\r\n2024-07-28T14:29:42+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=iZbp128wzc2zwaz21j6x3rZ\r\n2024-07-28T14:29:42+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc000686a80, chan: 0xc0004b6ae0 node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:30:02+08:00 ERR ../home/runner/work/headscale/headscale/hscontrol/poll.go:719 &gt; Could not get machine from db error=\&quot;record not found\&quot; node=iZbp128wzc2zwaz21j6x3rZ node.id=2 omitPeers=false readOnly=false stream=true\r\n2024/07/28 14:30:02 http2: panic serving 120.26.193.183:52916: runtime error: invalid memory address or nil pointer dereference\r\ngoroutine 3669 [running]:\r\ngolang.org/x/net/http2.(*serverConn).runHandler.func1()\r\n        /home/runner/go/pkg/mod/golang.org/x/net@v0.25.0/http2/server.go:2363 +0x145\r\npanic({0x1cf2040?, 0x337e5a0?})\r\n        /nix/store/3v17dij8rvg7q99009swxg52995r7s22-go-1.22.5/share/go/src/runtime/panic.go:770 +0x132\r\ngithub.com/juanfont/headscale/hscontrol.(*mapSession).serveLongPoll.func1()\r\n        /home/runner/work/headscale/headscale/hscontrol/poll.go:207 +0x90\r\ngithub.com/juanfont/headscale/hscontrol.(*mapSession).serveLongPoll(0xc000686a80)\r\n        /home/runner/work/headscale/headscale/hscontrol/poll.go:291 +0x1254\r\ngithub.com/juanfont/headscale/hscontrol.(*noiseServer).NoisePollNetMapHandler(0xc0006b3a70, {0x2380150, 0xc000121568}, 0xc0000abd40)\r\n        /home/runner/work/headscale/headscale/hscontrol/noise.go:240 +0x365\r\nnet/http.HandlerFunc.ServeHTTP(0x7fc66366f108?, {0x2380150?, 0xc000121568?}, 0x69ec60?)\r\n        /nix/store/3v17dij8rvg7q99009swxg52995r7s22-go-1.22.5/share/go/src/net/http/server.go:2171 +0x29\r\ngithub.com/juanfont/headscale/hscontrol.prometheusMiddleware.func1({0x2380150, 0xc000121568}, 0xc0000abd40)\r\n        /home/runner/work/headscale/headscale/hscontrol/metrics.go:87 +0x143\r\nnet/http.HandlerFunc.ServeHTTP(0xc0000abc20?, {0x2380150?, 0xc000121568?}, 0xc0004cc808?)\r\n        /nix/store/3v17dij8rvg7q99009swxg52995r7s22-go-1.22.5/share/go/src/net/http/server.go:2171 +0x29\r\ngithub.com/gorilla/mux.(*Router).ServeHTTP(0xc0005263c0, {0x2380150, 0xc000121568}, 0xc00055aa20)\r\n        /home/runner/go/pkg/mod/github.com/gorilla/mux@v1.8.1/mux.go:212 +0x1e2\r\ngolang.org/x/net/http2.(*serverConn).runHandler(0x44975d?, 0xc000603fd0?, 0xb9a885?, 0xc000c31200?)\r\n        /home/runner/go/pkg/mod/golang.org/x/net@v0.25.0/http2/server.go:2370 +0xbb\r\ncreated by golang.org/x/net/http2.(*serverConn).scheduleHandler in goroutine 3655\r\n        /home/runner/go/pkg/mod/golang.org/x/net@v0.25.0/http2/server.go:2305 +0x21d\r\n2024-07-28T14:30:02+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap\r\n2024-07-28T14:30:02+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap\r\n2024-07-28T14:30:02+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap\r\n2024-07-28T14:30:03+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap\r\n2024-07-28T14:30:03+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap\r\n2024-07-28T14:30:03+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap\r\n2024-07-28T14:30:04+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap\r\n2024-07-28T14:30:04+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap\r\n2024-07-28T14:30:05+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap\r\n2024-07-28T14:30:06+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap\r\n2024-07-28T14:30:07+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap\r\n2024-07-28T14:30:08+08:00 ERR Failed to fetch node from the database with node key: nodekey:bc7e2f5c26d9a11eb77260650699cf8e633cd29f9b761498e5d9ae1b52e9af6d handler=NoisePollNetMap\r\n2024-07-28T14:30:09+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:30:09+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Node not found in database, creating new expiry=-62135596800 followup= machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=\r\n2024-07-28T14:30:09+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e expiry=-62135596800 followup= machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=\r\n2024-07-28T14:30:09+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:30:14+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=\r\n2024-07-28T14:30:14+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:30:19+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=\r\n2024-07-28T14:30:20+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:30:24+08:00 DBG Registering node from API/CLI or auth callback expiresAt=&lt;nil&gt; machine_key=[4eaGW] registrationMethod=cli userName=test\r\n2024-07-28T14:30:24+08:00 DBG Registering node machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] user=test\r\n2024-07-28T14:30:25+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:28 &gt; Successfully sent auth url: http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e expiry=-62135596800 followup=http://116.62.188.235:8080/register/mkey:e1e68658d665ddaca93e161f01115071bc953345d92cdfdd259baf87862b3f6e machine_key=[4eaGW] node=iZbp128wzc2zwaz21j6x3rZ node_key=[vH4vX] node_key_old=\r\n2024-07-28T14:30:25+08:00 DBG New noise client cap_ver=102 handler=/key\r\n2024-07-28T14:30:25+08:00 DBG ../home/runner/work/headscale/headscale/hscontrol/auth.go:596 &gt; Client is registered and we have the current NodeKey. All clear to /map node=iZbp128wzc2zwaz21j6x3rZ\r\n2024-07-28T14:30:25+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/auth.go:627 &gt; Node successfully authorized node=iZbp128wzc2zwaz21j6x3rZ\r\n2024-07-28T14:30:25+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has connected, mapSession: 0xc0005f7380, chan: 0xc000d50ae0 node=iZbp128wzc2zwaz21j6x3rZ node.id=3 omitPeers=false readOnly=false stream=true\r\n2024-07-28T14:33:16+08:00 INF ../home/runner/work/headscale/headscale/hscontrol/poll.go:699 &gt; node has disconnected, mapSession: 0xc0005f7380, chan: 0xc000d50ae0 node=iZbp128wzc2zwaz21j6x3rZ node.id=3 omitPeers=false readOnly=false stream=true\r\n```\r\n\r\nHere I removed the reverse proxy and used IP to connect directly. The derp server uses the official derp server. It still has the same problem as before, so I infer that this problem has nothing to do with the reverse proxy.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2254366958/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;wangzhijie0602&quot;,
+    &quot;id&quot;: 46142484,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ2MTQyNDg0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/46142484?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/wangzhijie0602&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/wangzhijie0602&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-07-28T07:01:29Z · commented · wangzhijie0602</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2254368727&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2027#issuecomment-2254368727&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2027&quot;,
+  &quot;id&quot;: 2254368727,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886GXu_X&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;wangzhijie0602&quot;,
+    &quot;id&quot;: 46142484,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ2MTQyNDg0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/46142484?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/wangzhijie0602&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/wangzhijie0602&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-07-28T07:01:29Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-07-28T07:01:29Z&quot;,
+  &quot;body&quot;: &quot;Here I added two new clients. In fact, the two new clients were not fully connected. I exported my Postgres database file.\r\n\r\nHere I first list the performance of the two clients\r\nClient 1:\r\nAfter connecting, the following is displayed\r\n![5a4d73c7bb3040a803556e1d94f7d5b](https://github.com/user-attachments/assets/f9f3d9db-8a4d-460a-b9c5-82507fe1b3e8)\r\n\r\nClient 2:\r\nIt stays in this interface after connecting.\r\n![250844e7bd4ae5425f3449af3d611a4](https://github.com/user-attachments/assets/3f34f708-92ff-4da0-9d2d-c338cac6590b)\r\n\r\nThe following content is the content of the server after I deleted the nodes on the server after the first connection failed on the Linux client.\r\n![d5e81ef9cd4b4b8e3355dbc831fbeee](https://github.com/user-attachments/assets/7a660080-d35d-4c87-9d2a-eedb2edfda1d)\r\n&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2254368727/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;wangzhijie0602&quot;,
+    &quot;id&quot;: 46142484,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ2MTQyNDg0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/46142484?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/wangzhijie0602&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/wangzhijie0602&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-07-28T07:02:40Z · commented · wangzhijie0602</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2254369046&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2027#issuecomment-2254369046&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2027&quot;,
+  &quot;id&quot;: 2254369046,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886GXvEW&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;wangzhijie0602&quot;,
+    &quot;id&quot;: 46142484,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ2MTQyNDg0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/46142484?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/wangzhijie0602&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/wangzhijie0602&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-07-28T07:02:40Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-07-28T07:02:40Z&quot;,
+  &quot;body&quot;: &quot;Next is the sql dump file I exported containing the information of the two clients.\r\n[headscale_backup.zip](https://github.com/user-attachments/files/16402488/headscale_backup.zip)\r\n&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2254369046/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;wangzhijie0602&quot;,
+    &quot;id&quot;: 46142484,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ2MTQyNDg0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/46142484?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/wangzhijie0602&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/wangzhijie0602&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-07-28T07:04:49Z · commented · wangzhijie0602</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2254369552&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2027#issuecomment-2254369552&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2027&quot;,
+  &quot;id&quot;: 2254369552,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886GXvMQ&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;wangzhijie0602&quot;,
+    &quot;id&quot;: 46142484,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ2MTQyNDg0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/46142484?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/wangzhijie0602&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/wangzhijie0602&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-07-28T07:04:49Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-07-28T07:04:49Z&quot;,
+  &quot;body&quot;: &quot;The server information that appears in the above content is the test server I created. I released it after the test was completed. Now these server IPs no longer belong to me.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2254369552/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;wangzhijie0602&quot;,
+    &quot;id&quot;: 46142484,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ2MTQyNDg0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/46142484?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/wangzhijie0602&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/wangzhijie0602&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-07-28T07:09:23Z · commented · wangzhijie0602</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2254370776&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2027#issuecomment-2254370776&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2027&quot;,
+  &quot;id&quot;: 2254370776,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886GXvfY&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;wangzhijie0602&quot;,
+    &quot;id&quot;: 46142484,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ2MTQyNDg0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/46142484?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/wangzhijie0602&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/wangzhijie0602&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-07-28T07:09:23Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-07-28T07:09:23Z&quot;,
+  &quot;body&quot;: &quot;Here are the steps I took when creating the database\r\n\r\nsudo -u postgres psql\r\nCREATE USER foo WITH PASSWORD &#x27;bar&#x27;;\r\nCREATE DATABASE headscale;\r\nGRANT ALL PRIVILEGES ON DATABASE headscale TO foo;\r\n\\q\r\n&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2254370776/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;wangzhijie0602&quot;,
+    &quot;id&quot;: 46142484,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ2MTQyNDg0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/46142484?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/wangzhijie0602&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/wangzhijie0602&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/wangzhijie0602/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-08-31T03:22:04Z · commented · mpoindexter</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2322748330&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2027#issuecomment-2322748330&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2027&quot;,
+  &quot;id&quot;: 2322748330,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886KclOq&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;mpoindexter&quot;,
+    &quot;id&quot;: 1626393,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE2MjYzOTM=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/1626393?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mpoindexter&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mpoindexter&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mpoindexter/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mpoindexter/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mpoindexter/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mpoindexter/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mpoindexter/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mpoindexter/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mpoindexter/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mpoindexter/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mpoindexter/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-08-31T03:22:04Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-08-31T03:22:04Z&quot;,
+  &quot;body&quot;: &quot;I think this is a duplicate of #764 &quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2322748330/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mpoindexter&quot;,
+    &quot;id&quot;: 1626393,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE2MjYzOTM=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/1626393?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mpoindexter&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mpoindexter&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mpoindexter/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mpoindexter/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mpoindexter/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mpoindexter/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mpoindexter/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mpoindexter/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mpoindexter/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mpoindexter/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mpoindexter/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-09-03T07:27:32Z · commented · kradalby</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2325791442&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2027#issuecomment-2325791442&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2027&quot;,
+  &quot;id&quot;: 2325791442,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886KoMLS&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-09-03T07:27:32Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-09-03T07:27:32Z&quot;,
+  &quot;body&quot;: &quot;Yes, likely, I will close as duplicate, we can open if not.&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2325791442/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-09-03T07:27:32Z · closed · kradalby</summary><pre>{
+  &quot;id&quot;: 14110494033,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz886Qoq1BzwAAAANJDQ1R&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/14110494033&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-09-03T07:27:32Z&quot;,
+  &quot;state_reason&quot;: &quot;not_planned&quot;,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

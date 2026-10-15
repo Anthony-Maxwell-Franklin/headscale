@@ -1,0 +1,2272 @@
+commit d6dfdc100cf3f9d4bd9378b61284516478b437f8
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Fri Apr 17 12:06:10 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Sat Apr 18 15:12:21 2026 +0100
+
+    hscontrol: route hostname handling through dnsname and NodeStore
+    
+    Ingest (registration and MapRequest updates) now calls
+    dnsname.SanitizeHostname directly and lets NodeStore auto-bump on
+    collision. Admin rename uses dnsname.ValidLabel + SetGivenName so
+    conflicts are surfaced to the caller instead of silently mutated.
+    
+    Three duplicate invalidDNSRegex definitions, the old NormaliseHostname
+    and ValidateHostname helpers, EnsureHostname, InvalidString,
+    ApplyHostnameFromHostInfo, GivenNameHasBeenChanged, generateGivenName
+    and EnsureUniqueGivenName are removed along with their tests.
+    ValidateHostname's username half is retained as ValidateUsername for
+    users.go.
+    
+    The SaaS-matching collision rule replaces the random "invalid-xxxxxx"
+    fallback and the 8-character hash suffix; the empty-input fallback is
+    the literal "node". TestUpdateHostnameFromClient now exercises the
+    rewrite end-to-end with awkward macOS/Windows names.
+    
+    Fixes #3188
+    Fixes #2926
+    Fixes #2343
+    Fixes #2762
+    Fixes #2449
+    Updates #2177
+    Updates #2121
+    Updates #363
+---
+ hscontrol/auth.go            |  10 +-
+ hscontrol/auth_test.go       |  20 +-
+ hscontrol/db/node.go         |  93 +-------
+ hscontrol/db/node_test.go    | 392 ---------------------------------
+ hscontrol/db/users.go        |   4 +-
+ hscontrol/state/state.go     |  93 +++++---
+ hscontrol/types/node.go      |  59 -----
+ hscontrol/types/node_test.go | 297 -------------------------
+ hscontrol/util/dns.go        |  84 +------
+ hscontrol/util/dns_test.go   | 174 ---------------
+ hscontrol/util/string.go     |   5 -
+ hscontrol/util/util.go       |  40 ----
+ hscontrol/util/util_test.go  | 511 -------------------------------------------
+ integration/cli_test.go      |   2 +-
+ integration/general_test.go  |  27 ++-
+ 15 files changed, 104 insertions(+), 1707 deletions(-)
+
+diff --git a/hscontrol/auth.go b/hscontrol/auth.go
+index 4ce5fd6a..853df605 100644
+--- a/hscontrol/auth.go
++++ b/hscontrol/auth.go
+@@ -10,7 +10,6 @@ import (
+ 	"time"
+ 
+ 	"github.com/juanfont/headscale/hscontrol/types"
+-	"github.com/juanfont/headscale/hscontrol/util"
+ 	"github.com/rs/zerolog/log"
+ 	"gorm.io/gorm"
+ 	"tailscale.com/tailcfg"
+@@ -336,11 +335,10 @@ func registrationDataFromRequest(
+ 	req tailcfg.RegisterRequest,
+ 	machineKey key.MachinePublic,
+ ) *types.RegistrationData {
+-	hostname := util.EnsureHostname(
+-		req.Hostinfo.View(),
+-		machineKey.String(),
+-		req.NodeKey.String(),
+-	)
++	var hostname string
++	if req.Hostinfo != nil {
++		hostname = req.Hostinfo.Hostname
++	}
+ 
+ 	regData := &types.RegistrationData{
+ 		MachineKey: machineKey,
+diff --git a/hscontrol/auth_test.go b/hscontrol/auth_test.go
+index 7fc333f3..eb572332 100644
+--- a/hscontrol/auth_test.go
++++ b/hscontrol/auth_test.go
+@@ -816,10 +816,12 @@ func TestAuthenticationFlows(t *testing.T) {
+ 			validate: func(t *testing.T, resp *tailcfg.RegisterResponse, app *Headscale) { //nolint:thelper //nolint:thelper
+ 				assert.True(t, resp.MachineAuthorized)
+ 
+-				// Node should be created with generated hostname
++				// Raw hostname is preserved (empty in, empty stored), and
++				// GivenName falls back to the literal "node" per SaaS.
+ 				node, found := app.state.GetNodeByNodeKey(nodeKey1.Public())
+ 				assert.True(t, found)
+-				assert.NotEmpty(t, node.Hostname())
++				assert.Empty(t, node.Hostname())
++				assert.Equal(t, "node", node.GivenName())
+ 			},
+ 		},
+ 		// TEST: Nil hostinfo is handled with defensive code
+@@ -854,12 +856,12 @@ func TestAuthenticationFlows(t *testing.T) {
+ 			validate: func(t *testing.T, resp *tailcfg.RegisterResponse, app *Headscale) { //nolint:thelper //nolint:thelper
+ 				assert.True(t, resp.MachineAuthorized)
+ 
+-				// Node should be created with generated hostname from defensive code
++				// With nil Hostinfo the raw hostname stays empty and GivenName
++				// falls back to the literal "node" per the SaaS spec.
+ 				node, found := app.state.GetNodeByNodeKey(nodeKey1.Public())
+ 				assert.True(t, found)
+-				assert.NotEmpty(t, node.Hostname())
+-				// Hostname should start with "node-" (generated from machine key)
+-				assert.True(t, strings.HasPrefix(node.Hostname(), "node-"))
++				assert.Empty(t, node.Hostname())
++				assert.Equal(t, "node", node.GivenName())
+ 			},
+ 		},
+ 
+@@ -2251,9 +2253,9 @@ func TestAuthenticationFlows(t *testing.T) {
+ 				assert.True(t, found, "node should be registered despite nil hostinfo")
+ 
+ 				if found {
+-					// Should have some default hostname or handle nil gracefully
+-					hostname := node.Hostname()
+-					assert.NotEmpty(t, hostname, "should have some hostname even with nil hostinfo")
++					// Raw hostname stays empty; GivenName falls back to "node".
++					assert.Empty(t, node.Hostname())
++					assert.Equal(t, "node", node.GivenName())
+ 				}
+ 			},
+ 		},
+diff --git a/hscontrol/db/node.go b/hscontrol/db/node.go
+index d2db012c..e6bd9cf0 100644
+--- a/hscontrol/db/node.go
++++ b/hscontrol/db/node.go
+@@ -5,11 +5,9 @@ import (
+ 	"errors"
+ 	"fmt"
+ 	"net/netip"
+-	"regexp"
+ 	"slices"
+ 	"sort"
+ 	"strconv"
+-	"strings"
+ 	"sync"
+ 	"testing"
+ 	"time"
+@@ -21,6 +19,7 @@ import (
+ 	"gorm.io/gorm"
+ 	"tailscale.com/net/tsaddr"
+ 	"tailscale.com/types/key"
++	"tailscale.com/util/dnsname"
+ )
+ 
+ const (
+@@ -34,8 +33,6 @@ const (
+ // ErrNodeNameNotUnique is returned when a node name is not unique.
+ var ErrNodeNameNotUnique = errors.New("node name is not unique")
+ 
+-var invalidDNSRegex = regexp.MustCompile("[^a-z0-9-.]+")
+-
+ var (
+ 	ErrNodeNotFound                  = errors.New("node not found")
+ 	ErrNodeRouteIsNotAvailable       = errors.New("route is not available on node")
+@@ -291,7 +288,7 @@ func SetLastSeen(tx *gorm.DB, nodeID types.NodeID, lastSeen time.Time) error {
+ func RenameNode(tx *gorm.DB,
+ 	nodeID types.NodeID, newName string,
+ ) error {
+-	err := util.ValidateHostname(newName)
++	err := dnsname.ValidLabel(newName)
+ 	if err != nil {
+ 		return fmt.Errorf("renaming node: %w", err)
+ 	}
+@@ -299,8 +296,7 @@ func RenameNode(tx *gorm.DB,
+ 	// Check if the new name is unique
+ 	var count int64
+ 
+-	err = tx.Model(&types.Node{}).Where("given_name = ? AND id != ?", newName, nodeID).Count(&count).Error
+-	if err != nil {
++	if err := tx.Model(&types.Node{}).Where("given_name = ? AND id != ?", newName, nodeID).Count(&count).Error; err != nil { //nolint:noinlineerr
+ 		return fmt.Errorf("checking name uniqueness: %w", err)
+ 	}
+ 
+@@ -427,22 +423,11 @@ func RegisterNodeForTest(tx *gorm.DB, node types.Node, ipv4 *netip.Addr, ipv6 *n
+ 	node.IPv4 = ipv4
+ 	node.IPv6 = ipv6
+ 
+-	var err error
+-
+-	node.Hostname, err = util.NormaliseHostname(node.Hostname)
+-	if err != nil {
+-		newHostname := util.InvalidString()
+-		log.Info().Err(err).Str(zf.InvalidHostname, node.Hostname).Str(zf.NewHostname, newHostname).Msgf("invalid hostname, replacing")
+-		node.Hostname = newHostname
+-	}
+-
+ 	if node.GivenName == "" {
+-		givenName, err := EnsureUniqueGivenName(tx, node.Hostname)
+-		if err != nil {
+-			return nil, fmt.Errorf("ensuring unique given name: %w", err)
++		node.GivenName = dnsname.SanitizeHostname(node.Hostname)
++		if node.GivenName == "" {
++			node.GivenName = "node"
+ 		}
+-
+-		node.GivenName = givenName
+ 	}
+ 
+ 	if err := tx.Save(&node).Error; err != nil { //nolint:noinlineerr
+@@ -484,72 +469,6 @@ func NodeSetMachineKey(
+ 	}).Error
+ }
+ 
+-func generateGivenName(suppliedName string, randomSuffix bool) (string, error) {
+-	// Strip invalid DNS characters for givenName
+-	suppliedName = strings.ToLower(suppliedName)
+-	suppliedName = invalidDNSRegex.ReplaceAllString(suppliedName, "")
+-
+-	if len(suppliedName) > util.LabelHostnameLength {
+-		return "", types.ErrHostnameTooLong
+-	}
+-
+-	if randomSuffix {
+-		// Trim if a hostname will be longer than 63 chars after adding the hash.
+-		trimmedHostnameLength := util.LabelHostnameLength - NodeGivenNameHashLength - NodeGivenNameTrimSize
+-		if len(suppliedName) > trimmedHostnameLength {
+-			suppliedName = suppliedName[:trimmedHostnameLength]
+-		}
+-
+-		suffix, err := util.GenerateRandomStringDNSSafe(NodeGivenNameHashLength)
+-		if err != nil {
+-			return "", err
+-		}
+-
+-		suppliedName += "-" + suffix
+-	}
+-
+-	return suppliedName, nil
+-}
+-
+-func isUniqueName(tx *gorm.DB, name string) (bool, error) {
+-	nodes := types.Nodes{}
+-
+-	err := tx.
+-		Where("given_name = ?", name).Find(&nodes).Error
+-	if err != nil {
+-		return false, err
+-	}
+-
+-	return len(nodes) == 0, nil
+-}
+-
+-// EnsureUniqueGivenName generates a unique given name for a node based on its hostname.
+-func EnsureUniqueGivenName(
+-	tx *gorm.DB,
+-	name string,
+-) (string, error) {
+-	givenName, err := generateGivenName(name, false)
+-	if err != nil {
+-		return "", err
+-	}
+-
+-	unique, err := isUniqueName(tx, givenName)
+-	if err != nil {
+-		return "", err
+-	}
+-
+-	if !unique {
+-		postfixedName, err := generateGivenName(name, true)
+-		if err != nil {
+-			return "", err
+-		}
+-
+-		givenName = postfixedName
+-	}
+-
+-	return givenName, nil
+-}
+-
+ // EphemeralGarbageCollector is a garbage collector that will delete nodes after
+ // a certain amount of time.
+ // It is used to delete ephemeral nodes that have disconnected and should be
+diff --git a/hscontrol/db/node_test.go b/hscontrol/db/node_test.go
+index 9dca9635..f9ba7b36 100644
+--- a/hscontrol/db/node_test.go
++++ b/hscontrol/db/node_test.go
+@@ -5,7 +5,6 @@ import (
+ 	"fmt"
+ 	"math/big"
+ 	"net/netip"
+-	"regexp"
+ 	"runtime"
+ 	"sync"
+ 	"sync/atomic"
+@@ -227,122 +226,6 @@ func TestSetTags(t *testing.T) {
+ 	assert.Equal(t, []string{"tag:bar", "tag:test", "tag:unknown"}, node.Tags)
+ }
+ 
+-func TestHeadscale_generateGivenName(t *testing.T) {
+-	type args struct {
+-		suppliedName string
+-		randomSuffix bool
+-	}
+-
+-	tests := []struct {
+-		name    string
+-		args    args
+-		want    *regexp.Regexp
+-		wantErr bool
+-	}{
+-		{
+-			name: "simple node name generation",
+-			args: args{
+-				suppliedName: "testnode",
+-				randomSuffix: false,
+-			},
+-			want:    regexp.MustCompile("^testnode$"),
+-			wantErr: false,
+-		},
+-		{
+-			name: "UPPERCASE node name generation",
+-			args: args{
+-				suppliedName: "TestNode",
+-				randomSuffix: false,
+-			},
+-			want:    regexp.MustCompile("^testnode$"),
+-			wantErr: false,
+-		},
+-		{
+-			name: "node name with 53 chars",
+-			args: args{
+-				suppliedName: "testmaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaachine",
+-				randomSuffix: false,
+-			},
+-			want:    regexp.MustCompile("^testmaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaachine$"),
+-			wantErr: false,
+-		},
+-		{
+-			name: "node name with 63 chars",
+-			args: args{
+-				suppliedName: "nodeeeeeee12345678901234567890123456789012345678901234567890123",
+-				randomSuffix: false,
+-			},
+-			want:    regexp.MustCompile("^nodeeeeeee12345678901234567890123456789012345678901234567890123$"),
+-			wantErr: false,
+-		},
+-		{
+-			name: "node name with 64 chars",
+-			args: args{
+-				suppliedName: "nodeeeeeee123456789012345678901234567890123456789012345678901234",
+-				randomSuffix: false,
+-			},
+-			want:    nil,
+-			wantErr: true,
+-		},
+-		{
+-			name: "node name with 73 chars",
+-			args: args{
+-				suppliedName: "nodeeeeeee123456789012345678901234567890123456789012345678901234567890123",
+-				randomSuffix: false,
+-			},
+-			want:    nil,
+-			wantErr: true,
+-		},
+-		{
+-			name: "node name with random suffix",
+-			args: args{
+-				suppliedName: "test",
+-				randomSuffix: true,
+-			},
+-			want:    regexp.MustCompile(fmt.Sprintf("^test-[a-z0-9]{%d}$", NodeGivenNameHashLength)),
+-			wantErr: false,
+-		},
+-		{
+-			name: "node name with 63 chars with random suffix",
+-			args: args{
+-				suppliedName: "nodeeee12345678901234567890123456789012345678901234567890123",
+-				randomSuffix: true,
+-			},
+-			want:    regexp.MustCompile(fmt.Sprintf("^nodeeee1234567890123456789012345678901234567890123456-[a-z0-9]{%d}$", NodeGivenNameHashLength)),
+-			wantErr: false,
+-		},
+-	}
+-	for _, tt := range tests {
+-		t.Run(tt.name, func(t *testing.T) {
+-			got, err := generateGivenName(tt.args.suppliedName, tt.args.randomSuffix)
+-			if (err != nil) != tt.wantErr {
+-				t.Errorf(
+-					"Headscale.GenerateGivenName() error = %v, wantErr %v",
+-					err,
+-					tt.wantErr,
+-				)
+-
+-				return
+-			}
+-
+-			if tt.want != nil && !tt.want.MatchString(got) {
+-				t.Errorf(
+-					"Headscale.GenerateGivenName() = %v, does not match %v",
+-					tt.want,
+-					got,
+-				)
+-			}
+-
+-			if len(got) > util.LabelHostnameLength {
+-				t.Errorf(
+-					"Headscale.GenerateGivenName() = %v is larger than allowed DNS segment %d",
+-					got,
+-					util.LabelHostnameLength,
+-				)
+-			}
+-		})
+-	}
+-}
+ 
+ func TestAutoApproveRoutes(t *testing.T) {
+ 	tests := []struct {
+@@ -742,281 +625,6 @@ func TestListEphemeralNodes(t *testing.T) {
+ 	assert.Equal(t, nodeEph.Hostname, ephemeralNodes[0].Hostname)
+ }
+ 
+-func TestNodeNaming(t *testing.T) {
+-	db, err := newSQLiteTestDB()
+-	if err != nil {
+-		t.Fatalf("creating db: %s", err)
+-	}
+-
+-	user, err := db.CreateUser(types.User{Name: "test"})
+-	require.NoError(t, err)
+-
+-	user2, err := db.CreateUser(types.User{Name: "user2"})
+-	require.NoError(t, err)
+-
+-	node := types.Node{
+-		ID:             0,
+-		MachineKey:     key.NewMachine().Public(),
+-		NodeKey:        key.NewNode().Public(),
+-		Hostname:       "test",
+-		UserID:         &user.ID,
+-		RegisterMethod: util.RegisterMethodAuthKey,
+-		Hostinfo:       &tailcfg.Hostinfo{},
+-	}
+-
+-	node2 := types.Node{
+-		ID:             0,
+-		MachineKey:     key.NewMachine().Public(),
+-		NodeKey:        key.NewNode().Public(),
+-		Hostname:       "test",
+-		UserID:         &user2.ID,
+-		RegisterMethod: util.RegisterMethodAuthKey,
+-		Hostinfo:       &tailcfg.Hostinfo{},
+-	}
+-
+-	// Using non-ASCII characters in the hostname can
+-	// break your network, so they should be replaced when registering
+-	// a node.
+-	// https://github.com/juanfont/headscale/issues/2343
+-	nodeInvalidHostname := types.Node{
+-		MachineKey:     key.NewMachine().Public(),
+-		NodeKey:        key.NewNode().Public(),
+-		Hostname:       "我的电脑", //nolint:gosmopolitan // intentional i18n test data
+-		UserID:         &user2.ID,
+-		RegisterMethod: util.RegisterMethodAuthKey,
+-	}
+-
+-	nodeShortHostname := types.Node{
+-		MachineKey:     key.NewMachine().Public(),
+-		NodeKey:        key.NewNode().Public(),
+-		Hostname:       "a",
+-		UserID:         &user2.ID,
+-		RegisterMethod: util.RegisterMethodAuthKey,
+-	}
+-
+-	err = db.DB.Save(&node).Error
+-	require.NoError(t, err)
+-
+-	err = db.DB.Save(&node2).Error
+-	require.NoError(t, err)
+-
+-	err = db.DB.Transaction(func(tx *gorm.DB) error {
+-		_, err := RegisterNodeForTest(tx, node, nil, nil)
+-		if err != nil {
+-			return err
+-		}
+-
+-		_, err = RegisterNodeForTest(tx, node2, nil, nil)
+-		if err != nil {
+-			return err
+-		}
+-
+-		_, _ = RegisterNodeForTest(tx, nodeInvalidHostname, new(mpp("100.64.0.66/32").Addr()), nil)
+-		_, err = RegisterNodeForTest(tx, nodeShortHostname, new(mpp("100.64.0.67/32").Addr()), nil)
+-
+-		return err
+-	})
+-	require.NoError(t, err)
+-
+-	nodes, err := db.ListNodes()
+-	require.NoError(t, err)
+-
+-	assert.Len(t, nodes, 4)
+-
+-	t.Logf("node1 %s %s", nodes[0].Hostname, nodes[0].GivenName)
+-	t.Logf("node2 %s %s", nodes[1].Hostname, nodes[1].GivenName)
+-	t.Logf("node3 %s %s", nodes[2].Hostname, nodes[2].GivenName)
+-	t.Logf("node4 %s %s", nodes[3].Hostname, nodes[3].GivenName)
+-
+-	assert.Equal(t, nodes[0].Hostname, nodes[0].GivenName)
+-	assert.NotEqual(t, nodes[1].Hostname, nodes[1].GivenName)
+-	assert.Equal(t, nodes[0].Hostname, nodes[1].Hostname)
+-	assert.NotEqual(t, nodes[0].Hostname, nodes[1].GivenName)
+-	assert.Contains(t, nodes[1].GivenName, nodes[0].Hostname)
+-	assert.Equal(t, nodes[0].GivenName, nodes[1].Hostname)
+-	assert.Len(t, nodes[0].Hostname, 4)
+-	assert.Len(t, nodes[1].Hostname, 4)
+-	assert.Len(t, nodes[0].GivenName, 4)
+-	assert.Len(t, nodes[1].GivenName, 13)
+-	assert.Contains(t, nodes[2].Hostname, "invalid-") // invalid chars
+-	assert.Contains(t, nodes[2].GivenName, "invalid-")
+-	assert.Contains(t, nodes[3].Hostname, "invalid-") // too short
+-	assert.Contains(t, nodes[3].GivenName, "invalid-")
+-
+-	// Nodes can be renamed to a unique name
+-	err = db.Write(func(tx *gorm.DB) error {
+-		return RenameNode(tx, nodes[0].ID, "newname")
+-	})
+-	require.NoError(t, err)
+-
+-	nodes, err = db.ListNodes()
+-	require.NoError(t, err)
+-	assert.Len(t, nodes, 4)
+-	assert.Equal(t, "test", nodes[0].Hostname)
+-	assert.Equal(t, "newname", nodes[0].GivenName)
+-
+-	// Nodes can reuse name that is no longer used
+-	err = db.Write(func(tx *gorm.DB) error {
+-		return RenameNode(tx, nodes[1].ID, "test")
+-	})
+-	require.NoError(t, err)
+-
+-	nodes, err = db.ListNodes()
+-	require.NoError(t, err)
+-	assert.Len(t, nodes, 4)
+-	assert.Equal(t, "test", nodes[0].Hostname)
+-	assert.Equal(t, "newname", nodes[0].GivenName)
+-	assert.Equal(t, "test", nodes[1].GivenName)
+-
+-	// Nodes cannot be renamed to used names
+-	err = db.Write(func(tx *gorm.DB) error {
+-		return RenameNode(tx, nodes[0].ID, "test")
+-	})
+-	require.ErrorContains(t, err, "name is not unique")
+-
+-	// Rename invalid chars
+-	err = db.Write(func(tx *gorm.DB) error {
+-		return RenameNode(tx, nodes[2].ID, "我的电脑") //nolint:gosmopolitan // intentional i18n test data
+-	})
+-	require.ErrorContains(t, err, "invalid characters")
+-
+-	// Rename too short
+-	err = db.Write(func(tx *gorm.DB) error {
+-		return RenameNode(tx, nodes[3].ID, "a")
+-	})
+-	require.ErrorContains(t, err, "at least 2 characters")
+-
+-	// Rename with emoji
+-	err = db.Write(func(tx *gorm.DB) error {
+-		return RenameNode(tx, nodes[0].ID, "hostname-with-💩")
+-	})
+-	require.ErrorContains(t, err, "invalid characters")
+-
+-	// Rename with only emoji
+-	err = db.Write(func(tx *gorm.DB) error {
+-		return RenameNode(tx, nodes[0].ID, "🚀")
+-	})
+-	assert.ErrorContains(t, err, "invalid characters")
+-}
+-
+-func TestRenameNodeComprehensive(t *testing.T) {
+-	db, err := newSQLiteTestDB()
+-	if err != nil {
+-		t.Fatalf("creating db: %s", err)
+-	}
+-
+-	user, err := db.CreateUser(types.User{Name: "test"})
+-	require.NoError(t, err)
+-
+-	node := types.Node{
+-		ID:             0,
+-		MachineKey:     key.NewMachine().Public(),
+-		NodeKey:        key.NewNode().Public(),
+-		Hostname:       "testnode",
+-		UserID:         &user.ID,
+-		RegisterMethod: util.RegisterMethodAuthKey,
+-		Hostinfo:       &tailcfg.Hostinfo{},
+-	}
+-
+-	err = db.DB.Save(&node).Error
+-	require.NoError(t, err)
+-
+-	err = db.DB.Transaction(func(tx *gorm.DB) error {
+-		_, err := RegisterNodeForTest(tx, node, nil, nil)
+-		return err
+-	})
+-	require.NoError(t, err)
+-
+-	nodes, err := db.ListNodes()
+-	require.NoError(t, err)
+-	assert.Len(t, nodes, 1)
+-
+-	tests := []struct {
+-		name    string
+-		newName string
+-		wantErr string
+-	}{
+-		{
+-			name:    "uppercase_rejected",
+-			newName: "User2-Host",
+-			wantErr: "must be lowercase",
+-		},
+-		{
+-			name:    "underscore_rejected",
+-			newName: "test_node",
+-			wantErr: "invalid characters",
+-		},
+-		{
+-			name:    "at_sign_uppercase_rejected",
+-			newName: "Test@Host",
+-			wantErr: "must be lowercase",
+-		},
+-		{
+-			name:    "at_sign_rejected",
+-			newName: "test@host",
+-			wantErr: "invalid characters",
+-		},
+-		{
+-			name:    "chinese_chars_with_dash_rejected",
+-			newName: "server-北京-01", //nolint:gosmopolitan // intentional i18n test data
+-			wantErr: "invalid characters",
+-		},
+-		{
+-			name:    "chinese_only_rejected",
+-			newName: "我的电脑", //nolint:gosmopolitan // intentional i18n test data
+-			wantErr: "invalid characters",
+-		},
+-		{
+-			name:    "emoji_with_text_rejected",
+-			newName: "laptop-🚀",
+-			wantErr: "invalid characters",
+-		},
+-		{
+-			name:    "mixed_chinese_emoji_rejected",
+-			newName: "测试💻机器", //nolint:gosmopolitan // intentional i18n test data
+-			wantErr: "invalid characters",
+-		},
+-		{
+-			name:    "only_emojis_rejected",
+-			newName: "🎉🎊",
+-			wantErr: "invalid characters",
+-		},
+-		{
+-			name:    "only_at_signs_rejected",
+-			newName: "@@@",
+-			wantErr: "invalid characters",
+-		},
+-		{
+-			name:    "starts_with_dash_rejected",
+-			newName: "-test",
+-			wantErr: "cannot start or end with a hyphen",
+-		},
+-		{
+-			name:    "ends_with_dash_rejected",
+-			newName: "test-",
+-			wantErr: "cannot start or end with a hyphen",
+-		},
+-		{
+-			name:    "too_long_hostname_rejected",
+-			newName: "this-is-a-very-long-hostname-that-exceeds-sixty-three-characters-limit",
+-			wantErr: "must not exceed 63 characters",
+-		},
+-		{
+-			name:    "too_short_hostname_rejected",
+-			newName: "a",
+-			wantErr: "at least 2 characters",
+-		},
+-	}
+-
+-	for _, tt := range tests {
+-		t.Run(tt.name, func(t *testing.T) {
+-			err := db.Write(func(tx *gorm.DB) error {
+-				return RenameNode(tx, nodes[0].ID, tt.newName)
+-			})
+-			assert.ErrorContains(t, err, tt.wantErr)
+-		})
+-	}
+-}
+ 
+ func TestListPeers(t *testing.T) {
+ 	// Setup test database
+diff --git a/hscontrol/db/users.go b/hscontrol/db/users.go
+index 21320507..b8bb01af 100644
+--- a/hscontrol/db/users.go
++++ b/hscontrol/db/users.go
+@@ -28,7 +28,7 @@ func (hsdb *HSDatabase) CreateUser(user types.User) (*types.User, error) {
+ // CreateUser creates a new User. Returns error if could not be created
+ // or another user already exists.
+ func CreateUser(tx *gorm.DB, user types.User) (*types.User, error) {
+-	err := util.ValidateHostname(user.Name)
++	err := util.ValidateUsername(user.Name)
+ 	if err != nil {
+ 		return nil, err
+ 	}
+@@ -102,7 +102,7 @@ func RenameUser(tx *gorm.DB, uid types.UserID, newName string) error {
+ 		return err
+ 	}
+ 
+-	if err = util.ValidateHostname(newName); err != nil { //nolint:noinlineerr
++	if err = util.ValidateUsername(newName); err != nil { //nolint:noinlineerr
+ 		return err
+ 	}
+ 
+diff --git a/hscontrol/state/state.go b/hscontrol/state/state.go
+index a4f2d3d8..b7bc7432 100644
+--- a/hscontrol/state/state.go
++++ b/hscontrol/state/state.go
+@@ -17,6 +17,7 @@ import (
+ 	"fmt"
+ 	"net/netip"
+ 	"slices"
++	"strconv"
+ 	"strings"
+ 	"sync"
+ 	"sync/atomic"
+@@ -38,6 +39,7 @@ import (
+ 	"tailscale.com/tailcfg"
+ 	"tailscale.com/types/key"
+ 	"tailscale.com/types/views"
++	"tailscale.com/util/dnsname"
+ )
+ 
+ const (
+@@ -977,34 +979,29 @@ func (s *State) SetApprovedRoutes(nodeID types.NodeID, routes []netip.Prefix) (t
+ 	return nodeView, c, nil
+ }
+ 
+-// RenameNode changes the display name of a node.
++// RenameNode changes the display name of a node. The admin supplies
++// the exact DNS label they want; malformed input is rejected (no
++// auto-sanitisation) and collisions error out rather than silently
++// bumping a user-facing label. See HOSTNAME.md for the CLI contract.
+ func (s *State) RenameNode(nodeID types.NodeID, newName string) (types.NodeView, change.Change, error) {
+-	err := util.ValidateHostname(newName)
++	err := dnsname.ValidLabel(newName)
+ 	if err != nil {
+ 		return types.NodeView{}, change.Change{}, fmt.Errorf("renaming node: %w", err)
+ 	}
+ 
+-	// Check name uniqueness against NodeStore
+-	allNodes := s.nodeStore.ListNodes()
+-	for i := range allNodes.Len() {
+-		node := allNodes.At(i)
+-		if node.ID() != nodeID && node.AsStruct().GivenName == newName {
++	view, err := s.nodeStore.SetGivenName(nodeID, newName)
++	if err != nil {
++		switch {
++		case errors.Is(err, ErrGivenNameTaken):
+ 			return types.NodeView{}, change.Change{}, fmt.Errorf("%w: %s", ErrNodeNameNotUnique, newName)
++		case errors.Is(err, ErrNodeNotFound):
++			return types.NodeView{}, change.Change{}, fmt.Errorf("%w: %d", ErrNodeNotInNodeStore, nodeID)
++		default:
++			return types.NodeView{}, change.Change{}, fmt.Errorf("renaming node: %w", err)
+ 		}
+ 	}
+ 
+-	// Update NodeStore before database to ensure consistency. The NodeStore update is
+-	// blocking and will be the source of truth for the batcher. The database update must
+-	// make the exact same change.
+-	n, ok := s.nodeStore.UpdateNode(nodeID, func(node *types.Node) {
+-		node.GivenName = newName
+-	})
+-
+-	if !ok {
+-		return types.NodeView{}, change.Change{}, fmt.Errorf("%w: %d", ErrNodeNotInNodeStore, nodeID)
+-	}
+-
+-	return s.persistNodeToDB(n)
++	return s.persistNodeToDB(view)
+ }
+ 
+ // BackfillNodeIPs assigns IP addresses to nodes that don't have them.
+@@ -1724,14 +1721,11 @@ func (s *State) createAndSaveNewNode(params newNodeParams) (types.NodeView, erro
+ 	nodeToRegister.IPv4 = ipv4
+ 	nodeToRegister.IPv6 = ipv6
+ 
+-	// Ensure unique given name if not set
++	// Seed GivenName from the sanitised raw hostname. NodeStore.PutNode
++	// bumps on collision and falls back to "node" if the sanitised
++	// result is empty (pure non-ASCII / punctuation input).
+ 	if nodeToRegister.GivenName == "" {
+-		givenName, err := hsdb.EnsureUniqueGivenName(s.db.DB, nodeToRegister.Hostname)
+-		if err != nil {
+-			return types.NodeView{}, fmt.Errorf("ensuring unique given name: %w", err)
+-		}
+-
+-		nodeToRegister.GivenName = givenName
++		nodeToRegister.GivenName = dnsname.SanitizeHostname(nodeToRegister.Hostname)
+ 	}
+ 
+ 	// New node - database first to get ID, then NodeStore
+@@ -2121,12 +2115,13 @@ func (s *State) HandleNodeFromPreAuthKey(
+ 		}
+ 	}
+ 
+-	// Ensure we have a valid hostname - handle nil/empty cases
+-	hostname := util.EnsureHostname(
+-		regReq.Hostinfo.View(),
+-		machineKey.String(),
+-		regReq.NodeKey.String(),
+-	)
++	// Preserve the raw hostname as reported by the client. Sanitisation
++	// for the DNS label lives on node.GivenName, not on node.Hostname;
++	// see HOSTNAME.md.
++	var hostname string
++	if regReq.Hostinfo != nil {
++		hostname = regReq.Hostinfo.Hostname
++	}
+ 
+ 	// Ensure we have valid hostinfo
+ 	validHostinfo := cmp.Or(regReq.Hostinfo, &tailcfg.Hostinfo{})
+@@ -2433,6 +2428,27 @@ func (s *State) autoApproveNodes() ([]change.Change, error) {
+ 	return cs, nil
+ }
+ 
++// isAutoDerivedGivenName reports whether given matches what
++// dnsname.SanitizeHostname(hostname) would produce, optionally with a
++// NodeStore collision-bump "-N" suffix. It is used to detect whether a
++// GivenName has been admin-renamed (in which case it must not be
++// overwritten by client-side hostname changes).
++func isAutoDerivedGivenName(given, hostname string) bool {
++	base := dnsname.SanitizeHostname(hostname)
++	if given == base {
++		return true
++	}
++
++	suffix, ok := strings.CutPrefix(given, base+"-")
++	if !ok {
++		return false
++	}
++
++	_, err := strconv.Atoi(suffix)
++
++	return err == nil
++}
++
+ // UpdateNodeFromMapRequest is the sync point where Hostinfo changes,
+ // endpoint updates, and route advertisements from a MapRequest land in
+ // the NodeStore. It produces a change.Change summarising what actually
+@@ -2540,7 +2556,18 @@ func (s *State) UpdateNodeFromMapRequest(id types.NodeID, req tailcfg.MapRequest
+ 			// before we take the changes.
+ 			// NetInfo preservation has already been handled above before early return check
+ 			currentNode.Hostinfo = req.Hostinfo
+-			currentNode.ApplyHostnameFromHostInfo(req.Hostinfo)
++			if req.Hostinfo != nil && req.Hostinfo.Hostname != "" {
++				// Preserve an admin-renamed GivenName: only auto-derive when the
++				// current GivenName is still what SanitizeHostname of the old
++				// Hostname would produce (possibly with a "-N" collision bump).
++				autoDerived := isAutoDerivedGivenName(currentNode.GivenName, currentNode.Hostname)
++
++				currentNode.Hostname = req.Hostinfo.Hostname
++				if autoDerived {
++					currentNode.GivenName = dnsname.SanitizeHostname(req.Hostinfo.Hostname)
++					// NodeStore.UpdateNode auto-bumps GivenName on collision.
++				}
++			}
+ 
+ 			if routeChange {
+ 				// Apply pre-calculated route approval
+diff --git a/hscontrol/types/node.go b/hscontrol/types/node.go
+index 3e3618da..fe7638c9 100644
+--- a/hscontrol/types/node.go
++++ b/hscontrol/types/node.go
+@@ -4,7 +4,6 @@ import (
+ 	"errors"
+ 	"fmt"
+ 	"net/netip"
+-	"regexp"
+ 	"slices"
+ 	"strconv"
+ 	"strings"
+@@ -15,7 +14,6 @@ import (
+ 	"github.com/juanfont/headscale/hscontrol/util"
+ 	"github.com/juanfont/headscale/hscontrol/util/zlog/zf"
+ 	"github.com/rs/zerolog"
+-	"github.com/rs/zerolog/log"
+ 	"go4.org/netipx"
+ 	"google.golang.org/protobuf/types/known/timestamppb"
+ 	"tailscale.com/net/tsaddr"
+@@ -31,8 +29,6 @@ var (
+ 	ErrNodeUserHasNoName    = errors.New("node user has no name")
+ 	ErrCannotRemoveAllTags  = errors.New("cannot remove all tags from node")
+ 	ErrInvalidNodeView      = errors.New("cannot convert invalid NodeView to tailcfg.Node")
+-
+-	invalidDNSRegex = regexp.MustCompile("[^a-z0-9-.]+")
+ )
+ 
+ // RouteFunc is a function that takes a node ID and returns a list of
+@@ -171,15 +167,6 @@ func (ns Nodes) ViewSlice() views.Slice[NodeView] {
+ 	return views.SliceOf(vs)
+ }
+ 
+-// GivenNameHasBeenChanged returns whether the `givenName` can be automatically changed based on the `Hostname` of the node.
+-func (node *Node) GivenNameHasBeenChanged() bool {
+-	// Strip invalid DNS characters for givenName comparison
+-	normalised := strings.ToLower(node.Hostname)
+-	normalised = invalidDNSRegex.ReplaceAllString(normalised, "")
+-
+-	return node.GivenName == normalised
+-}
+-
+ // IsExpired returns whether the node registration has expired.
+ func (node *Node) IsExpired() bool {
+ 	// If Expiry is not set, the client has not indicated that
+@@ -695,52 +682,6 @@ func (node *Node) RegisterMethodToV1Enum() v1.RegisterMethod {
+ 	}
+ }
+ 
+-// ApplyHostnameFromHostInfo takes a Hostinfo struct and updates the node.
+-func (node *Node) ApplyHostnameFromHostInfo(hostInfo *tailcfg.Hostinfo) {
+-	if hostInfo == nil {
+-		return
+-	}
+-
+-	newHostname := strings.ToLower(hostInfo.Hostname)
+-
+-	err := util.ValidateHostname(newHostname)
+-	if err != nil {
+-		log.Warn().
+-			Str("node.id", node.ID.String()).
+-			Str("current_hostname", node.Hostname).
+-			Str("rejected_hostname", hostInfo.Hostname).
+-			Err(err).
+-			Msg("Rejecting invalid hostname update from hostinfo")
+-
+-		return
+-	}
+-
+-	if node.Hostname != newHostname {
+-		log.Trace().
+-			Str("node.id", node.ID.String()).
+-			Str("old_hostname", node.Hostname).
+-			Str("new_hostname", newHostname).
+-			Str("old_given_name", node.GivenName).
+-			Bool("given_name_changed", node.GivenNameHasBeenChanged()).
+-			Msg("Updating hostname from hostinfo")
+-
+-		if node.GivenNameHasBeenChanged() {
+-			// Strip invalid DNS characters for givenName display
+-			givenName := strings.ToLower(newHostname)
+-			givenName = invalidDNSRegex.ReplaceAllString(givenName, "")
+-			node.GivenName = givenName
+-		}
+-
+-		node.Hostname = newHostname
+-
+-		log.Trace().
+-			Str("node.id", node.ID.String()).
+-			Str("new_hostname", node.Hostname).
+-			Str("new_given_name", node.GivenName).
+-			Msg("Hostname updated")
+-	}
+-}
+-
+ // ApplyPeerChange takes a PeerChange struct and updates the node.
+ func (node *Node) ApplyPeerChange(change *tailcfg.PeerChange) {
+ 	if change.Key != nil {
+diff --git a/hscontrol/types/node_test.go b/hscontrol/types/node_test.go
+index d6eb7877..89bd25ba 100644
+--- a/hscontrol/types/node_test.go
++++ b/hscontrol/types/node_test.go
+@@ -550,303 +550,6 @@ func TestPeerChangeFromMapRequest(t *testing.T) {
+ 	}
+ }
+ 
+-func TestApplyHostnameFromHostInfo(t *testing.T) {
+-	tests := []struct {
+-		name       string
+-		nodeBefore Node
+-		change     *tailcfg.Hostinfo
+-		want       Node
+-	}{
+-		{
+-			name: "hostinfo-not-exists",
+-			nodeBefore: Node{
+-				GivenName: "manual-test.local",
+-				Hostname:  "TestHost.Local",
+-			},
+-			change: nil,
+-			want: Node{
+-				GivenName: "manual-test.local",
+-				Hostname:  "TestHost.Local",
+-			},
+-		},
+-		{
+-			name: "hostinfo-exists-no-automatic-givenName",
+-			nodeBefore: Node{
+-				GivenName: "manual-test.local",
+-				Hostname:  "TestHost.Local",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: "NewHostName.Local",
+-			},
+-			want: Node{
+-				GivenName: "manual-test.local",
+-				Hostname:  "newhostname.local",
+-			},
+-		},
+-		{
+-			name: "hostinfo-exists-automatic-givenName",
+-			nodeBefore: Node{
+-				GivenName: "automaticname.test",
+-				Hostname:  "AutomaticName.Test",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: "NewHostName.Local",
+-			},
+-			want: Node{
+-				GivenName: "newhostname.local",
+-				Hostname:  "newhostname.local",
+-			},
+-		},
+-		{
+-			name: "invalid-hostname-with-emoji-rejected",
+-			nodeBefore: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: "hostname-with-💩",
+-			},
+-			want: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname", // Should reject and keep old hostname
+-			},
+-		},
+-		{
+-			name: "invalid-hostname-with-unicode-rejected",
+-			nodeBefore: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: "我的电脑", //nolint:gosmopolitan // intentional i18n test data
+-			},
+-			want: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname", // Should keep old hostname
+-			},
+-		},
+-		{
+-			name: "invalid-hostname-with-special-chars-rejected",
+-			nodeBefore: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: "node-with-special!@#$%",
+-			},
+-			want: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname", // Should reject and keep old hostname
+-			},
+-		},
+-		{
+-			name: "invalid-hostname-too-short-rejected",
+-			nodeBefore: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: "a",
+-			},
+-			want: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname", // Should keep old hostname
+-			},
+-		},
+-		{
+-			name: "invalid-hostname-uppercase-accepted-lowercased",
+-			nodeBefore: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: "ValidHostName",
+-			},
+-			want: Node{
+-				GivenName: "validhostname", // GivenName follows hostname when it changes
+-				Hostname:  "validhostname", // Uppercase is lowercased, not rejected
+-			},
+-		},
+-		{
+-			name: "uppercase_to_lowercase_accepted",
+-			nodeBefore: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: "User2-Host",
+-			},
+-			want: Node{
+-				GivenName: "user2-host",
+-				Hostname:  "user2-host",
+-			},
+-		},
+-		{
+-			name: "at_sign_rejected",
+-			nodeBefore: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: "Test@Host",
+-			},
+-			want: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-		},
+-		{
+-			name: "chinese_chars_with_dash_rejected",
+-			nodeBefore: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: "server-北京-01", //nolint:gosmopolitan // intentional i18n test data
+-			},
+-			want: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-		},
+-		{
+-			name: "chinese_only_rejected",
+-			nodeBefore: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: "我的电脑", //nolint:gosmopolitan // intentional i18n test data
+-			},
+-			want: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-		},
+-		{
+-			name: "emoji_with_text_rejected",
+-			nodeBefore: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: "laptop-🚀",
+-			},
+-			want: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-		},
+-		{
+-			name: "mixed_chinese_emoji_rejected",
+-			nodeBefore: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: "测试💻机器", //nolint:gosmopolitan // intentional i18n test data
+-			},
+-			want: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-		},
+-		{
+-			name: "only_emojis_rejected",
+-			nodeBefore: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: "🎉🎊",
+-			},
+-			want: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-		},
+-		{
+-			name: "only_at_signs_rejected",
+-			nodeBefore: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: "@@@",
+-			},
+-			want: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-		},
+-		{
+-			name: "starts_with_dash_rejected",
+-			nodeBefore: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: "-test",
+-			},
+-			want: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-		},
+-		{
+-			name: "ends_with_dash_rejected",
+-			nodeBefore: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: "test-",
+-			},
+-			want: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-		},
+-		{
+-			name: "too_long_hostname_rejected",
+-			nodeBefore: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: strings.Repeat("t", 65),
+-			},
+-			want: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-		},
+-		{
+-			name: "underscore_rejected",
+-			nodeBefore: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-			change: &tailcfg.Hostinfo{
+-				Hostname: "test_node",
+-			},
+-			want: Node{
+-				GivenName: "valid-hostname",
+-				Hostname:  "valid-hostname",
+-			},
+-		},
+-	}
+-
+-	for _, tt := range tests {
+-		t.Run(tt.name, func(t *testing.T) {
+-			tt.nodeBefore.ApplyHostnameFromHostInfo(tt.change)
+-
+-			if diff := cmp.Diff(tt.want, tt.nodeBefore, util.Comparers...); diff != "" {
+-				t.Errorf("Patch unexpected result (-want +got):\n%s", diff)
+-			}
+-		})
+-	}
+-}
+ 
+ func TestApplyPeerChange(t *testing.T) {
+ 	tests := []struct {
+diff --git a/hscontrol/util/dns.go b/hscontrol/util/dns.go
+index 1b5a3806..c78a68d4 100644
+--- a/hscontrol/util/dns.go
++++ b/hscontrol/util/dns.go
+@@ -4,7 +4,6 @@ import (
+ 	"errors"
+ 	"fmt"
+ 	"net/netip"
+-	"regexp"
+ 	"strconv"
+ 	"strings"
+ 	"unicode"
+@@ -23,21 +22,14 @@ const (
+ 	LabelHostnameLength = 63
+ )
+ 
+-var invalidDNSRegex = regexp.MustCompile("[^a-z0-9-.]+")
+-
+-// DNS validation errors.
++// DNS validation errors. Hostname-side validation lives on
++// `tailscale.com/util/dnsname` and NodeStore collision handling; only
++// the username-side errors stay in this package.
+ var (
+-	ErrInvalidHostName         = errors.New("invalid hostname")
+ 	ErrUsernameTooShort        = errors.New("username must be at least 2 characters long")
+ 	ErrUsernameMustStartLetter = errors.New("username must start with a letter")
+ 	ErrUsernameTooManyAt       = errors.New("username cannot contain more than one '@'")
+ 	ErrUsernameInvalidChar     = errors.New("username contains invalid character")
+-	ErrHostnameTooShort        = errors.New("hostname is too short, must be at least 2 characters")
+-	ErrHostnameTooLong         = errors.New("hostname is too long, must not exceed 63 characters")
+-	ErrHostnameMustBeLowercase = errors.New("hostname must be lowercase")
+-	ErrHostnameHyphenBoundary  = errors.New("hostname cannot start or end with a hyphen")
+-	ErrHostnameDotBoundary     = errors.New("hostname cannot start or end with a dot")
+-	ErrHostnameInvalidChars    = errors.New("hostname contains invalid characters")
+ )
+ 
+ // ValidateUsername checks if a username is valid.
+@@ -79,76 +71,6 @@ func ValidateUsername(username string) error {
+ 	return nil
+ }
+ 
+-// ValidateHostname checks if a hostname meets DNS requirements.
+-// This function does NOT modify the input - it only validates.
+-// The hostname must already be lowercase and contain only valid characters.
+-func ValidateHostname(name string) error {
+-	if len(name) < 2 {
+-		return fmt.Errorf("%w: %q", ErrHostnameTooShort, name)
+-	}
+-
+-	if len(name) > LabelHostnameLength {
+-		return fmt.Errorf("%w: %q", ErrHostnameTooLong, name)
+-	}
+-
+-	if strings.ToLower(name) != name {
+-		return fmt.Errorf("%w: %q (try %q)", ErrHostnameMustBeLowercase, name, strings.ToLower(name))
+-	}
+-
+-	if strings.HasPrefix(name, "-") || strings.HasSuffix(name, "-") {
+-		return fmt.Errorf("%w: %q", ErrHostnameHyphenBoundary, name)
+-	}
+-
+-	if strings.HasPrefix(name, ".") || strings.HasSuffix(name, ".") {
+-		return fmt.Errorf("%w: %q", ErrHostnameDotBoundary, name)
+-	}
+-
+-	if invalidDNSRegex.MatchString(name) {
+-		return fmt.Errorf("%w: %q", ErrHostnameInvalidChars, name)
+-	}
+-
+-	return nil
+-}
+-
+-// NormaliseHostname transforms a string into a valid DNS hostname.
+-// Returns error if the transformation results in an invalid hostname.
+-//
+-// Transformations applied:
+-// - Converts to lowercase
+-// - Removes invalid DNS characters
+-// - Truncates to 63 characters if needed
+-//
+-// After transformation, validates the result.
+-func NormaliseHostname(name string) (string, error) {
+-	// Early return if already valid
+-	err := ValidateHostname(name)
+-	if err == nil {
+-		return name, nil
+-	}
+-
+-	// Transform to lowercase
+-	name = strings.ToLower(name)
+-
+-	// Strip invalid DNS characters
+-	name = invalidDNSRegex.ReplaceAllString(name, "")
+-
+-	// Truncate to DNS label limit
+-	if len(name) > LabelHostnameLength {
+-		name = name[:LabelHostnameLength]
+-	}
+-
+-	// Validate result after transformation
+-	err = ValidateHostname(name)
+-	if err != nil {
+-		return "", fmt.Errorf(
+-			"hostname invalid after normalisation: %w",
+-			err,
+-		)
+-	}
+-
+-	return name, nil
+-}
+-
+ // generateMagicDNSRootDomains generates a list of DNS entries to be included in `Routes` in `MapResponse`.
+ // This list of reverse DNS entries instructs the OS on what subnets and domains the Tailscale embedded DNS
+ // server (listening in 100.100.100.100 udp/53) should be used for.
+diff --git a/hscontrol/util/dns_test.go b/hscontrol/util/dns_test.go
+index 54306136..a70a1520 100644
+--- a/hscontrol/util/dns_test.go
++++ b/hscontrol/util/dns_test.go
+@@ -2,7 +2,6 @@ package util
+ 
+ import (
+ 	"net/netip"
+-	"strings"
+ 	"testing"
+ 
+ 	"github.com/stretchr/testify/assert"
+@@ -10,179 +9,6 @@ import (
+ 	"tailscale.com/util/must"
+ )
+ 
+-func TestNormaliseHostname(t *testing.T) {
+-	type args struct {
+-		name string
+-	}
+-
+-	tests := []struct {
+-		name    string
+-		args    args
+-		want    string
+-		wantErr bool
+-	}{
+-		{
+-			name:    "valid: lowercase user",
+-			args:    args{name: "valid-user"},
+-			want:    "valid-user",
+-			wantErr: false,
+-		},
+-		{
+-			name:    "normalise: capitalized user",
+-			args:    args{name: "Invalid-CapItaLIzed-user"},
+-			want:    "invalid-capitalized-user",
+-			wantErr: false,
+-		},
+-		{
+-			name:    "normalise: email as user",
+-			args:    args{name: "foo.bar@example.com"},
+-			want:    "foo.barexample.com",
+-			wantErr: false,
+-		},
+-		{
+-			name:    "normalise: chars in user name",
+-			args:    args{name: "super-user+name"},
+-			want:    "super-username",
+-			wantErr: false,
+-		},
+-		{
+-			name: "invalid: too long name truncated leaves trailing hyphen",
+-			args: args{
+-				name: "super-long-useruseruser-name-that-should-be-a-little-more-than-63-chars",
+-			},
+-			want:    "",
+-			wantErr: true,
+-		},
+-		{
+-			name:    "invalid: emoji stripped leaves trailing hyphen",
+-			args:    args{name: "hostname-with-💩"},
+-			want:    "",
+-			wantErr: true,
+-		},
+-		{
+-			name:    "normalise: multiple emojis stripped",
+-			args:    args{name: "node-🎉-🚀-test"},
+-			want:    "node---test",
+-			wantErr: false,
+-		},
+-		{
+-			name:    "invalid: only emoji becomes empty",
+-			args:    args{name: "💩"},
+-			want:    "",
+-			wantErr: true,
+-		},
+-		{
+-			name:    "invalid: emoji at start leaves leading hyphen",
+-			args:    args{name: "🚀-rocket-node"},
+-			want:    "",
+-			wantErr: true,
+-		},
+-		{
+-			name:    "invalid: emoji at end leaves trailing hyphen",
+-			args:    args{name: "node-test-🎉"},
+-			want:    "",
+-			wantErr: true,
+-		},
+-	}
+-	for _, tt := range tests {
+-		t.Run(tt.name, func(t *testing.T) {
+-			got, err := NormaliseHostname(tt.args.name)
+-			if (err != nil) != tt.wantErr {
+-				t.Errorf("NormaliseHostname() error = %v, wantErr %v", err, tt.wantErr)
+-				return
+-			}
+-
+-			if !tt.wantErr && got != tt.want {
+-				t.Errorf("NormaliseHostname() = %v, want %v", got, tt.want)
+-			}
+-		})
+-	}
+-}
+-
+-func TestValidateHostname(t *testing.T) {
+-	tests := []struct {
+-		name          string
+-		hostname      string
+-		wantErr       bool
+-		errorContains string
+-	}{
+-		{
+-			name:     "valid lowercase",
+-			hostname: "valid-hostname",
+-			wantErr:  false,
+-		},
+-		{
+-			name:          "uppercase rejected",
+-			hostname:      "MyHostname",
+-			wantErr:       true,
+-			errorContains: "must be lowercase",
+-		},
+-		{
+-			name:          "too short",
+-			hostname:      "a",
+-			wantErr:       true,
+-			errorContains: "too short",
+-		},
+-		{
+-			name:          "too long",
+-			hostname:      "a" + strings.Repeat("b", 63),
+-			wantErr:       true,
+-			errorContains: "too long",
+-		},
+-		{
+-			name:          "emoji rejected",
+-			hostname:      "hostname-💩",
+-			wantErr:       true,
+-			errorContains: "invalid characters",
+-		},
+-		{
+-			name:          "starts with hyphen",
+-			hostname:      "-hostname",
+-			wantErr:       true,
+-			errorContains: "cannot start or end with a hyphen",
+-		},
+-		{
+-			name:          "ends with hyphen",
+-			hostname:      "hostname-",
+-			wantErr:       true,
+-			errorContains: "cannot start or end with a hyphen",
+-		},
+-		{
+-			name:          "starts with dot",
+-			hostname:      ".hostname",
+-			wantErr:       true,
+-			errorContains: "cannot start or end with a dot",
+-		},
+-		{
+-			name:          "ends with dot",
+-			hostname:      "hostname.",
+-			wantErr:       true,
+-			errorContains: "cannot start or end with a dot",
+-		},
+-		{
+-			name:          "special characters",
+-			hostname:      "host!@#$name",
+-			wantErr:       true,
+-			errorContains: "invalid characters",
+-		},
+-	}
+-
+-	for _, tt := range tests {
+-		t.Run(tt.name, func(t *testing.T) {
+-			err := ValidateHostname(tt.hostname)
+-			if (err != nil) != tt.wantErr {
+-				t.Errorf("ValidateHostname() error = %v, wantErr %v", err, tt.wantErr)
+-				return
+-			}
+-
+-			if tt.wantErr && tt.errorContains != "" {
+-				if err == nil || !strings.Contains(err.Error(), tt.errorContains) {
+-					t.Errorf("ValidateHostname() error = %v, should contain %q", err, tt.errorContains)
+-				}
+-			}
+-		})
+-	}
+-}
+ 
+ func TestMagicDNSRootDomains100(t *testing.T) {
+ 	domains := GenerateIPv4DNSRootDomain(netip.MustParsePrefix("100.64.0.0/10"))
+diff --git a/hscontrol/util/string.go b/hscontrol/util/string.go
+index 6fca0257..b0f0376a 100644
+--- a/hscontrol/util/string.go
++++ b/hscontrol/util/string.go
+@@ -71,11 +71,6 @@ func MustGenerateRandomStringDNSSafe(size int) string {
+ 	return hash
+ }
+ 
+-func InvalidString() string {
+-	hash, _ := GenerateRandomStringDNSSafe(8)
+-	return "invalid-" + hash
+-}
+-
+ func TailNodesToString(nodes []*tailcfg.Node) string {
+ 	temp := make([]string, len(nodes))
+ 
+diff --git a/hscontrol/util/util.go b/hscontrol/util/util.go
+index 034779b5..134434f9 100644
+--- a/hscontrol/util/util.go
++++ b/hscontrol/util/util.go
+@@ -1,7 +1,6 @@
+ package util
+ 
+ import (
+-	"cmp"
+ 	"errors"
+ 	"fmt"
+ 	"net/netip"
+@@ -12,7 +11,6 @@ import (
+ 	"strings"
+ 	"time"
+ 
+-	"tailscale.com/tailcfg"
+ 	"tailscale.com/util/cmpver"
+ )
+ 
+@@ -282,44 +280,6 @@ func IsCI() bool {
+ 	return false
+ }
+ 
+-// EnsureHostname guarantees a valid hostname for node registration.
+-// It extracts a hostname from Hostinfo, providing sensible defaults
+-// if Hostinfo is nil or Hostname is empty. This prevents nil pointer dereferences
+-// and ensures nodes always have a valid hostname.
+-// The hostname is truncated to 63 characters to comply with DNS label length limits (RFC 1123).
+-// This function never fails - it always returns a valid hostname.
+-//
+-// Strategy:
+-// 1. If hostinfo is nil/empty → generate default from keys
+-// 2. If hostname is provided → normalise it
+-// 3. If normalisation fails → generate invalid-<random> replacement
+-//
+-// Returns the guaranteed-valid hostname to use.
+-func EnsureHostname(hostinfo tailcfg.HostinfoView, machineKey, nodeKey string) string {
+-	if !hostinfo.Valid() || hostinfo.Hostname() == "" {
+-		key := cmp.Or(machineKey, nodeKey)
+-		if key == "" {
+-			return "unknown-node"
+-		}
+-
+-		keyPrefix := key
+-		if len(key) > 8 {
+-			keyPrefix = key[:8]
+-		}
+-
+-		return "node-" + keyPrefix
+-	}
+-
+-	lowercased := strings.ToLower(hostinfo.Hostname())
+-
+-	err := ValidateHostname(lowercased)
+-	if err == nil {
+-		return lowercased
+-	}
+-
+-	return InvalidString()
+-}
+-
+ // GenerateRegistrationKey generates a vanity key for tracking web authentication
+ // registration flows in logs. This key is NOT stored in the database and does NOT use bcrypt -
+ // it's purely for observability and correlating log entries during the registration process.
+diff --git a/hscontrol/util/util_test.go b/hscontrol/util/util_test.go
+index 6e7a0630..117fb76f 100644
+--- a/hscontrol/util/util_test.go
++++ b/hscontrol/util/util_test.go
+@@ -7,11 +7,8 @@ import (
+ 	"time"
+ 
+ 	"github.com/google/go-cmp/cmp"
+-	"tailscale.com/tailcfg"
+ )
+ 
+-const testUnknownNode = "unknown-node"
+-
+ func TestTailscaleVersionNewerOrEqual(t *testing.T) {
+ 	type args struct {
+ 		minimum string
+@@ -799,514 +796,6 @@ over a maximum of 30 hops:
+ 	}
+ }
+ 
+-func TestEnsureHostname(t *testing.T) {
+-	t.Parallel()
+-
+-	tests := []struct {
+-		name       string
+-		hostinfo   *tailcfg.Hostinfo
+-		machineKey string
+-		nodeKey    string
+-		want       string
+-	}{
+-		{
+-			name: "valid_hostname",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "test-node",
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "test-node",
+-		},
+-		{
+-			name:       "nil_hostinfo_with_machine_key",
+-			hostinfo:   nil,
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "node-mkey1234",
+-		},
+-		{
+-			name:       "nil_hostinfo_with_node_key_only",
+-			hostinfo:   nil,
+-			machineKey: "",
+-			nodeKey:    "nkey12345678",
+-			want:       "node-nkey1234",
+-		},
+-		{
+-			name:       "nil_hostinfo_no_keys",
+-			hostinfo:   nil,
+-			machineKey: "",
+-			nodeKey:    "",
+-			want:       testUnknownNode,
+-		},
+-		{
+-			name: "empty_hostname_with_machine_key",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "",
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "node-mkey1234",
+-		},
+-		{
+-			name: "empty_hostname_with_node_key_only",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "",
+-			},
+-			machineKey: "",
+-			nodeKey:    "nkey12345678",
+-			want:       "node-nkey1234",
+-		},
+-		{
+-			name: "empty_hostname_no_keys",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "",
+-			},
+-			machineKey: "",
+-			nodeKey:    "",
+-			want:       testUnknownNode,
+-		},
+-		{
+-			name: "hostname_exactly_63_chars",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "123456789012345678901234567890123456789012345678901234567890123",
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "123456789012345678901234567890123456789012345678901234567890123",
+-		},
+-		{
+-			name: "hostname_64_chars_truncated",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "1234567890123456789012345678901234567890123456789012345678901234",
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "invalid-",
+-		},
+-		{
+-			name: "hostname_very_long_truncated",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "test-node-with-very-long-hostname-that-exceeds-dns-label-limits-of-63-characters-and-should-be-truncated",
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "invalid-",
+-		},
+-		{
+-			name: "hostname_with_special_chars",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "node-with-special!@#$%",
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "invalid-",
+-		},
+-		{
+-			name: "hostname_with_unicode",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "node-ñoño-测试", //nolint:gosmopolitan
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "invalid-",
+-		},
+-		{
+-			name: "short_machine_key",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "",
+-			},
+-			machineKey: "short",
+-			nodeKey:    "nkey12345678",
+-			want:       "node-short",
+-		},
+-		{
+-			name: "short_node_key",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "",
+-			},
+-			machineKey: "",
+-			nodeKey:    "short",
+-			want:       "node-short",
+-		},
+-		{
+-			name: "hostname_with_emoji_replaced",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "hostname-with-💩",
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "invalid-",
+-		},
+-		{
+-			name: "hostname_only_emoji_replaced",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "🚀",
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "invalid-",
+-		},
+-		{
+-			name: "hostname_with_multiple_emojis_replaced",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "node-🎉-🚀-test",
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "invalid-",
+-		},
+-		{
+-			name: "uppercase_to_lowercase",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "User2-Host",
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "user2-host",
+-		},
+-		{
+-			name: "underscore_removed",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "test_node",
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "invalid-",
+-		},
+-		{
+-			name: "at_sign_invalid",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "Test@Host",
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "invalid-",
+-		},
+-		{
+-			name: "chinese_chars_with_dash_invalid",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "server-北京-01", //nolint:gosmopolitan
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "invalid-",
+-		},
+-		{
+-			name: "chinese_only_invalid",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "我的电脑", //nolint:gosmopolitan
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "invalid-",
+-		},
+-		{
+-			name: "emoji_with_text_invalid",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "laptop-🚀",
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "invalid-",
+-		},
+-		{
+-			name: "mixed_chinese_emoji_invalid",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "测试💻机器", //nolint:gosmopolitan // intentional i18n test data
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "invalid-",
+-		},
+-		{
+-			name: "only_emojis_invalid",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "🎉🎊",
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "invalid-",
+-		},
+-		{
+-			name: "only_at_signs_invalid",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "@@@",
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "invalid-",
+-		},
+-		{
+-			name: "starts_with_dash_invalid",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "-test",
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "invalid-",
+-		},
+-		{
+-			name: "ends_with_dash_invalid",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "test-",
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "invalid-",
+-		},
+-		{
+-			name: "very_long_hostname_truncated",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: strings.Repeat("t", 70),
+-			},
+-			machineKey: "mkey12345678",
+-			nodeKey:    "nkey12345678",
+-			want:       "invalid-",
+-		},
+-	}
+-
+-	for _, tt := range tests {
+-		t.Run(tt.name, func(t *testing.T) {
+-			t.Parallel()
+-
+-			got := EnsureHostname(tt.hostinfo.View(), tt.machineKey, tt.nodeKey)
+-			// For invalid hostnames, we just check the prefix since the random part varies
+-			if strings.HasPrefix(tt.want, "invalid-") {
+-				if !strings.HasPrefix(got, "invalid-") {
+-					t.Errorf("EnsureHostname() = %v, want prefix %v", got, tt.want)
+-				}
+-			} else if got != tt.want {
+-				t.Errorf("EnsureHostname() = %v, want %v", got, tt.want)
+-			}
+-		})
+-	}
+-}
+-
+-func TestEnsureHostnameWithHostinfo(t *testing.T) {
+-	t.Parallel()
+-
+-	tests := []struct {
+-		name          string
+-		hostinfo      *tailcfg.Hostinfo
+-		machineKey    string
+-		nodeKey       string
+-		wantHostname  string
+-		checkHostinfo func(*testing.T, *tailcfg.Hostinfo)
+-	}{
+-		{
+-			name: "valid_hostinfo_unchanged",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "test-node",
+-				OS:       "linux",
+-			},
+-			machineKey:   "mkey12345678",
+-			nodeKey:      "nkey12345678",
+-			wantHostname: "test-node",
+-			checkHostinfo: func(t *testing.T, hi *tailcfg.Hostinfo) { //nolint:thelper
+-				if hi == nil {
+-					t.Fatal("hostinfo should not be nil")
+-				}
+-
+-				if hi.Hostname != "test-node" {
+-					t.Errorf("hostname = %v, want test-node", hi.Hostname)
+-				}
+-
+-				if hi.OS != "linux" {
+-					t.Errorf("OS = %v, want linux", hi.OS)
+-				}
+-			},
+-		},
+-		{
+-			name:         "nil_hostinfo_creates_default",
+-			hostinfo:     nil,
+-			machineKey:   "mkey12345678",
+-			nodeKey:      "nkey12345678",
+-			wantHostname: "node-mkey1234",
+-		},
+-		{
+-			name: "empty_hostname_updated",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "",
+-				OS:       "darwin",
+-			},
+-			machineKey:   "mkey12345678",
+-			nodeKey:      "nkey12345678",
+-			wantHostname: "node-mkey1234",
+-		},
+-		{
+-			name: "long_hostname_rejected",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "test-node-with-very-long-hostname-that-exceeds-dns-label-limits-of-63-characters",
+-			},
+-			machineKey:   "mkey12345678",
+-			nodeKey:      "nkey12345678",
+-			wantHostname: "invalid-",
+-		},
+-		{
+-			name:         "nil_hostinfo_node_key_only",
+-			hostinfo:     nil,
+-			machineKey:   "",
+-			nodeKey:      "nkey12345678",
+-			wantHostname: "node-nkey1234",
+-			checkHostinfo: func(t *testing.T, hi *tailcfg.Hostinfo) { //nolint:thelper
+-				if hi == nil {
+-					t.Fatal("hostinfo should not be nil")
+-				}
+-
+-				if hi.Hostname != "node-nkey1234" {
+-					t.Errorf("hostname = %v, want node-nkey1234", hi.Hostname)
+-				}
+-			},
+-		},
+-		{
+-			name:         "nil_hostinfo_no_keys",
+-			hostinfo:     nil,
+-			machineKey:   "",
+-			nodeKey:      "",
+-			wantHostname: testUnknownNode,
+-			checkHostinfo: func(t *testing.T, hi *tailcfg.Hostinfo) { //nolint:thelper
+-				if hi == nil {
+-					t.Fatal("hostinfo should not be nil")
+-				}
+-
+-				if hi.Hostname != testUnknownNode {
+-					t.Errorf("hostname = %v, want unknown-node", hi.Hostname)
+-				}
+-			},
+-		},
+-		{
+-			name: "empty_hostname_no_keys",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "",
+-			},
+-			machineKey:   "",
+-			nodeKey:      "",
+-			wantHostname: testUnknownNode,
+-			checkHostinfo: func(t *testing.T, hi *tailcfg.Hostinfo) { //nolint:thelper
+-				if hi == nil {
+-					t.Fatal("hostinfo should not be nil")
+-				}
+-
+-				if hi.Hostname != testUnknownNode {
+-					t.Errorf("hostname = %v, want unknown-node", hi.Hostname)
+-				}
+-			},
+-		},
+-		{
+-			name: "preserves_other_fields",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname:     "test",
+-				OS:           "windows",
+-				OSVersion:    "10.0.19044",
+-				DeviceModel:  "test-device",
+-				BackendLogID: "log123",
+-			},
+-			machineKey:   "mkey12345678",
+-			nodeKey:      "nkey12345678",
+-			wantHostname: "test",
+-			checkHostinfo: func(t *testing.T, hi *tailcfg.Hostinfo) { //nolint:thelper
+-				if hi == nil {
+-					t.Fatal("hostinfo should not be nil")
+-				}
+-
+-				if hi.Hostname != "test" {
+-					t.Errorf("hostname = %v, want test", hi.Hostname)
+-				}
+-
+-				if hi.OS != "windows" {
+-					t.Errorf("OS = %v, want windows", hi.OS)
+-				}
+-
+-				if hi.OSVersion != "10.0.19044" {
+-					t.Errorf("OSVersion = %v, want 10.0.19044", hi.OSVersion)
+-				}
+-
+-				if hi.DeviceModel != "test-device" {
+-					t.Errorf("DeviceModel = %v, want test-device", hi.DeviceModel)
+-				}
+-
+-				if hi.BackendLogID != "log123" {
+-					t.Errorf("BackendLogID = %v, want log123", hi.BackendLogID)
+-				}
+-			},
+-		},
+-		{
+-			name: "exactly_63_chars_unchanged",
+-			hostinfo: &tailcfg.Hostinfo{
+-				Hostname: "123456789012345678901234567890123456789012345678901234567890123",
+-			},
+-			machineKey:   "mkey12345678",
+-			nodeKey:      "nkey12345678",
+-			wantHostname: "123456789012345678901234567890123456789012345678901234567890123",
+-			checkHostinfo: func(t *testing.T, hi *tailcfg.Hostinfo) { //nolint:thelper
+-				if hi == nil {
+-					t.Fatal("hostinfo should not be nil")
+-				}
+-
+-				if len(hi.Hostname) != 63 {
+-					t.Errorf("hostname length = %v, want 63", len(hi.Hostname))
+-				}
+-			},
+-		},
+-	}
+-
+-	for _, tt := range tests {
+-		t.Run(tt.name, func(t *testing.T) {
+-			t.Parallel()
+-
+-			gotHostname := EnsureHostname(tt.hostinfo.View(), tt.machineKey, tt.nodeKey)
+-			// For invalid hostnames, we just check the prefix since the random part varies
+-			if strings.HasPrefix(tt.wantHostname, "invalid-") {
+-				if !strings.HasPrefix(gotHostname, "invalid-") {
+-					t.Errorf("EnsureHostname() = %v, want prefix %v", gotHostname, tt.wantHostname)
+-				}
+-			} else if gotHostname != tt.wantHostname {
+-				t.Errorf("EnsureHostname() hostname = %v, want %v", gotHostname, tt.wantHostname)
+-			}
+-		})
+-	}
+-}
+-
+-func TestEnsureHostname_DNSLabelLimit(t *testing.T) {
+-	t.Parallel()
+-
+-	testCases := []string{
+-		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+-		"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+-		"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+-		"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+-	}
+-
+-	for i, hostname := range testCases {
+-		t.Run(cmp.Diff("", ""), func(t *testing.T) {
+-			t.Parallel()
+-
+-			hostinfo := &tailcfg.Hostinfo{Hostname: hostname}
+-
+-			result := EnsureHostname(hostinfo.View(), "mkey", "nkey")
+-			if len(result) > 63 {
+-				t.Errorf("test case %d: hostname length = %d, want <= 63", i, len(result))
+-			}
+-		})
+-	}
+-}
+-
+-func TestEnsureHostname_Idempotent(t *testing.T) {
+-	t.Parallel()
+-
+-	originalHostinfo := &tailcfg.Hostinfo{
+-		Hostname: "test-node",
+-		OS:       "linux",
+-	}
+-
+-	hostname1 := EnsureHostname(originalHostinfo.View(), "mkey", "nkey")
+-	hostname2 := EnsureHostname(originalHostinfo.View(), "mkey", "nkey")
+-
+-	if hostname1 != hostname2 {
+-		t.Errorf("hostnames not equal: %v != %v", hostname1, hostname2)
+-	}
+-}
+ 
+ func TestGenerateRegistrationKey(t *testing.T) {
+ 	t.Parallel()
+diff --git a/integration/cli_test.go b/integration/cli_test.go
+index 15fd51a3..7ee00271 100644
+--- a/integration/cli_test.go
++++ b/integration/cli_test.go
+@@ -1590,7 +1590,7 @@ func TestNodeRenameCommand(t *testing.T) {
+ 			strings.Repeat("t", 64),
+ 		},
+ 	)
+-	require.ErrorContains(t, err, "must not exceed 63 characters")
++	require.ErrorContains(t, err, "is too long, max length is 63 bytes")
+ 
+ 	var listAllAfterRenameAttempt []v1.Node
+ 
+diff --git a/integration/general_test.go b/integration/general_test.go
+index 9a797145..71d4371a 100644
+--- a/integration/general_test.go
++++ b/integration/general_test.go
+@@ -12,8 +12,8 @@ import (
+ 
+ 	v1 "github.com/juanfont/headscale/gen/go/headscale/v1"
+ 	"github.com/juanfont/headscale/hscontrol/types"
+-	"github.com/juanfont/headscale/hscontrol/util"
+ 	"github.com/juanfont/headscale/integration/hsic"
++	"tailscale.com/util/dnsname"
+ 	"github.com/juanfont/headscale/integration/integrationutil"
+ 	"github.com/juanfont/headscale/integration/tsic"
+ 	"github.com/rs/zerolog/log"
+@@ -760,10 +760,19 @@ func TestTaildrop(t *testing.T) {
+ func TestUpdateHostnameFromClient(t *testing.T) {
+ 	IntegrationSkip(t)
+ 
++	// Hostnames chosen to exercise the SaaS sanitisation rules end-to-end:
++	//   - Joe's Mac mini → apostrophes dropped + spaces to dashes (#3188)
++	//   - Test@Host      → `@` replaced with dash
++	//   - mail.server    → dots replaced with dashes (MagicDNS breaker)
++	// Pre-rewrite these were rejected by ApplyHostnameFromHostInfo with
++	// "invalid characters" and the node was stuck on an invalid-<rand>
++	// GivenName with the HostName update dropped. The assertions below
++	// verify both raw preservation (node.Name) and SaaS-matching sanitisation
++	// (node.GivenName) for each awkward input.
+ 	hostnames := map[string]string{
+-		"1": "user1-host",
+-		"2": "user2-host",
+-		"3": "user3-host",
++		"1": "Joe's Mac mini",
++		"2": "Test@Host",
++		"3": "mail.server",
+ 	}
+ 
+ 	spec := ScenarioSpec{
+@@ -825,10 +834,9 @@ func TestUpdateHostnameFromClient(t *testing.T) {
+ 			hostname := hostnames[strconv.FormatUint(node.GetId(), 10)]
+ 			assert.Equal(ct, hostname, node.GetName(), "Node name should match hostname")
+ 
+-			// GivenName is normalized (lowercase, invalid chars stripped)
+-			normalised, err := util.NormaliseHostname(hostname)
+-			assert.NoError(ct, err)
+-			assert.Equal(ct, normalised, node.GetGivenName(), "Given name should match FQDN rules")
++			// GivenName is sanitised via dnsname.SanitizeHostname (SaaS algorithm).
++			assert.Equal(ct, dnsname.SanitizeHostname(hostname), node.GetGivenName(),
++				"Given name should match SaaS hostname-sanitisation rules")
+ 		}
+ 	}, integrationutil.ScaledTimeout(20*time.Second), 1*time.Second)
+ 
+@@ -925,8 +933,7 @@ func TestUpdateHostnameFromClient(t *testing.T) {
+ 		for _, node := range nodes {
+ 			hostname := hostnames[strconv.FormatUint(node.GetId(), 10)]
+ 			givenName := fmt.Sprintf("%d-givenname", node.GetId())
+-			// Hostnames are lowercased before being stored, so "NEW" becomes "new"
+-			if node.GetName() != hostname+"new" || node.GetGivenName() != givenName {
++			if node.GetName() != hostname+"NEW" || node.GetGivenName() != givenName {
+ 				return false
+ 			}
+ 		}

@@ -1,0 +1,275 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #3047: [Bug] Cannot choose Container number in advanced setup</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #3047: [Bug] Cannot choose Container number in advanced setup</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/3047">Original issue #3047</a></p><p>Created: 2026-01-26T18:21:11Z; updated: 2026-01-28T18:02:20Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+Cannot choose LXC number in proxmox instance, the scripts defaults to next one available
+
+### Expected Behavior
+
+As for most other pve local scripts, one should be able to choose container number.
+
+### Steps To Reproduce
+
+In the below environment, launch &#x27;Headscale&#x27; script in advanced mode.
+The &quot;Container number&quot; option is not present.
+
+### Environment
+
+```markdown
+Running pve local scripts on the following proxmox instance:
+Processor(s) : 8 x Intel(R) Core(TM) i7-6700T CPU @ 2.80GHz (1 Support de processeur)
+Memory : 16Gb
+Kernel Version : Linux 6.17.2-2-pve (2025-11-26T12:33Z)
+Mode d’amorçage : Legacy BIOS
+PVE Manager version : pve-manager/9.1.2/9d436f37a0ac4172
+```
+
+### Runtime environment
+
+- [ ] Headscale is behind a (reverse) proxy
+- [ ] Headscale runs in a container
+
+### Debug information
+
+will try to install it with default number, and change it with backup/restore trick, when I get some time</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/3047#issuecomment-3801299929">nblock</a></h3><p>Created: 2026-01-26T19:17:00Z; updated: 2026-01-26T19:17:00Z</p><pre>&gt; As for most other pve local scripts, one should be able to choose container number.
+
+Please raise this issue with ProxmoxVE-Local</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/3047#issuecomment-3812928390">dim6003</a></h3><p>Created: 2026-01-28T18:02:20Z; updated: 2026-01-28T18:02:20Z</p><pre>Sorry for the mismatch, followed the link on pve-local page. Will create it where it belongs.</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2026-01-26T18:21:12Z · labeled · dim6003</summary><pre>{
+  &quot;id&quot;: 22296474126,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz887l5sSrzwAAAAUw-TIO&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/22296474126&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;dim6003&quot;,
+    &quot;id&quot;: 57224834,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjU3MjI0ODM0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/57224834?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/dim6003&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/dim6003&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/dim6003/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/dim6003/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/dim6003/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/dim6003/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/dim6003/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/dim6003/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/dim6003/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/dim6003/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/dim6003/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-01-26T18:21:12Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-01-26T19:17:00Z · commented · nblock</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3801299929&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3047#issuecomment-3801299929&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3047&quot;,
+  &quot;id&quot;: 3801299929,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz887ikzvZ&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-01-26T19:17:00Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-01-26T19:17:00Z&quot;,
+  &quot;body&quot;: &quot;&gt; As for most other pve local scripts, one should be able to choose container number.\n\nPlease raise this issue with ProxmoxVE-Local&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3801299929/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-01-26T19:17:00Z · closed · nblock</summary><pre>{
+  &quot;id&quot;: 22297679070,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz887l5sSrzwAAAAUxC5Te&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/22297679070&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-01-26T19:17:00Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-01-26T19:26:01Z · unsubscribed · mrabino1</summary><pre>{
+  &quot;id&quot;: 22297851110,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz887l5sSrzwAAAAUxDjTm&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/22297851110&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mrabino1&quot;,
+    &quot;id&quot;: 4902221,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ5MDIyMjE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4902221?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mrabino1&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mrabino1&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mrabino1/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mrabino1/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mrabino1/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mrabino1/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mrabino1/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mrabino1/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mrabino1/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mrabino1/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mrabino1/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-01-26T19:26:01Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-01-28T18:02:20Z · commented · dim6003</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3812928390&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3047#issuecomment-3812928390&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3047&quot;,
+  &quot;id&quot;: 3812928390,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz887jRKuG&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;dim6003&quot;,
+    &quot;id&quot;: 57224834,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjU3MjI0ODM0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/57224834?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/dim6003&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/dim6003&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/dim6003/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/dim6003/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/dim6003/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/dim6003/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/dim6003/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/dim6003/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/dim6003/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/dim6003/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/dim6003/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-01-28T18:02:20Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-01-28T18:02:20Z&quot;,
+  &quot;body&quot;: &quot;Sorry for the mismatch, followed the link on pve-local page. Will create it where it belongs.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3812928390/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;dim6003&quot;,
+    &quot;id&quot;: 57224834,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjU3MjI0ODM0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/57224834?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/dim6003&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/dim6003&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/dim6003/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/dim6003/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/dim6003/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/dim6003/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/dim6003/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/dim6003/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/dim6003/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/dim6003/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/dim6003/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

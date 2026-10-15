@@ -1,0 +1,217 @@
+commit 6031194c36019b12fa64ef016951742c62597d36
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Thu Apr 30 08:16:02 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Wed Sep 23 15:18:34 2026 +0200
+
+    types: add listener address helpers
+    
+    portFromAddr resolves numeric and named ports (":http", ":https")
+    without touching /etc/services or the resolver. listenersOverlap
+    follows kernel rules: same port plus a wildcard host on either side,
+    or same port plus identical specific host, both count as collision;
+    different specific hosts on the same port do not. Set an explicit
+    viper default for tls_letsencrypt_listen so a minimal config still
+    resolves to ":http".
+    
+    Updates #3227
+---
+ hscontrol/types/config.go        |  1 +
+ hscontrol/types/listener.go      | 80 +++++++++++++++++++++++++++++++++++
+ hscontrol/types/listener_test.go | 90 ++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 171 insertions(+)
+
+diff --git a/hscontrol/types/config.go b/hscontrol/types/config.go
+index dabf2524..46991846 100644
+--- a/hscontrol/types/config.go
++++ b/hscontrol/types/config.go
+@@ -437,6 +437,7 @@ func LoadConfig(path string, isFile bool) error {
+ 
+ 	viper.SetDefault("tls_letsencrypt_cache_dir", "/var/www/.cache")
+ 	viper.SetDefault("tls_letsencrypt_challenge_type", HTTP01ChallengeType)
++	viper.SetDefault("tls_letsencrypt_listen", ":http")
+ 
+ 	viper.SetDefault("log.level", "info")
+ 	viper.SetDefault("log.format", TextLogFormat)
+diff --git a/hscontrol/types/listener.go b/hscontrol/types/listener.go
+new file mode 100644
+index 00000000..2aeb8314
+--- /dev/null
++++ b/hscontrol/types/listener.go
+@@ -0,0 +1,80 @@
++package types
++
++import (
++	"errors"
++	"fmt"
++	"net"
++	"strconv"
++)
++
++var errEmptyListenAddr = errors.New("address is empty")
++
++// portFromAddr resolves the numeric port of a TCP listen address.
++// Accepts host:port form with either a numeric port or one of the named
++// services "http" / "https". The named-service table is intentionally
++// hardcoded so this stays a pure string->int mapping with no network or
++// /etc/services lookups.
++func portFromAddr(addr string) (int, error) {
++	if addr == "" {
++		return 0, errEmptyListenAddr
++	}
++
++	_, port, err := net.SplitHostPort(addr)
++	if err != nil {
++		return 0, fmt.Errorf("split host/port from %q: %w", addr, err)
++	}
++
++	switch port {
++	case "http":
++		return 80, nil
++	case "https":
++		return 443, nil
++	}
++
++	p, err := strconv.Atoi(port)
++	if err != nil {
++		return 0, fmt.Errorf("parse port from %q: %w", addr, err)
++	}
++
++	return p, nil
++}
++
++// listenersOverlap reports whether two TCP listen addresses would
++// compete for the same kernel socket. Mirrors kernel rules:
++//   - different ports                              → false
++//   - same port + a wildcard host on either side   → true
++//   - same port + identical specific host          → true
++//   - same port + different specific hosts         → false
++func listenersOverlap(a, b string) (bool, error) {
++	aPort, err := portFromAddr(a)
++	if err != nil {
++		return false, err
++	}
++
++	bPort, err := portFromAddr(b)
++	if err != nil {
++		return false, err
++	}
++
++	if aPort != bPort {
++		return false, nil
++	}
++
++	aHost, _, _ := net.SplitHostPort(a)
++	bHost, _, _ := net.SplitHostPort(b)
++
++	if isWildcardHost(aHost) || isWildcardHost(bHost) {
++		return true, nil
++	}
++
++	return aHost == bHost, nil
++}
++
++func isWildcardHost(h string) bool {
++	switch h {
++	case "", "0.0.0.0", "::", "[::]":
++		return true
++	}
++
++	return false
++}
+diff --git a/hscontrol/types/listener_test.go b/hscontrol/types/listener_test.go
+new file mode 100644
+index 00000000..98d2d47e
+--- /dev/null
++++ b/hscontrol/types/listener_test.go
+@@ -0,0 +1,90 @@
++package types
++
++import (
++	"testing"
++
++	"github.com/stretchr/testify/assert"
++	"github.com/stretchr/testify/require"
++)
++
++func TestPortFromAddr(t *testing.T) {
++	tests := []struct {
++		name    string
++		addr    string
++		want    int
++		wantErr bool
++	}{
++		{"named-http", ":http", 80, false},
++		{"numeric-80", ":80", 80, false},
++		{"wildcard-numeric", "0.0.0.0:80", 80, false},
++		{"named-https", ":https", 443, false},
++		{"numeric-443", "0.0.0.0:443", 443, false},
++		{"ipv6-wildcard", "[::]:8080", 8080, false},
++		{"specific-ipv4", "192.168.1.1:8080", 8080, false},
++		{"empty", "", 0, true},
++		{"no-port", "0.0.0.0", 0, true},
++		{"unknown-named", ":bogus", 0, true},
++	}
++	for _, tt := range tests {
++		t.Run(tt.name, func(t *testing.T) {
++			got, err := portFromAddr(tt.addr)
++			if tt.wantErr {
++				require.Error(t, err)
++				return
++			}
++
++			require.NoError(t, err)
++			assert.Equal(t, tt.want, got)
++		})
++	}
++}
++
++func TestListenersOverlap(t *testing.T) {
++	tests := []struct {
++		name        string
++		a, b        string
++		wantOverlap bool
++		wantErr     bool
++	}{
++		{"different-ports", ":80", ":443", false, false},
++		{"same-port-numeric", ":80", ":80", true, false},
++		{"http-vs-numeric", ":http", ":80", true, false},
++		{"https-vs-numeric", ":443", ":https", true, false},
++		{"wildcard-vs-loopback-same-port", "0.0.0.0:80", "127.0.0.1:80", true, false},
++		{"loopback-vs-wildcard-same-port", "127.0.0.1:80", "0.0.0.0:80", true, false},
++		{"ipv6-wildcard-vs-numeric", "[::]:80", "0.0.0.0:80", true, false},
++		{"different-specific-hosts-same-port", "192.168.1.1:80", "192.168.1.2:80", false, false},
++		{"same-specific-host-same-port", "127.0.0.1:80", "127.0.0.1:80", true, false},
++		{"same-specific-host-different-port", "127.0.0.1:80", "127.0.0.1:81", false, false},
++		{"bad-input-a", "garbage", "", false, true},
++		{"bad-input-b", ":80", "garbage", false, true},
++	}
++	for _, tt := range tests {
++		t.Run(tt.name, func(t *testing.T) {
++			got, err := listenersOverlap(tt.a, tt.b)
++			if tt.wantErr {
++				require.Error(t, err)
++				return
++			}
++
++			require.NoError(t, err)
++			assert.Equal(t, tt.wantOverlap, got)
++		})
++	}
++}
++
++func TestIsWildcardHost(t *testing.T) {
++	wildcards := []string{"", "0.0.0.0", "::", "[::]"}
++	for _, h := range wildcards {
++		t.Run("wildcard-"+h, func(t *testing.T) {
++			assert.True(t, isWildcardHost(h))
++		})
++	}
++
++	specifics := []string{"127.0.0.1", "192.168.1.1", "::1", "example.com"}
++	for _, h := range specifics {
++		t.Run("specific-"+h, func(t *testing.T) {
++			assert.False(t, isWildcardHost(h))
++		})
++	}
++}

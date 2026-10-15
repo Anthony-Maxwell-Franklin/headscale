@@ -1,0 +1,436 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #1313: Unable to disable Headscale from using Tailscale DERP nodes</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #1313: Unable to disable Headscale from using Tailscale DERP nodes</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/1313">Original issue #1313</a></p><p>Created: 2023-04-04T01:45:34Z; updated: 2023-04-28T01:22:43Z; observed state: closed; reason: not_planned</p><h2>Report body</h2><pre># Environment
+
+**Headscale version**: v0.21.0  
+**Server version**: CentOS7  
+**Tailscale version**: Win-134.2
+
+# Problem
+
+1.  Successfully installed and deployed Headscale by following the [official Linux deployment guide](https://github.com/juanfont/headscale/blob/main/docs/running-headscale-linux.md) and connected nodes to the server.
+2.  Nodes can ping each other.
+3.  However, it is well-known that there is no official Tailscale DERP node in the country with the largest area in Asia.
+4.  All nodes connect to a DERP node in India for some unknown reason.
+5.  This results in very high latency, reaching around 200, when pinging a company computer at home, making remote desktop applications like Microsoft Remote Desktop almost unusable.
+
+# Attempts made
+
+1.  Asked chatGPT and received several answers without dissent.
+2.  Tried commenting out or deleting the DERP content in the Headscale configuration file `config.yaml`.
+
+# Requirements
+
+1.  A should connect to B only using Headscale server and not Tailscale DERP server.
+2.  Reduce latency and ensure both ends can access through UDP, with latency below 30.
+
+==Can anyone please help me? Thank you.==</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/1313#issuecomment-1496765421">kylechase</a></h3><p>Created: 2023-04-05T00:27:26Z; updated: 2023-04-05T00:29:48Z</p><pre>If you set the url key in the derp key to [], this will disable tailscale provided derps.  Did you enable the local derp server in config.yaml?
+
+This is not a bug, just a configuration issue.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1313#issuecomment-1498385259">MilkTeaNo7</a></h3><p>Created: 2023-04-06T01:54:40Z; updated: 2023-04-06T01:54:40Z</p><pre>Thank you for your response, the problem has been solved. However, I realized that without deploying a DERP server, I am always using the DERP server provided by OpenAI. I am currently experiencing some issues and would greatly appreciate it if you could provide some useful documentation. The official documentation lacks many key basic steps.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1313#issuecomment-1499145113">kylechase</a></h3><p>Created: 2023-04-06T14:20:51Z; updated: 2023-04-06T14:20:51Z</p><pre>Headscale has an embedded derp server.
+
+Here is the derp server config from my configuration.
+```
+derp:
+  server:
+    # If enabled, runs the embedded DERP server and merges it into the rest of the DERP config
+    # The Headscale server_url defined above MUST be using https, DERP requires TLS to be in place
+    enabled: true
+
+    # Region ID to use for the embedded DERP server.
+    # The local DERP prevails if the region ID collides with other region ID coming from
+    # the regular DERP config.
+    region_id: 999
+
+    # Region code and name are displayed in the Tailscale UI to identify a DERP region
+    region_code: &quot;derpyderp&quot;
+    region_name: &quot;My Derpy Derp Server&quot;
+
+    # Listens over UDP at the configured address for STUN connections - to help with NAT traversal.
+    # When the embedded DERP server is enabled stun_listen_addr MUST be defined.
+    #
+    # For more details on how this works, check this great article: https://tailscale.com/blog/how-tailscale-works/
+    stun_listen_addr: &quot;0.0.0.0:3478&quot;
+
+  # List of externally available DERP maps encoded in JSON
+  urls: []
+#    - https://controlplane.tailscale.com/derpmap/default
+
+  # Locally available DERP map files encoded in YAML
+  #
+  # This option is mostly interesting for people hosting
+  # their own DERP servers:
+  # https://tailscale.com/kb/1118/custom-derp-servers/
+  #
+  # paths:
+  #   - /etc/headscale/derp-example.yaml
+  paths: []
+
+  # If enabled, a worker will be set up to periodically
+  # refresh the given sources and update the derpmap
+  # will be set up.
+  auto_update_enabled: true
+
+  # How often should we check for DERP updates?
+  update_frequency: 24h
+```</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2023-04-04T01:45:34Z · labeled · MilkTeaNo7</summary><pre>{
+  &quot;id&quot;: 8919123880,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz885ihzDFzwAAAAITnweo&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/8919123880&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;MilkTeaNo7&quot;,
+    &quot;id&quot;: 74584122,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjc0NTg0MTIy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/74584122?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MilkTeaNo7&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MilkTeaNo7&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2023-04-04T01:45:34Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2023-04-05T00:27:26Z · commented · kylechase</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1496765421&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1313#issuecomment-1496765421&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1313&quot;,
+  &quot;id&quot;: 1496765421,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885ZNtPt&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;kylechase&quot;,
+    &quot;id&quot;: 4741043,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ3NDEwNDM=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4741043?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kylechase&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kylechase&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kylechase/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kylechase/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kylechase/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kylechase/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kylechase/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kylechase/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kylechase/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kylechase/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kylechase/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2023-04-05T00:27:26Z&quot;,
+  &quot;updated_at&quot;: &quot;2023-04-05T00:29:48Z&quot;,
+  &quot;body&quot;: &quot;If you set the url key in the derp key to [], this will disable tailscale provided derps.  Did you enable the local derp server in config.yaml?\r\n\r\nThis is not a bug, just a configuration issue.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1496765421/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kylechase&quot;,
+    &quot;id&quot;: 4741043,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ3NDEwNDM=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4741043?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kylechase&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kylechase&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kylechase/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kylechase/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kylechase/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kylechase/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kylechase/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kylechase/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kylechase/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kylechase/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kylechase/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2023-04-06T01:54:40Z · commented · MilkTeaNo7</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1498385259&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1313#issuecomment-1498385259&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1313&quot;,
+  &quot;id&quot;: 1498385259,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885ZT4tr&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;MilkTeaNo7&quot;,
+    &quot;id&quot;: 74584122,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjc0NTg0MTIy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/74584122?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MilkTeaNo7&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MilkTeaNo7&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2023-04-06T01:54:40Z&quot;,
+  &quot;updated_at&quot;: &quot;2023-04-06T01:54:40Z&quot;,
+  &quot;body&quot;: &quot;Thank you for your response, the problem has been solved. However, I realized that without deploying a DERP server, I am always using the DERP server provided by OpenAI. I am currently experiencing some issues and would greatly appreciate it if you could provide some useful documentation. The official documentation lacks many key basic steps.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1498385259/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;MilkTeaNo7&quot;,
+    &quot;id&quot;: 74584122,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjc0NTg0MTIy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/74584122?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MilkTeaNo7&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MilkTeaNo7&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2023-04-06T01:54:40Z · closed · MilkTeaNo7</summary><pre>{
+  &quot;id&quot;: 8940913306,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz885ihzDFzwAAAAIU64Ka&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/8940913306&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;MilkTeaNo7&quot;,
+    &quot;id&quot;: 74584122,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjc0NTg0MTIy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/74584122?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MilkTeaNo7&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MilkTeaNo7&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2023-04-06T01:54:40Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2023-04-06T14:20:51Z · commented · kylechase</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1499145113&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1313#issuecomment-1499145113&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1313&quot;,
+  &quot;id&quot;: 1499145113,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885ZWyOZ&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;kylechase&quot;,
+    &quot;id&quot;: 4741043,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ3NDEwNDM=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4741043?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kylechase&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kylechase&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kylechase/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kylechase/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kylechase/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kylechase/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kylechase/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kylechase/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kylechase/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kylechase/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kylechase/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2023-04-06T14:20:51Z&quot;,
+  &quot;updated_at&quot;: &quot;2023-04-06T14:20:51Z&quot;,
+  &quot;body&quot;: &quot;Headscale has an embedded derp server.\r\n\r\nHere is the derp server config from my configuration.\r\n```\r\nderp:\r\n  server:\r\n    # If enabled, runs the embedded DERP server and merges it into the rest of the DERP config\r\n    # The Headscale server_url defined above MUST be using https, DERP requires TLS to be in place\r\n    enabled: true\r\n\r\n    # Region ID to use for the embedded DERP server.\r\n    # The local DERP prevails if the region ID collides with other region ID coming from\r\n    # the regular DERP config.\r\n    region_id: 999\r\n\r\n    # Region code and name are displayed in the Tailscale UI to identify a DERP region\r\n    region_code: \&quot;derpyderp\&quot;\r\n    region_name: \&quot;My Derpy Derp Server\&quot;\r\n\r\n    # Listens over UDP at the configured address for STUN connections - to help with NAT traversal.\r\n    # When the embedded DERP server is enabled stun_listen_addr MUST be defined.\r\n    #\r\n    # For more details on how this works, check this great article: https://tailscale.com/blog/how-tailscale-works/\r\n    stun_listen_addr: \&quot;0.0.0.0:3478\&quot;\r\n\r\n  # List of externally available DERP maps encoded in JSON\r\n  urls: []\r\n#    - https://controlplane.tailscale.com/derpmap/default\r\n\r\n  # Locally available DERP map files encoded in YAML\r\n  #\r\n  # This option is mostly interesting for people hosting\r\n  # their own DERP servers:\r\n  # https://tailscale.com/kb/1118/custom-derp-servers/\r\n  #\r\n  # paths:\r\n  #   - /etc/headscale/derp-example.yaml\r\n  paths: []\r\n\r\n  # If enabled, a worker will be set up to periodically\r\n  # refresh the given sources and update the derpmap\r\n  # will be set up.\r\n  auto_update_enabled: true\r\n\r\n  # How often should we check for DERP updates?\r\n  update_frequency: 24h\r\n```&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1499145113/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kylechase&quot;,
+    &quot;id&quot;: 4741043,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ3NDEwNDM=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4741043?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kylechase&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kylechase&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kylechase/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kylechase/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kylechase/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kylechase/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kylechase/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kylechase/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kylechase/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kylechase/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kylechase/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2023-04-06T18:02:22Z · unsubscribed · restanrm</summary><pre>{
+  &quot;id&quot;: 8948498463,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz885ihzDFzwAAAAIVX0Af&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/8948498463&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;restanrm&quot;,
+    &quot;id&quot;: 4344371,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQzNDQzNzE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4344371?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/restanrm&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/restanrm&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/restanrm/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/restanrm/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/restanrm/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/restanrm/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/restanrm/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/restanrm/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/restanrm/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/restanrm/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/restanrm/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2023-04-06T18:02:22Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2023-04-28T01:22:43Z · closed · MilkTeaNo7</summary><pre>{
+  &quot;id&quot;: 9120091062,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz885ihzDFzwAAAAIfmYu2&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/9120091062&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;MilkTeaNo7&quot;,
+    &quot;id&quot;: 74584122,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjc0NTg0MTIy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/74584122?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/MilkTeaNo7&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/MilkTeaNo7&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/MilkTeaNo7/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2023-04-28T01:22:43Z&quot;,
+  &quot;state_reason&quot;: &quot;not_planned&quot;,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-01-27T10:36:38Z · subscribed · jaceknoga</summary><pre>{
+  &quot;id&quot;: 16075780234,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz885ihzDFzwAAAAO-MPCK&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/16075780234&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;jaceknoga&quot;,
+    &quot;id&quot;: 4347797,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQzNDc3OTc=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4347797?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/jaceknoga&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/jaceknoga&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/jaceknoga/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/jaceknoga/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/jaceknoga/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/jaceknoga/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/jaceknoga/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/jaceknoga/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/jaceknoga/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/jaceknoga/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/jaceknoga/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-01-27T10:36:38Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

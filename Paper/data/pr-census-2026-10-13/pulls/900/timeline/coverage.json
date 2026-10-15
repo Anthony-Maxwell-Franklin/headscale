@@ -1,0 +1,12 @@
+{
+  "start_url": "https://api.github.com/repos/juanfont/headscale/issues/900/timeline?per_page=100",
+  "next_url": null,
+  "pages": [
+    {
+      "file": "page_0001.json",
+      "sha256": "b02dce834be5026af7a5f77554ffe14bda90f73547fd0d80a03d12375957e77f",
+      "fetched_at_utc": "2026-10-13T16:36:57.665956+00:00"
+    }
+  ],
+  "complete": true
+}

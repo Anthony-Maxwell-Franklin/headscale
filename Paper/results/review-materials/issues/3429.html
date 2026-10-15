@@ -1,0 +1,320 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #3429: [Bug] able to create users with same `username`</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #3429: [Bug] able to create users with same `username`</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/3429">Original issue #3429</a></p><p>Created: 2026-08-19T20:07:01Z; updated: 2026-09-30T13:49:27Z; observed state: open; reason: None</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+I observe multiple users can have the same `username` if the users are later created/onboarded via OIDC.
+
+```shell
+# headscale users list
+ID | Name           | Username  | Email          | Created
+1  |                | debtquity |                | 2026-07-02 06:18:07
+2  | Darren Rambaud | debtquity | me@example.com | 2026-08-16 03:29:59
+3  |                | unused    |                | 2026-08-19 19:24:36
+```
+
+No issue observed when logging in and creating user via OIDC. However, after a restart of the headscale process. It prevented headscale from starting up:
+
+```shell
+# journalctl -u headscale.service -e
+...
+Aug 19 19:19:41 ... headscale-start[124195]: Error: initializing: creating new headscale: init state: initializing policy manager: validating policy user references: multiple users found: token &quot;debtquity@&quot; found: [ 1: debtquity, 2: debtquity,  ]
+Aug 19 19:19:41 ... systemd[1]: headscale.service: Main process exited, code=exited, status=1/FAILURE
+Aug 19 19:19:41 ... systemd[1]: headscale.service: Failed with result &#x27;exit-code&#x27;.
+Aug 19 19:19:44 ... systemd[1]: Stopped headscale coordination server for Tailscale.
+```
+
+Note: attempts to create or rename user via CLI will return an error:
+
+```
+# headscale users create debtquity
+Error: creating user: rpc error: code = Internal desc = creating user: creating user: constraint failed: UNIQUE constraint failed: users.name (2067)
+
+# headscale users rename -i 3 -r debtquity
+Error: renaming user: rpc error: code = Unknown desc = updating user: constraint failed: UNIQUE constraint failed: users.name (2067)
+```
+
+### Expected Behavior
+
+Should return unique name constraint error and prevent user from being created until username conflict resolved; or merge the 2 users.
+
+### Steps To Reproduce
+
+1. Create user via `headscale users create USERNAME`
+2. Enable OIDC in headscale with `oidc.*` configuration
+3. Setup policy file to reference the `USERNAME` in step 1 (if necessary, restart headscale)
+```
+# policy.path
+{
+  &quot;groups&quot;: {
+    &quot;group:network-admin&quot;: [
+      &quot;USERNAME@&quot;
+    ]
+  }
+}
+```
+4. In IdP, create a user where the `preferred_username` claim will conflict with the `USERNAME` in step 1
+5. Create user via OIDC flow in any tailscale client
+6. Restart headscale process
+
+### Environment
+
+```markdown
+- OS: NixOS 26.11 (Zokor) [6.18.41, x86_64]
+- Headscale version: v0.29.3 (managed w/ `services.headscale` NixOS module)
+- Tailscale version: 1.98.10
+- Nodes: 12
+- OIDC: Pocket ID (v2.13.0)
+```
+
+### Runtime environment
+
+- [x] Headscale is behind a (reverse) proxy
+- [ ] Headscale runs in a container
+
+### Debug information
+
+```text
+# tailscale status
+...
+# Health check:
+#     - Unable to connect to the Tailscale coordination server to synchronize the state of your tailnet. Peer reachability might degrade over time.
+```</pre><h2>Comments, in creation order</h2><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2026-08-19T20:07:02Z · labeled · debtquity</summary><pre>{
+  &quot;id&quot;: 29705328847,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABNb8rfs8AAAAG6pNYzw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/29705328847&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;debtquity&quot;,
+    &quot;id&quot;: 225436867,
+    &quot;node_id&quot;: &quot;U_kgDODW_kww&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/225436867?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/debtquity&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/debtquity&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/debtquity/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/debtquity/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/debtquity/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/debtquity/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/debtquity/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/debtquity/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/debtquity/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/debtquity/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/debtquity/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-08-19T20:07:02Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-08-19T20:08:06Z · subscribed · debtquity</summary><pre>{
+  &quot;id&quot;: 29705379041,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz888AAAABNb8rfs8AAAAG6pQc4Q&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/29705379041&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;debtquity&quot;,
+    &quot;id&quot;: 225436867,
+    &quot;node_id&quot;: &quot;U_kgDODW_kww&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/225436867?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/debtquity&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/debtquity&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/debtquity/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/debtquity/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/debtquity/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/debtquity/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/debtquity/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/debtquity/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/debtquity/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/debtquity/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/debtquity/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-08-19T20:08:06Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-08-20T19:41:54Z · unsubscribed · mrabino1</summary><pre>{
+  &quot;id&quot;: 29765165429,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz888AAAABNb8rfs8AAAAG7iRhdQ&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/29765165429&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mrabino1&quot;,
+    &quot;id&quot;: 4902221,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ5MDIyMjE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4902221?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mrabino1&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mrabino1&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mrabino1/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mrabino1/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mrabino1/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mrabino1/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mrabino1/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mrabino1/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mrabino1/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mrabino1/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mrabino1/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-08-20T19:41:54Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-30T13:49:27Z · labeled · kradalby</summary><pre>{
+  &quot;id&quot;: 32170567034,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABNb8rfs8AAAAHfYPleg&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32170567034&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-30T13:49:27Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;OIDC&quot;,
+    &quot;color&quot;: &quot;B86185&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-30T13:49:27Z · labeled · kradalby</summary><pre>{
+  &quot;id&quot;: 32170567113,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABNb8rfs8AAAAHfYPlyQ&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32170567113&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-30T13:49:27Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;database&quot;,
+    &quot;color&quot;: &quot;F31389&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-30T13:49:27Z · labeled · kradalby</summary><pre>{
+  &quot;id&quot;: 32170567201,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABNb8rfs8AAAAHfYPmIQ&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32170567201&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-30T13:49:27Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;policy 📝&quot;,
+    &quot;color&quot;: &quot;004C1D&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-30T13:49:27Z · milestoned · kradalby</summary><pre>{
+  &quot;id&quot;: 32170567342,
+  &quot;node_id&quot;: &quot;MIE_lADOEFLz888AAAABNb8rfs8AAAAHfYPmrg&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32170567342&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;milestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-30T13:49:27Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.33&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

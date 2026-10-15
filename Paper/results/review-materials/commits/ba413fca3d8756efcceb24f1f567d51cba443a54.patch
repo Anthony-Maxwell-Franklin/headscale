@@ -1,0 +1,72 @@
+commit ba413fca3d8756efcceb24f1f567d51cba443a54
+Author:     Kristoffer Dalby <kristoffer@tailscale.com>
+AuthorDate: Fri Oct 2 10:51:16 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Wed Oct 7 23:36:16 2026 +0200
+
+    state: return a node's primary routes in stable order
+    
+    They came from map iteration, so an unchanged router rendered its self
+    node differently on every call.
+    
+    Updates #3502
+---
+ hscontrol/state/node_store.go      |  4 +++-
+ hscontrol/state/node_store_test.go | 22 ++++++++++++++++++++++
+ 2 files changed, 25 insertions(+), 1 deletion(-)
+
+diff --git a/hscontrol/state/node_store.go b/hscontrol/state/node_store.go
+index 1fa7db3d..0f3e4c02 100644
+--- a/hscontrol/state/node_store.go
++++ b/hscontrol/state/node_store.go
+@@ -986,7 +986,7 @@ func (s *NodeStore) PrimaryRouteFor(prefix netip.Prefix) (types.NodeID, bool) {
+ }
+ 
+ // PrimaryRoutesForNode returns the prefixes for which id is the current
+-// primary advertiser.
++// primary advertiser, sorted so an unchanged node renders identically.
+ func (s *NodeStore) PrimaryRoutesForNode(id types.NodeID) []netip.Prefix {
+ 	snap := s.data.Load()
+ 	if !snap.isPrimaryRoute[id] {
+@@ -1001,6 +1001,8 @@ func (s *NodeStore) PrimaryRoutesForNode(id types.NodeID) []netip.Prefix {
+ 		}
+ 	}
+ 
++	slices.SortFunc(out, netip.Prefix.Compare)
++
+ 	return out
+ }
+ 
+diff --git a/hscontrol/state/node_store_test.go b/hscontrol/state/node_store_test.go
+index 8d07eaf0..8c8a2750 100644
+--- a/hscontrol/state/node_store_test.go
++++ b/hscontrol/state/node_store_test.go
+@@ -1496,6 +1496,28 @@ func TestHealthOnlyWriteReusesPeerMap(t *testing.T) {
+ 		peersCalls.Load())
+ }
+ 
++// TestPrimaryRoutesForNodeSorted checks a router's primaries come back in
++// a stable order: they render into its self node, which the mapper resends
++// whenever it differs from what the node holds (issue #3502).
++func TestPrimaryRoutesForNodeSorted(t *testing.T) {
++	node := createTestNode(1, 1, "user1", "router")
++
++	prefixes := make([]netip.Prefix, 0, 8)
++	for i := range 8 {
++		prefixes = append(prefixes, netip.PrefixFrom(netip.AddrFrom4([4]byte{10, byte(i), 0, 0}), 16))
++	}
++
++	node.Hostinfo = &tailcfg.Hostinfo{Hostname: "router", RoutableIPs: prefixes}
++	node.ApprovedRoutes = prefixes
++	node.IsOnline = new(true)
++
++	store := NewNodeStore(types.Nodes{&node}, allowAllPeersFunc, TestBatchSize, TestBatchTimeout)
++
++	for range 20 {
++		require.Equal(t, prefixes, store.PrimaryRoutesForNode(1))
++	}
++}
++
+ func BenchmarkSnapshotPayloadDense(b *testing.B) {
+ 	const nodeCount = 500
+ 

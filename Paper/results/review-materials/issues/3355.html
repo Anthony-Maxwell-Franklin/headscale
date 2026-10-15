@@ -1,0 +1,669 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #3355: [Bug] policy check no longer works without headscale running after update to 0.29</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #3355: [Bug] policy check no longer works without headscale running after update to 0.29</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/3355">Original issue #3355</a></p><p>Created: 2026-06-28T14:52:03Z; updated: 2026-10-02T03:53:19Z; observed state: open; reason: None</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+v0.29.1:
+```
+WRN no config file found, using defaults
+Error: connecting to headscale: connecting to /var/run/headscale/headscale.sock: context deadline exceeded
+```
+
+### Expected Behavior
+
+v0.28.0:
+```
+Policy is valid
+```
+
+### Steps To Reproduce
+
+1. Create a valid policy file in current directory
+2. Execute `podman run --rm -v ./policy.hujson:/etc/headscale/policy.hujson:ro --entrypoint headscale docker.io/headscale/headscale:0.29.1 policy check --file /etc/headscale/policy.hujson`
+3. Change 0.29.1 to 0.28.0 and it works
+
+### Environment
+
+```markdown
+- OS: Docker image
+- Headscale version: 0.29.1 (also 0.29.0)
+```
+
+### Runtime environment
+
+- [ ] Headscale is behind a (reverse) proxy
+- [x] Headscale runs in a container
+
+### Debug information
+
+Trace output:
+```
+DBG Setting timeout timeout=5000
+DBG HEADSCALE_CLI_ADDRESS environment is not set, connecting to unix socket. socket=/var/run/headscale/headscale.sock
+TRC home/runner/work/headscale/headscale/cmd/headscale/cli/utils.go:171 &gt; connecting via gRPC address=/var/run/headscale/headscale.sock
+Error: connecting to headscale: connecting to /var/run/headscale/headscale.sock: context deadline exceeded
+```</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/3355#issuecomment-4846414661">maximilize</a></h3><p>Created: 2026-06-30T17:53:14Z; updated: 2026-06-30T17:53:14Z</p><pre>This is a regression in what `policy check` does, not a connectivity issue. In 0.28.0 the command validated the file **offline**, with no server and no database:
+
+```go
+// v0.28.0 cmd/headscale/cli/policy.go
+_, err = policy.NewPolicyManager(policyBytes, nil, views.Slice[types.NodeView]{})
+```
+
+Since 0.29 it instead calls a running headscale over the API (`cmd/headscale/cli/policy.go`, `checkPolicy.RunE` → `withClient(... CheckPolicyWithResponse ...)`), which is the socket/`context deadline exceeded` you hit without a server.
+
+The `--bypass-server-and-access-database-directly` flag added after 0.29.1 doesn&#x27;t cover this case either: `openBypassDB` (`policy.go:42`) prompts interactively (`[y/n]`, so it aborts under CI/closed stdin) and then needs a full config + an existing database — not an offline file check.
+
+Reproduced with the official images, no server and no DB:
+
+```
+$ headscale:0.28.0 policy check --file policy.hujson   → Policy is valid        (exit 0)
+$ headscale:0.29.1 policy check --file policy.hujson   → context deadline exceeded (exit 1)
+```
+
+A `main` build behaves the same: default → API timeout; `--bypass…` → interactive prompt, then `Fatal config error` without a config/DB.
+
+The 0.28 path — a structural parse via `NewPolicyManager(bytes, nil, &lt;empty nodes&gt;)`, needing neither server nor DB — is what CI use needs. Restoring it as a parse-only path is a small change; I can open a PR for it.
+</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/3355#issuecomment-5944063327">github-actions[bot]</a></h3><p>Created: 2026-10-02T01:47:16Z; updated: 2026-10-02T01:47:16Z</p><pre>This issue is stale because it has been open for 90 days with no activity.</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2026-06-28T14:52:05Z · labeled · uumas</summary><pre>{
+  &quot;id&quot;: 27300277474,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABG9-Wxc8AAAAGWzks4g&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/27300277474&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;uumas&quot;,
+    &quot;id&quot;: 10895201,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEwODk1MjAx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/10895201?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/uumas&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/uumas&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/uumas/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/uumas/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/uumas/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/uumas/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/uumas/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/uumas/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/uumas/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/uumas/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/uumas/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-06-28T14:52:05Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-06-29T13:46:58Z · unsubscribed · mrabino1</summary><pre>{
+  &quot;id&quot;: 27332522855,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz888AAAABG9-Wxc8AAAAGXSUzZw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/27332522855&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mrabino1&quot;,
+    &quot;id&quot;: 4902221,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ5MDIyMjE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4902221?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mrabino1&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mrabino1&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mrabino1/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mrabino1/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mrabino1/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mrabino1/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mrabino1/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mrabino1/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mrabino1/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mrabino1/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mrabino1/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-06-29T13:46:58Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-06-30T17:53:14Z · commented · maximilize</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4846414661&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3355#issuecomment-4846414661&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3355&quot;,
+  &quot;id&quot;: 4846414661,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABIN5rRQ&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;maximilize&quot;,
+    &quot;id&quot;: 3752128,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjM3NTIxMjg=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/3752128?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/maximilize&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/maximilize&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/maximilize/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/maximilize/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/maximilize/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/maximilize/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/maximilize/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/maximilize/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/maximilize/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/maximilize/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/maximilize/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-06-30T17:53:14Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-06-30T17:53:14Z&quot;,
+  &quot;body&quot;: &quot;This is a regression in what `policy check` does, not a connectivity issue. In 0.28.0 the command validated the file **offline**, with no server and no database:\n\n```go\n// v0.28.0 cmd/headscale/cli/policy.go\n_, err = policy.NewPolicyManager(policyBytes, nil, views.Slice[types.NodeView]{})\n```\n\nSince 0.29 it instead calls a running headscale over the API (`cmd/headscale/cli/policy.go`, `checkPolicy.RunE` → `withClient(... CheckPolicyWithResponse ...)`), which is the socket/`context deadline exceeded` you hit without a server.\n\nThe `--bypass-server-and-access-database-directly` flag added after 0.29.1 doesn&#x27;t cover this case either: `openBypassDB` (`policy.go:42`) prompts interactively (`[y/n]`, so it aborts under CI/closed stdin) and then needs a full config + an existing database — not an offline file check.\n\nReproduced with the official images, no server and no DB:\n\n```\n$ headscale:0.28.0 policy check --file policy.hujson   → Policy is valid        (exit 0)\n$ headscale:0.29.1 policy check --file policy.hujson   → context deadline exceeded (exit 1)\n```\n\nA `main` build behaves the same: default → API timeout; `--bypass…` → interactive prompt, then `Fatal config error` without a config/DB.\n\nThe 0.28 path — a structural parse via `NewPolicyManager(bytes, nil, &lt;empty nodes&gt;)`, needing neither server nor DB — is what CI use needs. Restoring it as a parse-only path is a small change; I can open a PR for it.\n&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4846414661/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;maximilize&quot;,
+    &quot;id&quot;: 3752128,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjM3NTIxMjg=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/3752128?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/maximilize&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/maximilize&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/maximilize/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/maximilize/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/maximilize/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/maximilize/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/maximilize/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/maximilize/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/maximilize/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/maximilize/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/maximilize/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-07-01T05:30:17Z · labeled · nblock</summary><pre>{
+  &quot;id&quot;: 27411555173,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABG9-Wxc8AAAAGYdsjZQ&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/27411555173&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-07-01T05:30:17Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;regression&quot;,
+    &quot;color&quot;: &quot;ea1173&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-07-03T06:46:07Z · milestoned · kradalby</summary><pre>{
+  &quot;id&quot;: 27515518696,
+  &quot;node_id&quot;: &quot;MIE_lADOEFLz888AAAABG9-Wxc8AAAAGaA1-6A&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/27515518696&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;milestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-07-03T06:46:07Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.30.0&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-07-03T07:38:31Z · parent_issue_added · kradalby</summary><pre>{
+  &quot;id&quot;: 27517410727,
+  &quot;node_id&quot;: &quot;PIAE_lADOEFLz888AAAABG9-Wxc8AAAAGaCpdpw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/27517410727&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;parent_issue_added&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-07-03T07:38:31Z&quot;,
+  &quot;parent_issue&quot;: {
+    &quot;number&quot;: 3364,
+    &quot;title&quot;: &quot;CLI redo&quot;,
+    &quot;state&quot;: &quot;open&quot;,
+    &quot;state_reason&quot;: null,
+    &quot;repository&quot;: {
+      &quot;id&quot;: 273871859,
+      &quot;node_id&quot;: &quot;MDEwOlJlcG9zaXRvcnkyNzM4NzE4NTk=&quot;,
+      &quot;name&quot;: &quot;headscale&quot;,
+      &quot;full_name&quot;: &quot;juanfont/headscale&quot;,
+      &quot;private&quot;: false,
+      &quot;owner&quot;: {
+        &quot;login&quot;: &quot;juanfont&quot;,
+        &quot;id&quot;: 181059,
+        &quot;node_id&quot;: &quot;MDQ6VXNlcjE4MTA1OQ==&quot;,
+        &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/181059?v=4&quot;,
+        &quot;gravatar_id&quot;: &quot;&quot;,
+        &quot;url&quot;: &quot;https://api.github.com/users/juanfont&quot;,
+        &quot;html_url&quot;: &quot;https://github.com/juanfont&quot;,
+        &quot;followers_url&quot;: &quot;https://api.github.com/users/juanfont/followers&quot;,
+        &quot;following_url&quot;: &quot;https://api.github.com/users/juanfont/following{/other_user}&quot;,
+        &quot;gists_url&quot;: &quot;https://api.github.com/users/juanfont/gists{/gist_id}&quot;,
+        &quot;starred_url&quot;: &quot;https://api.github.com/users/juanfont/starred{/owner}{/repo}&quot;,
+        &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/juanfont/subscriptions&quot;,
+        &quot;organizations_url&quot;: &quot;https://api.github.com/users/juanfont/orgs&quot;,
+        &quot;repos_url&quot;: &quot;https://api.github.com/users/juanfont/repos&quot;,
+        &quot;events_url&quot;: &quot;https://api.github.com/users/juanfont/events{/privacy}&quot;,
+        &quot;received_events_url&quot;: &quot;https://api.github.com/users/juanfont/received_events&quot;,
+        &quot;type&quot;: &quot;User&quot;,
+        &quot;user_view_type&quot;: &quot;public&quot;,
+        &quot;site_admin&quot;: false
+      },
+      &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale&quot;,
+      &quot;description&quot;: &quot;An open source, self-hosted implementation of the Tailscale control server&quot;,
+      &quot;fork&quot;: false,
+      &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale&quot;,
+      &quot;forks_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/forks&quot;,
+      &quot;keys_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/keys{/key_id}&quot;,
+      &quot;collaborators_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/collaborators{/collaborator}&quot;,
+      &quot;teams_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/teams&quot;,
+      &quot;hooks_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/hooks&quot;,
+      &quot;issue_events_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events{/number}&quot;,
+      &quot;events_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/events&quot;,
+      &quot;assignees_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/assignees{/user}&quot;,
+      &quot;branches_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/branches{/branch}&quot;,
+      &quot;tags_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/tags&quot;,
+      &quot;blobs_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/git/blobs{/sha}&quot;,
+      &quot;git_tags_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/git/tags{/sha}&quot;,
+      &quot;git_refs_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/git/refs{/sha}&quot;,
+      &quot;trees_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/git/trees{/sha}&quot;,
+      &quot;statuses_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/statuses/{sha}&quot;,
+      &quot;languages_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/languages&quot;,
+      &quot;stargazers_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/stargazers&quot;,
+      &quot;contributors_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/contributors&quot;,
+      &quot;subscribers_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/subscribers&quot;,
+      &quot;subscription_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/subscription&quot;,
+      &quot;commits_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/commits{/sha}&quot;,
+      &quot;git_commits_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/git/commits{/sha}&quot;,
+      &quot;comments_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/comments{/number}&quot;,
+      &quot;issue_comment_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments{/number}&quot;,
+      &quot;contents_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/contents/{+path}&quot;,
+      &quot;compare_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/compare/{base}...{head}&quot;,
+      &quot;merges_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/merges&quot;,
+      &quot;archive_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/{archive_format}{/ref}&quot;,
+      &quot;downloads_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/downloads&quot;,
+      &quot;issues_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues{/number}&quot;,
+      &quot;pulls_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/pulls{/number}&quot;,
+      &quot;milestones_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/milestones{/number}&quot;,
+      &quot;notifications_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/notifications{?since,all,participating}&quot;,
+      &quot;labels_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/labels{/name}&quot;,
+      &quot;releases_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/releases{/id}&quot;,
+      &quot;deployments_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/deployments&quot;
+    },
+    &quot;issue_type&quot;: null
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-07-03T19:40:00Z · subscribed · lethedata</summary><pre>{
+  &quot;id&quot;: 27542012009,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz888AAAABG9-Wxc8AAAAGaaHAaQ&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/27542012009&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;lethedata&quot;,
+    &quot;id&quot;: 97153783,
+    &quot;node_id&quot;: &quot;U_kgDOBcpy9w&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/97153783?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/lethedata&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/lethedata&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/lethedata/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/lethedata/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/lethedata/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/lethedata/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/lethedata/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/lethedata/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/lethedata/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/lethedata/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/lethedata/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-07-03T19:40:00Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-02T01:47:16Z · commented · github-actions[bot]</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/5944063327&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3355#issuecomment-5944063327&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3355&quot;,
+  &quot;id&quot;: 5944063327,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABYks1Xw&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-10-02T01:47:16Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-10-02T01:47:16Z&quot;,
+  &quot;body&quot;: &quot;This issue is stale because it has been open for 90 days with no activity.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/5944063327/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: {
+    &quot;id&quot;: 15368,
+    &quot;client_id&quot;: &quot;Iv1.05c79e9ad1f6bdfa&quot;,
+    &quot;slug&quot;: &quot;github-actions&quot;,
+    &quot;node_id&quot;: &quot;MDM6QXBwMTUzNjg=&quot;,
+    &quot;owner&quot;: {
+      &quot;login&quot;: &quot;github&quot;,
+      &quot;id&quot;: 9919,
+      &quot;node_id&quot;: &quot;MDEyOk9yZ2FuaXphdGlvbjk5MTk=&quot;,
+      &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/9919?v=4&quot;,
+      &quot;gravatar_id&quot;: &quot;&quot;,
+      &quot;url&quot;: &quot;https://api.github.com/users/github&quot;,
+      &quot;html_url&quot;: &quot;https://github.com/github&quot;,
+      &quot;followers_url&quot;: &quot;https://api.github.com/users/github/followers&quot;,
+      &quot;following_url&quot;: &quot;https://api.github.com/users/github/following{/other_user}&quot;,
+      &quot;gists_url&quot;: &quot;https://api.github.com/users/github/gists{/gist_id}&quot;,
+      &quot;starred_url&quot;: &quot;https://api.github.com/users/github/starred{/owner}{/repo}&quot;,
+      &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github/subscriptions&quot;,
+      &quot;organizations_url&quot;: &quot;https://api.github.com/users/github/orgs&quot;,
+      &quot;repos_url&quot;: &quot;https://api.github.com/users/github/repos&quot;,
+      &quot;events_url&quot;: &quot;https://api.github.com/users/github/events{/privacy}&quot;,
+      &quot;received_events_url&quot;: &quot;https://api.github.com/users/github/received_events&quot;,
+      &quot;type&quot;: &quot;Organization&quot;,
+      &quot;user_view_type&quot;: &quot;public&quot;,
+      &quot;site_admin&quot;: false
+    },
+    &quot;name&quot;: &quot;GitHub Actions&quot;,
+    &quot;description&quot;: &quot;Automate your workflow from idea to production&quot;,
+    &quot;external_url&quot;: &quot;https://help.github.com/en/actions&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;created_at&quot;: &quot;2018-07-30T09:30:17Z&quot;,
+    &quot;updated_at&quot;: &quot;2026-06-18T16:17:48Z&quot;,
+    &quot;permissions&quot;: {
+      &quot;actions&quot;: &quot;write&quot;,
+      &quot;administration&quot;: &quot;read&quot;,
+      &quot;artifact_metadata&quot;: &quot;write&quot;,
+      &quot;attestations&quot;: &quot;write&quot;,
+      &quot;checks&quot;: &quot;write&quot;,
+      &quot;code_quality&quot;: &quot;write&quot;,
+      &quot;contents&quot;: &quot;write&quot;,
+      &quot;copilot_requests&quot;: &quot;write&quot;,
+      &quot;deployments&quot;: &quot;write&quot;,
+      &quot;discussions&quot;: &quot;write&quot;,
+      &quot;drives&quot;: &quot;write&quot;,
+      &quot;issues&quot;: &quot;write&quot;,
+      &quot;merge_queues&quot;: &quot;write&quot;,
+      &quot;metadata&quot;: &quot;read&quot;,
+      &quot;models&quot;: &quot;read&quot;,
+      &quot;packages&quot;: &quot;write&quot;,
+      &quot;pages&quot;: &quot;write&quot;,
+      &quot;pull_requests&quot;: &quot;write&quot;,
+      &quot;repository_hooks&quot;: &quot;write&quot;,
+      &quot;repository_projects&quot;: &quot;write&quot;,
+      &quot;security_events&quot;: &quot;write&quot;,
+      &quot;statuses&quot;: &quot;write&quot;,
+      &quot;vulnerability_alerts&quot;: &quot;read&quot;
+    },
+    &quot;events&quot;: [
+      &quot;branch_protection_rule&quot;,
+      &quot;check_run&quot;,
+      &quot;check_suite&quot;,
+      &quot;create&quot;,
+      &quot;delete&quot;,
+      &quot;deployment&quot;,
+      &quot;deployment_status&quot;,
+      &quot;discussion&quot;,
+      &quot;discussion_comment&quot;,
+      &quot;fork&quot;,
+      &quot;gollum&quot;,
+      &quot;issues&quot;,
+      &quot;issue_comment&quot;,
+      &quot;label&quot;,
+      &quot;merge_group&quot;,
+      &quot;milestone&quot;,
+      &quot;page_build&quot;,
+      &quot;public&quot;,
+      &quot;pull_request&quot;,
+      &quot;pull_request_review&quot;,
+      &quot;pull_request_review_comment&quot;,
+      &quot;push&quot;,
+      &quot;registry_package&quot;,
+      &quot;release&quot;,
+      &quot;repository&quot;,
+      &quot;repository_dispatch&quot;,
+      &quot;status&quot;,
+      &quot;watch&quot;,
+      &quot;workflow_dispatch&quot;,
+      &quot;workflow_run&quot;
+    ]
+  },
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-10-02T01:47:16Z · labeled · github-actions[bot]</summary><pre>{
+  &quot;id&quot;: 32302564868,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABG9-Wxc8AAAAHhWIGBA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32302564868&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-10-02T01:47:16Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;stale&quot;,
+    &quot;color&quot;: &quot;ededed&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-02T03:53:19Z · unlabeled · nblock</summary><pre>{
+  &quot;id&quot;: 32307673024,
+  &quot;node_id&quot;: &quot;UNLE_lADOEFLz888AAAABG9-Wxc8AAAAHha_3wA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32307673024&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unlabeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-10-02T03:53:19Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;stale&quot;,
+    &quot;color&quot;: &quot;ededed&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-02T03:53:19Z · labeled · nblock</summary><pre>{
+  &quot;id&quot;: 32307673064,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABG9-Wxc8AAAAHha_36A&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32307673064&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-10-02T03:53:19Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;no-stale-bot&quot;,
+    &quot;color&quot;: &quot;6ECABC&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

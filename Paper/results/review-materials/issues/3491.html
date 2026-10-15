@@ -1,0 +1,234 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #3491: [Bug] Approve routes should not accept any positional args given that routes are accepted as flags</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #3491: [Bug] Approve routes should not accept any positional args given that routes are accepted as flags</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/3491">Original issue #3491</a></p><p>Created: 2026-09-24T06:32:28Z; updated: 2026-10-12T23:58:14Z; observed state: open; reason: None</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+This was partly my mistake not using help before typing the command but when using headscale accept-routes command, identifier is given with flag -i but I assumed routes will be an arg given that it&#x27;s a command about routes. When entering routes with command like `headscale nodes approve-routes -i 2 &quot;0.0.0.0/0,::/0,xxx.xxx.xxx.xxx/32,xxxx:xxxx:xxxx:xxxx::/64&quot;`, it should give out an error instead of giving `Node updated` as output.
+
+### Expected Behavior
+
+Expected output is `headscale nodes approve-routes does not allow arguments`
+
+### Steps To Reproduce
+
+The above example should work.
+
+### Environment
+
+```markdown
+- OS: Debian 13
+- Headscale version: 0.29.4
+```
+
+### Runtime environment
+Headscale runs on A public cloud VPS with public IPv4 and IPv6
+
+### Debug information
+
+Not needed in this case.</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/3491#issuecomment-6064801335">blacksoxx</a></h3><p>Created: 2026-10-08T16:52:04Z; updated: 2026-10-08T16:52:04Z</p><pre>I have a fix ready: `Args: cobra.NoArgs` on `approve-routes` and on the other `nodes` subcommands that take flags only (register, list, list-routes, expire, delete, backfillips, tag), with a test. `headscale nodes approve-routes -i 2 &quot;0.0.0.0/0&quot;` then fails with `unknown command &quot;0.0.0.0/0&quot; for &quot;headscale nodes approve-routes&quot;` instead of printing `Node updated`. Happy to open the PR once vouched.
+</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2026-09-24T06:32:30Z · labeled · dharsanb</summary><pre>{
+  &quot;id&quot;: 31733862498,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABS6aBM88AAAAHY3xQYg&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/31733862498&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;dharsanb&quot;,
+    &quot;id&quot;: 52737410,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjUyNzM3NDEw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/52737410?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/dharsanb&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/dharsanb&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/dharsanb/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/dharsanb/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/dharsanb/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/dharsanb/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/dharsanb/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/dharsanb/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/dharsanb/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/dharsanb/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/dharsanb/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-24T06:32:30Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-24T06:32:45Z · renamed · dharsanb</summary><pre>{
+  &quot;id&quot;: 31733875307,
+  &quot;node_id&quot;: &quot;RTE_lADOEFLz888AAAABS6aBM88AAAAHY3yCaw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/31733875307&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;dharsanb&quot;,
+    &quot;id&quot;: 52737410,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjUyNzM3NDEw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/52737410?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/dharsanb&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/dharsanb&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/dharsanb/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/dharsanb/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/dharsanb/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/dharsanb/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/dharsanb/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/dharsanb/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/dharsanb/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/dharsanb/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/dharsanb/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;renamed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-24T06:32:45Z&quot;,
+  &quot;rename&quot;: {
+    &quot;from&quot;: &quot;[Bug] Spprove routes should not accept any positional args given that routes are accepted as flags&quot;,
+    &quot;to&quot;: &quot;[Bug] Approve routes should not accept any positional args given that routes are accepted as flags&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-24T06:32:59Z · subscribed · dharsanb</summary><pre>{
+  &quot;id&quot;: 31733888776,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz888AAAABS6aBM88AAAAHY3y3CA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/31733888776&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;dharsanb&quot;,
+    &quot;id&quot;: 52737410,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjUyNzM3NDEw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/52737410?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/dharsanb&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/dharsanb&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/dharsanb/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/dharsanb/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/dharsanb/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/dharsanb/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/dharsanb/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/dharsanb/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/dharsanb/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/dharsanb/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/dharsanb/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-24T06:32:59Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-25T09:03:14Z · milestoned · kradalby</summary><pre>{
+  &quot;id&quot;: 31823401278,
+  &quot;node_id&quot;: &quot;MIE_lADOEFLz888AAAABS6aBM88AAAAHaNKRPg&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/31823401278&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;milestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-25T09:03:14Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.30&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-08T16:52:04Z · commented · blacksoxx</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/6064801335&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3491#issuecomment-6064801335&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3491&quot;,
+  &quot;id&quot;: 6064801335,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABaX2GNw&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;blacksoxx&quot;,
+    &quot;id&quot;: 106540583,
+    &quot;node_id&quot;: &quot;U_kgDOBlmuJw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/106540583?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/blacksoxx&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/blacksoxx&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/blacksoxx/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/blacksoxx/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/blacksoxx/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/blacksoxx/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/blacksoxx/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/blacksoxx/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/blacksoxx/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/blacksoxx/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/blacksoxx/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-10-08T16:52:04Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-10-08T16:52:04Z&quot;,
+  &quot;body&quot;: &quot;I have a fix ready: `Args: cobra.NoArgs` on `approve-routes` and on the other `nodes` subcommands that take flags only (register, list, list-routes, expire, delete, backfillips, tag), with a test. `headscale nodes approve-routes -i 2 \&quot;0.0.0.0/0\&quot;` then fails with `unknown command \&quot;0.0.0.0/0\&quot; for \&quot;headscale nodes approve-routes\&quot;` instead of printing `Node updated`. Happy to open the PR once vouched.\n&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/6064801335/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;blacksoxx&quot;,
+    &quot;id&quot;: 106540583,
+    &quot;node_id&quot;: &quot;U_kgDOBlmuJw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/106540583?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/blacksoxx&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/blacksoxx&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/blacksoxx/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/blacksoxx/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/blacksoxx/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/blacksoxx/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/blacksoxx/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/blacksoxx/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/blacksoxx/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/blacksoxx/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/blacksoxx/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

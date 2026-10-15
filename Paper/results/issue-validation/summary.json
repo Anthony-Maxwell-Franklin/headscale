@@ -1,0 +1,15 @@
+{
+  "sample_size": 100,
+  "closed_in_sample": 84,
+  "last_closure_by_bot": 29,
+  "explicit_closing_commit": 5,
+  "reopened_issues": 2,
+  "comments_after_closure_issues": 19,
+  "sampling": "Year, observed-state and closure-reason stratified; raw counts are not population rates",
+  "evidence_manifest_sha256": "d966e544b91ecb4d03ba69272ba99f71c87f71555f7bbbc2caa48d3c05423593",
+  "limitations": [
+    "Bot closure does not establish either repair or lack of repair.",
+    "No closing commit does not mean no repair occurred.",
+    "Independent outcome coding remains pending; no coder agreement is claimed."
+  ]
+}

@@ -1,0 +1,1298 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #3087: [Bug] &quot;Restrict access to exit nodes per user or group&quot; no longer works</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #3087: [Bug] &quot;Restrict access to exit nodes per user or group&quot; no longer works</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/3087">Original issue #3087</a></p><p>Created: 2026-02-17T18:38:55Z; updated: 2026-05-12T12:30:08Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+We have a section [&quot;Restrict access to exit nodes per user or group&quot;](https://headscale.net/0.28.0/ref/routes/#restrict-access-to-exit-nodes-per-user-or-group) which seems to no longer work in 0.27.0, 0.27.1 and 0.28.0
+
+The policy from the docs:
+
+```json
+{
+  &quot;hosts&quot;: {
+    &quot;exit1&quot;: &quot;100.64.0.1/32&quot;,
+    &quot;exit2&quot;: &quot;100.64.0.2/32&quot;
+  },
+  &quot;acls&quot;: [
+    {
+      &quot;action&quot;: &quot;accept&quot;,
+      &quot;src&quot;: [
+        &quot;alice@&quot;
+      ],
+      &quot;dst&quot;: [
+        &quot;exit1:*&quot;
+      ]
+    }
+  ]
+}
+```
+
+evaluates to the following filter (from `/debug/filter`):
+
+```json
+[
+  {
+    &quot;SrcIPs&quot;: [
+      &quot;10.64.0.3/32&quot;
+    ],
+    &quot;DstPorts&quot;: [
+      {
+        &quot;IP&quot;: &quot;100.64.0.1/32&quot;,
+        &quot;Ports&quot;: {
+          &quot;First&quot;: 0,
+          &quot;Last&quot;: 65535
+        }
+      },
+      {
+        &quot;IP&quot;: &quot;fd7a:115c:a1e0::1/128&quot;,
+        &quot;Ports&quot;: {
+          &quot;First&quot;: 0,
+          &quot;Last&quot;: 65535
+        }
+      }
+    ],
+    &quot;IPProto&quot;: [
+      6,
+      17
+    ]
+  }
+]
+```
+
+While a [policy with `autogroup:internet:*`](https://headscale.net/0.28.0/ref/routes/#restrict-the-use-of-an-exit-node-with-acl) evaluates to this filter (shortened):
+
+```json
+[
+  {
+    &quot;SrcIPs&quot;: [
+      &quot;100.64.0.3/32&quot;,
+      &quot;fd7a:115c:a1e0::3/128&quot;
+    ],
+    &quot;DstPorts&quot;: [
+      {
+        &quot;IP&quot;: &quot;0.0.0.0/5&quot;,
+        &quot;Ports&quot;: {
+          &quot;First&quot;: 0,
+          &quot;Last&quot;: 65535
+        }
+      },
+      {
+        &quot;IP&quot;: &quot;8.0.0.0/7&quot;,
+        &quot;Ports&quot;: {
+          &quot;First&quot;: 0,
+          &quot;Last&quot;: 65535
+        }
+      },
+....
+```
+
+The client shows available exit nodes with both policies but traffic is only routed in the `autogroup:internet:*` case.
+
+### Expected Behavior
+
+Since this is a Headscale specific workaround and policy related work is planned for this milestone, we should either rewrite this to grants/via (ref: https://tailscale.com/docs/reference/examples/grants#route-traffic-through-exit-nodes-based-on-location) or remove it from the docs.
+
+### Steps To Reproduce
+
+Follow the steps in the docs to run an exit node: https://headscale.net/0.28.0/ref/routes/#exit-node and compare [Restrict the use of an exit node with ACL](https://headscale.net/0.28.0/ref/routes/#restrict-the-use-of-an-exit-node-with-acl) with [Restrict access to exit nodes per user or group](https://headscale.net/0.28.0/ref/routes/#restrict-access-to-exit-nodes-per-user-or-group).
+
+### Environment
+
+```markdown
+- OS: Debian 13
+- Headscale version: 0.27.x, 0.28.0
+- Tailscale version: 1.94.x, 1.90.ö
+```
+
+### Runtime environment
+
+- [ ] Headscale is behind a (reverse) proxy
+- [ ] Headscale runs in a container
+
+### Debug information
+
+None.</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/3087#issuecomment-3933140908">SymoHTL</a></h3><p>Created: 2026-02-20T11:05:50Z; updated: 2026-04-19T19:14:17Z</p><pre> Can confirm this also affects regular (non-exit-node) ACL rules on v0.28.0.
+
+  Setup: Two nodes — one tagged (tag:gaming, tag:infra), one user-owned. Policy uses groups in `src` and `*:*` in `dst`:
+
+```json
+   {
+     &quot;groups&quot;: {
+       &quot;group:home&quot;: [&quot;owner@example.com&quot;, &quot;user2@example.com&quot;]
+     },
+     &quot;acls&quot;: [
+       {&quot;action&quot;: &quot;accept&quot;, &quot;src&quot;: [&quot;group:home&quot;], &quot;dst&quot;: [&quot;*:*&quot;]}
+     ]
+   }
+```
+
+  Result: PacketFilter: `[]` — empty filter, all TCP traffic blocked. tailscale ping works (bypasses filter), but real connections (e.g. Minecraft on port 25565) are dropped.
+
+  Replacing `group:home` with `*` in src immediately fixes it:
+
+```json
+   {&quot;action&quot;: &quot;accept&quot;, &quot;src&quot;: [&quot;*&quot;], &quot;dst&quot;: [&quot;*:*&quot;]}
+```
+  So the issue isn&#x27;t limited to exit node restrictions — group-based src rules produce empty filters for any destination when tagged nodes are involved.
+
+  Using `{&quot;src&quot;: [&quot;*&quot;], &quot;dst&quot;: [&quot;*:*&quot;]}` as a workaround until v0.29.0.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/3087#issuecomment-4413599789">thenebu</a></h3><p>Created: 2026-05-09T20:27:16Z; updated: 2026-05-09T20:27:16Z</p><pre>Confirming on **headscale v0.28.0** with **tailscale 1.96.5 (macOS) / 1.96.4 (Linux) / latest iOS**.
+
+Reproduction is independent of `dst` syntax — tested all of:
+
+- `dst: [&quot;&lt;user&gt;:*&quot;, &quot;autogroup:internet:*&quot;]`
+- `dst: [&quot;&lt;user&gt;:*&quot;, &quot;0.0.0.0/0:*&quot;, &quot;::/0:*&quot;]`
+- `dst: [&quot;*:*&quot;]`
+- `dst: [&quot;*:*&quot;, &quot;autogroup:internet:*&quot;]`
+
+…all produce the same end result: `tailscale status` shows `active; exit node;`, `AllowedIPs` on the client contains `0.0.0.0/0` for the exit-node peer, headscale routes are approved — but **0 data packets** ever reach the exit node (`tcpdump -i any -n &#x27;host &lt;client-tailnet-ip&gt;&#x27;` on the exit node confirms). Tunnel itself is healthy: `tailscale ping --tsmp &lt;exit-node&gt;` and ICMP to the exit node&#x27;s tailnet IP both work.
+
+Two independent exit nodes tested to rule out host-specific issues:
+
+- One Debian 13 node co-located with the headscale server (per [FAQ warning](https://headscale.net/stable/about/faq/#can-i-use-headscale-and-tailscale-on-the-same-machine))
+- One pristine Debian 13 VPS with only tailscale installed, IP forwarding, UFW with `DEFAULT_FORWARD_POLICY=ACCEPT` and `default allow routed`, `ts-postrouting` MASQUERADE rule present (counter `0 packets, 0 bytes`)
+
+Same symptom on both. Two clients tested (macOS, iOS) — same symptom on both. So the issue is policy-side, not exit-node-side or client-platform-side.
+
+Daemon log on client during a ping attempt:
+
+```
+open-conn-track: timeout opening (TCP &lt;client-ip&gt;:nnnn =&gt; 1.1.1.1:443); 
+                                                          no associated peer node
+```
+
+…until ACL is changed away from `autogroup:internet:*`, after which the same flow logs `rejected due to acl` instead. Either way, packets never leave the client.
+
+`tailscale debug netmap` on the client shows the exit-node peer correctly with `AllowedIPs: [&quot;0.0.0.0/0&quot;, &quot;100.64.0.x/32&quot;, &quot;::/0&quot;, ...]`, but the `PacketFilter` array contains zero rules where the client&#x27;s own tailnet IP appears as a `Src` — so the wgengine has no allow-rule for client-as-source toward `0.0.0.0/0`, and silently drops.
+
+This matches @SymoHTL&#x27;s analysis exactly: our `src` is a user identity, our exit nodes are tagged — user-src + tagged-dst → empty effective filter for that flow.
+
+Will try the `src: [&quot;*&quot;]` workaround and report back.
+</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/3087#issuecomment-4414755593">thenebu</a></h3><p>Created: 2026-05-10T07:41:56Z; updated: 2026-05-10T07:41:56Z</p><pre>Workaround verified: replacing user/group `src` with `src: [&quot;*&quot;]` immediately makes the exit-node flow work end-to-end (`curl https://api.ipify.org` returns the exit node&#x27;s public IP, ICMP/TCP to arbitrary internet hosts succeeds).
+
+For anyone hitting this with a structured ACL who wants to keep peer-access restrictions and only open the exit-node path, this minimal-permission variant works:
+
+```hujson
+&quot;acls&quot;: [
+  // existing user/group rules KEEP src: [&quot;user@&quot;] / [&quot;group:...&quot;]
+  // and KEEP dst restricted to peers (NOT &quot;*:*&quot;, NOT autogroup:internet)
+  { &quot;action&quot;: &quot;accept&quot;, &quot;src&quot;: [&quot;user@&quot;],        &quot;dst&quot;: [&quot;user@:*&quot;] },
+  { &quot;action&quot;: &quot;accept&quot;, &quot;src&quot;: [&quot;group:family&quot;], &quot;dst&quot;: [&quot;group:family:*&quot;] },
+
+  // ONE additional rule with src: [&quot;*&quot;] just for internet egress via exit nodes
+  { &quot;action&quot;: &quot;accept&quot;, &quot;src&quot;: [&quot;*&quot;], &quot;dst&quot;: [&quot;autogroup:internet:*&quot;] }
+]
+```
+
+The trade-off: `src: [&quot;*&quot;]` here grants every tailnet user the right to use any approved exit node. Peer-to-peer access between users stays restricted by the original rules.
+
+Tested combinations that **do not** work (all produce empty effective filter for the user→internet flow when exit nodes are tagged):
+
+- `src: [&quot;user@&quot;], dst: [&quot;autogroup:internet:*&quot;]`
+- `src: [&quot;user@&quot;], dst: [&quot;*:*&quot;]`
+- `src: [&quot;user@&quot;], dst: [&quot;*:*&quot;, &quot;autogroup:internet:*&quot;]`
+- `src: [&quot;group:...&quot;], dst: [...]` (any of the above)
+
+The only `src` value that produces a non-empty filter is `[&quot;*&quot;]`. So #3087 isn&#x27;t strictly limited to &quot;Restrict access to exit nodes per user or group&quot; as the title suggests — it&#x27;s a more general issue with user/group-scoped src against tagged-dst nodes (which exit nodes typically are).
+</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/3087#issuecomment-4430500206">nblock</a></h3><p>Created: 2026-05-12T12:30:08Z; updated: 2026-05-12T12:30:08Z</p><pre>@SymoHTL @thenebu It&#x27;d be great if you could [test  a recent nightly build](https://headscale.net/development/setup/install/main/) and migrate to these instructions: https://headscale.net/development/ref/routes/#restrict-access-to-exit-nodes-per-user-or-group</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2026-02-17T18:38:56Z · labeled · nblock</summary><pre>{
+  &quot;id&quot;: 22862004296,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz887rr4tgzwAAAAVSroBI&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/22862004296&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-02-17T18:38:56Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-02-17T18:38:59Z · milestoned · nblock</summary><pre>{
+  &quot;id&quot;: 22862005341,
+  &quot;node_id&quot;: &quot;MIE_lADOEFLz887rr4tgzwAAAAVSroRd&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/22862005341&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;milestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-02-17T18:38:59Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.29.0&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-02-17T18:39:08Z · labeled · nblock</summary><pre>{
+  &quot;id&quot;: 22862008446,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz887rr4tgzwAAAAVSrpB-&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/22862008446&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-02-17T18:39:08Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;no-stale-bot&quot;,
+    &quot;color&quot;: &quot;6ECABC&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-02-18T00:28:12Z · unsubscribed · mrabino1</summary><pre>{
+  &quot;id&quot;: 22868859999,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz887rr4tgzwAAAAVTFxxf&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/22868859999&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mrabino1&quot;,
+    &quot;id&quot;: 4902221,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ5MDIyMjE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4902221?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mrabino1&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mrabino1&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mrabino1/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mrabino1/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mrabino1/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mrabino1/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mrabino1/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mrabino1/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mrabino1/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mrabino1/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mrabino1/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-02-18T00:28:12Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-02-18T08:10:45Z · subscribed · jakob42</summary><pre>{
+  &quot;id&quot;: 22876389648,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz887rr4tgzwAAAAVTigEQ&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/22876389648&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;jakob42&quot;,
+    &quot;id&quot;: 82335,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgyMzM1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/82335?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/jakob42&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/jakob42&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/jakob42/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/jakob42/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/jakob42/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/jakob42/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/jakob42/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/jakob42/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/jakob42/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/jakob42/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/jakob42/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-02-18T08:10:45Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-02-20T11:05:50Z · commented · SymoHTL</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3933140908&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3087#issuecomment-3933140908&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3087&quot;,
+  &quot;id&quot;: 3933140908,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz887qbves&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;SymoHTL&quot;,
+    &quot;id&quot;: 54981573,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjU0OTgxNTcz&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/54981573?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/SymoHTL&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/SymoHTL&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/SymoHTL/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/SymoHTL/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/SymoHTL/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/SymoHTL/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/SymoHTL/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/SymoHTL/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/SymoHTL/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/SymoHTL/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/SymoHTL/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-02-20T11:05:50Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-04-19T19:14:17Z&quot;,
+  &quot;body&quot;: &quot; Can confirm this also affects regular (non-exit-node) ACL rules on v0.28.0.\n\n  Setup: Two nodes — one tagged (tag:gaming, tag:infra), one user-owned. Policy uses groups in `src` and `*:*` in `dst`:\n\n```json\n   {\n     \&quot;groups\&quot;: {\n       \&quot;group:home\&quot;: [\&quot;owner@example.com\&quot;, \&quot;user2@example.com\&quot;]\n     },\n     \&quot;acls\&quot;: [\n       {\&quot;action\&quot;: \&quot;accept\&quot;, \&quot;src\&quot;: [\&quot;group:home\&quot;], \&quot;dst\&quot;: [\&quot;*:*\&quot;]}\n     ]\n   }\n```\n\n  Result: PacketFilter: `[]` — empty filter, all TCP traffic blocked. tailscale ping works (bypasses filter), but real connections (e.g. Minecraft on port 25565) are dropped.\n\n  Replacing `group:home` with `*` in src immediately fixes it:\n\n```json\n   {\&quot;action\&quot;: \&quot;accept\&quot;, \&quot;src\&quot;: [\&quot;*\&quot;], \&quot;dst\&quot;: [\&quot;*:*\&quot;]}\n```\n  So the issue isn&#x27;t limited to exit node restrictions — group-based src rules produce empty filters for any destination when tagged nodes are involved.\n\n  Using `{\&quot;src\&quot;: [\&quot;*\&quot;], \&quot;dst\&quot;: [\&quot;*:*\&quot;]}` as a workaround until v0.29.0.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3933140908/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;SymoHTL&quot;,
+    &quot;id&quot;: 54981573,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjU0OTgxNTcz&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/54981573?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/SymoHTL&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/SymoHTL&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/SymoHTL/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/SymoHTL/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/SymoHTL/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/SymoHTL/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/SymoHTL/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/SymoHTL/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/SymoHTL/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/SymoHTL/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/SymoHTL/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-02-23T08:28:39Z · subscribed · avalls-smd</summary><pre>{
+  &quot;id&quot;: 22993891497,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz887rr4tgzwAAAAVaivCp&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/22993891497&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;avalls-smd&quot;,
+    &quot;id&quot;: 213762172,
+    &quot;node_id&quot;: &quot;U_kgDODL3AfA&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/213762172?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/avalls-smd&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/avalls-smd&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/avalls-smd/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/avalls-smd/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/avalls-smd/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/avalls-smd/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/avalls-smd/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/avalls-smd/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/avalls-smd/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/avalls-smd/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/avalls-smd/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-02-23T08:28:39Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-03-20T20:42:20Z · subscribed · T-Thurow</summary><pre>{
+  &quot;id&quot;: 23764839525,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz887rr4tgzwAAAAWIfqxl&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/23764839525&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;T-Thurow&quot;,
+    &quot;id&quot;: 25453402,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI1NDUzNDAy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/25453402?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/T-Thurow&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/T-Thurow&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/T-Thurow/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/T-Thurow/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/T-Thurow/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/T-Thurow/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/T-Thurow/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/T-Thurow/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/T-Thurow/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/T-Thurow/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/T-Thurow/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-03-20T20:42:20Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-04-03T17:58:04Z · subscribed · artemiymalkin</summary><pre>{
+  &quot;id&quot;: 24182674782,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz887rr4tgzwAAAAWhZlVe&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/24182674782&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;artemiymalkin&quot;,
+    &quot;id&quot;: 127610336,
+    &quot;node_id&quot;: &quot;U_kgDOB5st4A&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/127610336?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/artemiymalkin&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/artemiymalkin&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/artemiymalkin/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/artemiymalkin/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/artemiymalkin/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/artemiymalkin/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/artemiymalkin/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/artemiymalkin/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/artemiymalkin/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/artemiymalkin/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/artemiymalkin/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-04-03T17:58:04Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-04-12T09:54:57Z · subscribed · svengreb</summary><pre>{
+  &quot;id&quot;: 24418741421,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz887rr4tgzwAAAAWveGyt&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/24418741421&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;svengreb&quot;,
+    &quot;id&quot;: 13448100,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzNDQ4MTAw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/13448100?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/svengreb&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/svengreb&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/svengreb/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/svengreb/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/svengreb/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/svengreb/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/svengreb/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/svengreb/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/svengreb/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/svengreb/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/svengreb/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-04-12T09:54:57Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-04-30T15:38:36Z · referenced · nblock</summary><pre>{
+  &quot;id&quot;: 25040959807,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz887rr4tgzwAAAAXUjrk_&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25040959807&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;d48d7c6b1a35366b56fbbf57c5fde6ffa70de579&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/nblock/headscale/commits/d48d7c6b1a35366b56fbbf57c5fde6ffa70de579&quot;,
+  &quot;created_at&quot;: &quot;2026-04-30T15:38:36Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-04-30T15:40:20Z · referenced · nblock</summary><pre>{
+  &quot;id&quot;: 25041029471,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz887rr4tgzwAAAAXUj8lf&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25041029471&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;a3d1af59f2d84ba9f0aaf5c7b911638e76bc26fc&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/nblock/headscale/commits/a3d1af59f2d84ba9f0aaf5c7b911638e76bc26fc&quot;,
+  &quot;created_at&quot;: &quot;2026-04-30T15:40:20Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-04-30T16:55:43Z · referenced · nblock</summary><pre>{
+  &quot;id&quot;: 25043770957,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz887rr4tgzwAAAAXUuZ5N&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25043770957&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;65af2bbbb71befb33b048a6df333d794555b961a&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/nblock/headscale/commits/65af2bbbb71befb33b048a6df333d794555b961a&quot;,
+  &quot;created_at&quot;: &quot;2026-04-30T16:55:43Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-05-01T05:08:09Z · referenced · nblock</summary><pre>{
+  &quot;id&quot;: 25062296484,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz887rr4tgzwAAAAXV1Euk&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25062296484&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;42f1cb79f27515e5fd0d5578a5e7fcfcf77fdcd7&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/nblock/headscale/commits/42f1cb79f27515e5fd0d5578a5e7fcfcf77fdcd7&quot;,
+  &quot;created_at&quot;: &quot;2026-05-01T05:08:09Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-05-01T05:34:41Z · referenced · nblock</summary><pre>{
+  &quot;id&quot;: 25062749748,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz887rr4tgzwAAAAXV2zY0&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25062749748&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;b7d05afb9c8447332192eb907f3c63bd3c593b92&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/nblock/headscale/commits/b7d05afb9c8447332192eb907f3c63bd3c593b92&quot;,
+  &quot;created_at&quot;: &quot;2026-05-01T05:34:41Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-05-08T13:29:59Z · subscribed · ryclarke</summary><pre>{
+  &quot;id&quot;: 25307505203,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz887rr4tgzwAAAAXkceIz&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25307505203&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;ryclarke&quot;,
+    &quot;id&quot;: 16803587,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE2ODAzNTg3&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/16803587?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ryclarke&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ryclarke&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ryclarke/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ryclarke/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ryclarke/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ryclarke/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ryclarke/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ryclarke/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ryclarke/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ryclarke/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ryclarke/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-05-08T13:29:59Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-05-09T03:14:54Z · referenced · nblock</summary><pre>{
+  &quot;id&quot;: 25330907311,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz887rr4tgzwAAAAXl1viv&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25330907311&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;34f7b4492ab484097253321b577461387307b8ab&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/nblock/headscale/commits/34f7b4492ab484097253321b577461387307b8ab&quot;,
+  &quot;created_at&quot;: &quot;2026-05-09T03:14:54Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-05-09T20:27:16Z · commented · thenebu</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4413599789&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3087#issuecomment-4413599789&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3087&quot;,
+  &quot;id&quot;: 4413599789,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABBxIwLQ&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;thenebu&quot;,
+    &quot;id&quot;: 74529933,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjc0NTI5OTMz&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/74529933?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thenebu&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thenebu&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thenebu/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thenebu/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thenebu/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thenebu/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thenebu/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thenebu/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thenebu/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thenebu/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thenebu/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-05-09T20:27:16Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-05-09T20:27:16Z&quot;,
+  &quot;body&quot;: &quot;Confirming on **headscale v0.28.0** with **tailscale 1.96.5 (macOS) / 1.96.4 (Linux) / latest iOS**.\n\nReproduction is independent of `dst` syntax — tested all of:\n\n- `dst: [\&quot;&lt;user&gt;:*\&quot;, \&quot;autogroup:internet:*\&quot;]`\n- `dst: [\&quot;&lt;user&gt;:*\&quot;, \&quot;0.0.0.0/0:*\&quot;, \&quot;::/0:*\&quot;]`\n- `dst: [\&quot;*:*\&quot;]`\n- `dst: [\&quot;*:*\&quot;, \&quot;autogroup:internet:*\&quot;]`\n\n…all produce the same end result: `tailscale status` shows `active; exit node;`, `AllowedIPs` on the client contains `0.0.0.0/0` for the exit-node peer, headscale routes are approved — but **0 data packets** ever reach the exit node (`tcpdump -i any -n &#x27;host &lt;client-tailnet-ip&gt;&#x27;` on the exit node confirms). Tunnel itself is healthy: `tailscale ping --tsmp &lt;exit-node&gt;` and ICMP to the exit node&#x27;s tailnet IP both work.\n\nTwo independent exit nodes tested to rule out host-specific issues:\n\n- One Debian 13 node co-located with the headscale server (per [FAQ warning](https://headscale.net/stable/about/faq/#can-i-use-headscale-and-tailscale-on-the-same-machine))\n- One pristine Debian 13 VPS with only tailscale installed, IP forwarding, UFW with `DEFAULT_FORWARD_POLICY=ACCEPT` and `default allow routed`, `ts-postrouting` MASQUERADE rule present (counter `0 packets, 0 bytes`)\n\nSame symptom on both. Two clients tested (macOS, iOS) — same symptom on both. So the issue is policy-side, not exit-node-side or client-platform-side.\n\nDaemon log on client during a ping attempt:\n\n```\nopen-conn-track: timeout opening (TCP &lt;client-ip&gt;:nnnn =&gt; 1.1.1.1:443); \n                                                          no associated peer node\n```\n\n…until ACL is changed away from `autogroup:internet:*`, after which the same flow logs `rejected due to acl` instead. Either way, packets never leave the client.\n\n`tailscale debug netmap` on the client shows the exit-node peer correctly with `AllowedIPs: [\&quot;0.0.0.0/0\&quot;, \&quot;100.64.0.x/32\&quot;, \&quot;::/0\&quot;, ...]`, but the `PacketFilter` array contains zero rules where the client&#x27;s own tailnet IP appears as a `Src` — so the wgengine has no allow-rule for client-as-source toward `0.0.0.0/0`, and silently drops.\n\nThis matches @SymoHTL&#x27;s analysis exactly: our `src` is a user identity, our exit nodes are tagged — user-src + tagged-dst → empty effective filter for that flow.\n\nWill try the `src: [\&quot;*\&quot;]` workaround and report back.\n&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4413599789/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;thenebu&quot;,
+    &quot;id&quot;: 74529933,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjc0NTI5OTMz&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/74529933?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thenebu&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thenebu&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thenebu/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thenebu/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thenebu/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thenebu/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thenebu/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thenebu/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thenebu/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thenebu/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thenebu/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-05-09T20:27:17Z · mentioned · SymoHTL</summary><pre>{
+  &quot;id&quot;: 25344387994,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz887rr4tgzwAAAAXmpKua&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25344387994&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;SymoHTL&quot;,
+    &quot;id&quot;: 54981573,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjU0OTgxNTcz&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/54981573?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/SymoHTL&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/SymoHTL&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/SymoHTL/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/SymoHTL/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/SymoHTL/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/SymoHTL/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/SymoHTL/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/SymoHTL/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/SymoHTL/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/SymoHTL/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/SymoHTL/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-05-09T20:27:17Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-05-09T20:27:17Z · subscribed · SymoHTL</summary><pre>{
+  &quot;id&quot;: 25344388005,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz887rr4tgzwAAAAXmpKul&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25344388005&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;SymoHTL&quot;,
+    &quot;id&quot;: 54981573,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjU0OTgxNTcz&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/54981573?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/SymoHTL&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/SymoHTL&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/SymoHTL/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/SymoHTL/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/SymoHTL/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/SymoHTL/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/SymoHTL/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/SymoHTL/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/SymoHTL/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/SymoHTL/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/SymoHTL/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-05-09T20:27:17Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-05-10T07:41:56Z · commented · thenebu</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4414755593&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3087#issuecomment-4414755593&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3087&quot;,
+  &quot;id&quot;: 4414755593,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABByPTCQ&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;thenebu&quot;,
+    &quot;id&quot;: 74529933,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjc0NTI5OTMz&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/74529933?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thenebu&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thenebu&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thenebu/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thenebu/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thenebu/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thenebu/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thenebu/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thenebu/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thenebu/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thenebu/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thenebu/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-05-10T07:41:56Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-05-10T07:41:56Z&quot;,
+  &quot;body&quot;: &quot;Workaround verified: replacing user/group `src` with `src: [\&quot;*\&quot;]` immediately makes the exit-node flow work end-to-end (`curl https://api.ipify.org` returns the exit node&#x27;s public IP, ICMP/TCP to arbitrary internet hosts succeeds).\n\nFor anyone hitting this with a structured ACL who wants to keep peer-access restrictions and only open the exit-node path, this minimal-permission variant works:\n\n```hujson\n\&quot;acls\&quot;: [\n  // existing user/group rules KEEP src: [\&quot;user@\&quot;] / [\&quot;group:...\&quot;]\n  // and KEEP dst restricted to peers (NOT \&quot;*:*\&quot;, NOT autogroup:internet)\n  { \&quot;action\&quot;: \&quot;accept\&quot;, \&quot;src\&quot;: [\&quot;user@\&quot;],        \&quot;dst\&quot;: [\&quot;user@:*\&quot;] },\n  { \&quot;action\&quot;: \&quot;accept\&quot;, \&quot;src\&quot;: [\&quot;group:family\&quot;], \&quot;dst\&quot;: [\&quot;group:family:*\&quot;] },\n\n  // ONE additional rule with src: [\&quot;*\&quot;] just for internet egress via exit nodes\n  { \&quot;action\&quot;: \&quot;accept\&quot;, \&quot;src\&quot;: [\&quot;*\&quot;], \&quot;dst\&quot;: [\&quot;autogroup:internet:*\&quot;] }\n]\n```\n\nThe trade-off: `src: [\&quot;*\&quot;]` here grants every tailnet user the right to use any approved exit node. Peer-to-peer access between users stays restricted by the original rules.\n\nTested combinations that **do not** work (all produce empty effective filter for the user→internet flow when exit nodes are tagged):\n\n- `src: [\&quot;user@\&quot;], dst: [\&quot;autogroup:internet:*\&quot;]`\n- `src: [\&quot;user@\&quot;], dst: [\&quot;*:*\&quot;]`\n- `src: [\&quot;user@\&quot;], dst: [\&quot;*:*\&quot;, \&quot;autogroup:internet:*\&quot;]`\n- `src: [\&quot;group:...\&quot;], dst: [...]` (any of the above)\n\nThe only `src` value that produces a non-empty filter is `[\&quot;*\&quot;]`. So #3087 isn&#x27;t strictly limited to \&quot;Restrict access to exit nodes per user or group\&quot; as the title suggests — it&#x27;s a more general issue with user/group-scoped src against tagged-dst nodes (which exit nodes typically are).\n&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4414755593/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;thenebu&quot;,
+    &quot;id&quot;: 74529933,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjc0NTI5OTMz&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/74529933?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thenebu&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thenebu&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thenebu/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thenebu/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thenebu/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thenebu/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thenebu/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thenebu/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thenebu/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thenebu/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thenebu/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-05-11T10:53:47Z · referenced · nblock</summary><pre>{
+  &quot;id&quot;: 25377984268,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz887rr4tgzwAAAAXopU8M&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25377984268&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;e266f4f321fb967e39c0cbfbf532b516932572ba&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/nblock/headscale/commits/e266f4f321fb967e39c0cbfbf532b516932572ba&quot;,
+  &quot;created_at&quot;: &quot;2026-05-11T10:53:47Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-05-11T16:03:25Z · referenced · nblock</summary><pre>{
+  &quot;id&quot;: 25390449907,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz887rr4tgzwAAAAXpY4Tz&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25390449907&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;5018878fb6b135ac9866f314267eddf8def2b1a7&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/nblock/headscale/commits/5018878fb6b135ac9866f314267eddf8def2b1a7&quot;,
+  &quot;created_at&quot;: &quot;2026-05-11T16:03:25Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-05-12T12:02:12Z · referenced · nblock</summary><pre>{
+  &quot;id&quot;: 25428629827,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz887rr4tgzwAAAAXrqhlD&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25428629827&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;27244056c4fa4a00045939b56f30fd610c3901f6&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/nblock/headscale/commits/27244056c4fa4a00045939b56f30fd610c3901f6&quot;,
+  &quot;created_at&quot;: &quot;2026-05-12T12:02:12Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-05-12T12:12:32Z · closed · nblock</summary><pre>{
+  &quot;id&quot;: 25429043174,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz887rr4tgzwAAAAXrsGfm&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25429043174&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: &quot;109bfc404c3cf13116958c4dcb0eb8c7393a0f73&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/commits/109bfc404c3cf13116958c4dcb0eb8c7393a0f73&quot;,
+  &quot;created_at&quot;: &quot;2026-05-12T12:12:32Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-05-12T12:27:14Z · referenced · pull[bot]</summary><pre>{
+  &quot;id&quot;: 25429624294,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz887rr4tgzwAAAAXruUXm&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25429624294&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;pull[bot]&quot;,
+    &quot;id&quot;: 39814207,
+    &quot;node_id&quot;: &quot;MDM6Qm90Mzk4MTQyMDc=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/12910?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/pull%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/pull&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/pull%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/pull%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/pull%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/pull%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/pull%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/pull%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/pull%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/pull%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/pull%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;109bfc404c3cf13116958c4dcb0eb8c7393a0f73&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/A-Archives-and-Forks/headscale/commits/109bfc404c3cf13116958c4dcb0eb8c7393a0f73&quot;,
+  &quot;created_at&quot;: &quot;2026-05-12T12:27:14Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-05-12T12:30:08Z · commented · nblock</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4430500206&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3087#issuecomment-4430500206&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3087&quot;,
+  &quot;id&quot;: 4430500206,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABCBQRbg&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-05-12T12:30:08Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-05-12T12:30:08Z&quot;,
+  &quot;body&quot;: &quot;@SymoHTL @thenebu It&#x27;d be great if you could [test  a recent nightly build](https://headscale.net/development/setup/install/main/) and migrate to these instructions: https://headscale.net/development/ref/routes/#restrict-access-to-exit-nodes-per-user-or-group&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4430500206/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-05-12T12:30:09Z · mentioned · SymoHTL</summary><pre>{
+  &quot;id&quot;: 25429741865,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz887rr4tgzwAAAAXruxEp&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25429741865&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;SymoHTL&quot;,
+    &quot;id&quot;: 54981573,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjU0OTgxNTcz&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/54981573?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/SymoHTL&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/SymoHTL&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/SymoHTL/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/SymoHTL/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/SymoHTL/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/SymoHTL/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/SymoHTL/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/SymoHTL/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/SymoHTL/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/SymoHTL/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/SymoHTL/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-05-12T12:30:09Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-05-12T12:30:09Z · subscribed · SymoHTL</summary><pre>{
+  &quot;id&quot;: 25429741888,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz887rr4tgzwAAAAXruxFA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25429741888&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;SymoHTL&quot;,
+    &quot;id&quot;: 54981573,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjU0OTgxNTcz&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/54981573?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/SymoHTL&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/SymoHTL&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/SymoHTL/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/SymoHTL/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/SymoHTL/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/SymoHTL/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/SymoHTL/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/SymoHTL/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/SymoHTL/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/SymoHTL/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/SymoHTL/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-05-12T12:30:09Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-05-12T12:30:10Z · mentioned · thenebu</summary><pre>{
+  &quot;id&quot;: 25429741967,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz887rr4tgzwAAAAXruxGP&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25429741967&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;thenebu&quot;,
+    &quot;id&quot;: 74529933,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjc0NTI5OTMz&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/74529933?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thenebu&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thenebu&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thenebu/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thenebu/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thenebu/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thenebu/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thenebu/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thenebu/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thenebu/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thenebu/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thenebu/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-05-12T12:30:10Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-05-12T12:30:10Z · subscribed · thenebu</summary><pre>{
+  &quot;id&quot;: 25429742012,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz887rr4tgzwAAAAXruxG8&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25429742012&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;thenebu&quot;,
+    &quot;id&quot;: 74529933,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjc0NTI5OTMz&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/74529933?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/thenebu&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/thenebu&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/thenebu/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/thenebu/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/thenebu/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/thenebu/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/thenebu/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/thenebu/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/thenebu/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/thenebu/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/thenebu/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-05-12T12:30:10Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><article><h3><a href="https://api.github.com/repos/nblock/headscale/commits/d48d7c6b1a35366b56fbbf57c5fde6ffa70de579">d48d7c6b1a35366b56fbbf57c5fde6ffa70de579</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/25040959807">referenced</a> · 2026-04-30T15:38:36Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/nblock/headscale/commits/a3d1af59f2d84ba9f0aaf5c7b911638e76bc26fc">a3d1af59f2d84ba9f0aaf5c7b911638e76bc26fc</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/25041029471">referenced</a> · 2026-04-30T15:40:20Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/nblock/headscale/commits/65af2bbbb71befb33b048a6df333d794555b961a">65af2bbbb71befb33b048a6df333d794555b961a</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/25043770957">referenced</a> · 2026-04-30T16:55:43Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/nblock/headscale/commits/42f1cb79f27515e5fd0d5578a5e7fcfcf77fdcd7">42f1cb79f27515e5fd0d5578a5e7fcfcf77fdcd7</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/25062296484">referenced</a> · 2026-05-01T05:08:09Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/nblock/headscale/commits/b7d05afb9c8447332192eb907f3c63bd3c593b92">b7d05afb9c8447332192eb907f3c63bd3c593b92</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/25062749748">referenced</a> · 2026-05-01T05:34:41Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/nblock/headscale/commits/34f7b4492ab484097253321b577461387307b8ab">34f7b4492ab484097253321b577461387307b8ab</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/25330907311">referenced</a> · 2026-05-09T03:14:54Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/nblock/headscale/commits/e266f4f321fb967e39c0cbfbf532b516932572ba">e266f4f321fb967e39c0cbfbf532b516932572ba</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/25377984268">referenced</a> · 2026-05-11T10:53:47Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/nblock/headscale/commits/5018878fb6b135ac9866f314267eddf8def2b1a7">5018878fb6b135ac9866f314267eddf8def2b1a7</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/25390449907">referenced</a> · 2026-05-11T16:03:25Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/nblock/headscale/commits/27244056c4fa4a00045939b56f30fd610c3901f6">27244056c4fa4a00045939b56f30fd610c3901f6</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/25428629827">referenced</a> · 2026-05-12T12:02:12Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/juanfont/headscale/commits/109bfc404c3cf13116958c4dcb0eb8c7393a0f73">109bfc404c3cf13116958c4dcb0eb8c7393a0f73</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/25429043174">closed</a> · 2026-05-12T12:12:32Z</p><p><a href="../commits/109bfc404c3cf13116958c4dcb0eb8c7393a0f73.patch">Full local Git patch</a>; Refresh docs for Grants; in release ancestry: True.</p></article><article><h3><a href="https://api.github.com/repos/A-Archives-and-Forks/headscale/commits/109bfc404c3cf13116958c4dcb0eb8c7393a0f73">109bfc404c3cf13116958c4dcb0eb8c7393a0f73</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/25429624294">referenced</a> · 2026-05-12T12:27:14Z</p><p><a href="../commits/109bfc404c3cf13116958c4dcb0eb8c7393a0f73.patch">Full local Git patch</a>; Refresh docs for Grants; in release ancestry: True.</p></article></body></html>

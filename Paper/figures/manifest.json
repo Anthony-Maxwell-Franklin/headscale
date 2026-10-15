@@ -1,0 +1,14 @@
+{
+  "source_sha256": {
+    "Paper/results/research-v0.29.5/quarterly_rename_sensitivity.csv": "a1ec2beb2405ae66af9cb77d8fa3813bd8476d49be76c0b2467e688cf2a48c93",
+    "Paper/results/research-v0.29.5/bug_closure_observations.csv": "4d73cda4944398ff5848dcbd18c7f83e0087afd9767db38e4ac24b5432853b69",
+    "Paper/results/research-v0.29.5/bug_time_to_closure_km.csv": "6baf2146d69fbc18b2803cade4f927e4f7516be764212c096e24dd7833e5182e",
+    "Paper/results/pr-census/human_first_disposition_cif.csv": "3393324636e826bc7c3f01056923d29e5824ca83ed297aa283fc96f01db5a034",
+    "Paper/results/pr-census/quarterly_merge_responsibility.csv": "1a457a0dd8a794e999bb29d46db3fb90773f9bc67ac1ef61a54c5621baa461a8",
+    "Paper/results/review-census/quarterly_paired_review_roles.csv": "c676878f9fb7a26ff549ce204aa928685b788ef5d63769e7857b005c0b867a2f"
+  },
+  "matplotlib_version": "3.11.2",
+  "numpy_version": "2.5.4",
+  "km_validation": "Custom product-limit survival probabilities match SciPy ecdf within 1e-12",
+  "script_sha256": "2da06dcb01971f30bd3b25b867b5eeea7ccad1d03395206d0072a9e0244f6be1"
+}

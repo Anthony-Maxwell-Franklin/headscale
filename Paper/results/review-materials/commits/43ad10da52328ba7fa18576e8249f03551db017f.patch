@@ -1,0 +1,121 @@
+commit 43ad10da52328ba7fa18576e8249f03551db017f
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Thu Apr 30 08:25:07 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Wed Sep 23 15:18:34 2026 +0200
+
+    types: add ListenerBindError for typed bind failures
+    
+    ListenerBindError wraps a TCP listener bind failure with the listener
+    name and the YAML key that drove its address. Preserves the underlying
+    *net.OpError via Unwrap so errors.Is(err, syscall.EADDRINUSE) keeps
+    working through any number of fmt.Errorf("%w") wraps. Lets the
+    top-level CLI classifier match listener failures with errors.As
+    instead of string matching.
+    
+    Updates #3227
+---
+ hscontrol/types/listener.go      | 20 ++++++++++++++++++
+ hscontrol/types/listener_test.go | 45 ++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 65 insertions(+)
+
+diff --git a/hscontrol/types/listener.go b/hscontrol/types/listener.go
+index 6972a128..5024209a 100644
+--- a/hscontrol/types/listener.go
++++ b/hscontrol/types/listener.go
+@@ -11,6 +11,26 @@ import (
+ 
+ var errEmptyListenAddr = errors.New("address is empty")
+ 
++// ListenerBindError is returned when a TCP listener fails to bind. It
++// names the listener and the YAML key that drove the address so an
++// operator can identify which socket collided. The underlying error
++// (typically *net.OpError around syscall.EADDRINUSE / EACCES) is
++// preserved via Unwrap, so errors.Is(err, syscall.EADDRINUSE) keeps
++// working through any number of fmt.Errorf("%w") wraps.
++type ListenerBindError struct {
++	Listener string
++	YAMLKey  string
++	Addr     string
++	Err      error
++}
++
++func (e *ListenerBindError) Error() string {
++	return fmt.Sprintf("binding %s listener (%s=%q): %v",
++		e.Listener, e.YAMLKey, e.Addr, e.Err)
++}
++
++func (e *ListenerBindError) Unwrap() error { return e.Err }
++
+ // portFromAddr resolves the numeric port of a TCP listen address.
+ // Accepts host:port form with either a numeric port or one of the named
+ // services "http" / "https". The named-service table is intentionally
+diff --git a/hscontrol/types/listener_test.go b/hscontrol/types/listener_test.go
+index 98d2d47e..b104f38e 100644
+--- a/hscontrol/types/listener_test.go
++++ b/hscontrol/types/listener_test.go
+@@ -1,12 +1,18 @@
+ package types
+ 
+ import (
++	"errors"
++	"fmt"
++	"net"
++	"syscall"
+ 	"testing"
+ 
+ 	"github.com/stretchr/testify/assert"
+ 	"github.com/stretchr/testify/require"
+ )
+ 
++var errTestBindFailure = errors.New("listen tcp :80: bind: address already in use")
++
+ func TestPortFromAddr(t *testing.T) {
+ 	tests := []struct {
+ 		name    string
+@@ -73,6 +79,45 @@ func TestListenersOverlap(t *testing.T) {
+ 	}
+ }
+ 
++func TestListenerBindError_IsEADDRINUSE(t *testing.T) {
++	inner := &net.OpError{
++		Op:  "listen",
++		Net: "tcp",
++		Err: syscall.EADDRINUSE,
++	}
++	bindErr := &ListenerBindError{
++		Listener: "main HTTP",
++		YAMLKey:  "listen_addr",
++		Addr:     "0.0.0.0:80",
++		Err:      inner,
++	}
++
++	wrapped := fmt.Errorf("serve: %w", bindErr)
++
++	require.ErrorIs(t, wrapped, syscall.EADDRINUSE)
++
++	var got *ListenerBindError
++	require.ErrorAs(t, wrapped, &got)
++	assert.Equal(t, "main HTTP", got.Listener)
++	assert.Equal(t, "listen_addr", got.YAMLKey)
++	assert.Equal(t, "0.0.0.0:80", got.Addr)
++}
++
++func TestListenerBindError_Render(t *testing.T) {
++	bindErr := &ListenerBindError{
++		Listener: "ACME HTTP-01 challenge",
++		YAMLKey:  "tls_letsencrypt_listen",
++		Addr:     ":http",
++		Err:      errTestBindFailure,
++	}
++	got := bindErr.Error()
++	assert.Equal(
++		t,
++		`binding ACME HTTP-01 challenge listener (tls_letsencrypt_listen=":http"): listen tcp :80: bind: address already in use`,
++		got,
++	)
++}
++
+ func TestIsWildcardHost(t *testing.T) {
+ 	wildcards := []string{"", "0.0.0.0", "::", "[::]"}
+ 	for _, h := range wildcards {

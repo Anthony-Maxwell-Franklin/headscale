@@ -1,0 +1,42 @@
+{
+  "start_url": "https://api.github.com/repos/juanfont/headscale/pulls/3102/files?per_page=100",
+  "next_url": null,
+  "pages": [
+    {
+      "file": "page_0001.json",
+      "sha256": "5eb89392db0476e0d088776016f490df00800e4a3734576581286bb75c9c1db7",
+      "fetched_at_utc": "2026-10-13T18:34:04.527216+00:00"
+    },
+    {
+      "file": "page_0002.json",
+      "sha256": "ae2f5a6e41a4267e07b0a5fafeca542dae3bc6df1e3467e4013c364fbbc5f797",
+      "fetched_at_utc": "2026-10-13T18:34:06.029729+00:00"
+    },
+    {
+      "file": "page_0003.json",
+      "sha256": "2f24840de9feba045d9ecb8ab4f6168be9b7874603f20e4d2f06e638a37cf187",
+      "fetched_at_utc": "2026-10-13T18:34:08.169268+00:00"
+    },
+    {
+      "file": "page_0004.json",
+      "sha256": "a3c291dbd4c6409e1b64e92ed00df8f2d6bfd1cab6e2b0a136451508fb0b4b1d",
+      "fetched_at_utc": "2026-10-13T18:34:10.600093+00:00"
+    },
+    {
+      "file": "page_0005.json",
+      "sha256": "30c797af81a80bc146c9fecd8b22275fca47d842b3a70b0247f7e4992bd11c09",
+      "fetched_at_utc": "2026-10-13T18:34:12.174864+00:00"
+    },
+    {
+      "file": "page_0006.json",
+      "sha256": "641452efaa6d9fed2bf1de9e349a6fc6ccd84a9dea44b871249d2ce346ed080d",
+      "fetched_at_utc": "2026-10-13T18:34:13.683593+00:00"
+    },
+    {
+      "file": "page_0007.json",
+      "sha256": "447045c784d455e3cb8efa3d4b049490bf3872cac0aaffe1995670082b52dc2c",
+      "fetched_at_utc": "2026-10-13T18:34:15.468662+00:00"
+    }
+  ],
+  "complete": true
+}

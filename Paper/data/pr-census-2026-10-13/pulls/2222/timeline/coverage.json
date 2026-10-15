@@ -1,0 +1,12 @@
+{
+  "start_url": "https://api.github.com/repos/juanfont/headscale/issues/2222/timeline?per_page=100",
+  "next_url": null,
+  "pages": [
+    {
+      "file": "page_0001.json",
+      "sha256": "ddc81b0fead448f76b6a22751d474ba0f4741712b3dea5acd287592af0e478d5",
+      "fetched_at_utc": "2026-10-13T16:55:31.286524+00:00"
+    }
+  ],
+  "complete": true
+}

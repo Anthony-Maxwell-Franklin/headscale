@@ -1,0 +1,17 @@
+{
+  "start_url": "https://api.github.com/repos/juanfont/headscale/issues/1564/timeline?per_page=100",
+  "next_url": null,
+  "pages": [
+    {
+      "file": "page_0001.json",
+      "sha256": "19c96ddf815df3a9dc382f91adc67018f5733417457b113f4a61dca1f7540e1a",
+      "fetched_at_utc": "2026-10-13T16:46:46.959439+00:00"
+    },
+    {
+      "file": "page_0002.json",
+      "sha256": "cf1c407abbc70d1b0c7c07ab3a68dffb06a2fa5c28b3163a71c89b926612ff34",
+      "fetched_at_utc": "2026-10-13T16:46:48.233955+00:00"
+    }
+  ],
+  "complete": true
+}

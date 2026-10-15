@@ -1,0 +1,1060 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #2209: [Bug] Tailscale Client Fails to Resolve DNS</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #2209: [Bug] Tailscale Client Fails to Resolve DNS</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/2209">Original issue #2209</a></p><p>Created: 2024-10-23T13:42:00Z; updated: 2025-02-23T12:53:35Z; observed state: closed; reason: not_planned</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [X] This is not a support request
+
+### Is there an existing issue for this?
+
+- [X] I have searched the existing issues
+
+### Current Behavior
+
+Seems more like a Tailscale bug, but the Tailscale client on Windows often fails to connect on startup. It&#x27;s stuck on &quot;connecting...&quot; despite my machine having an active Ethernet connection.
+
+In the logs, it says it&#x27;s failing to resolve my headscale server&#x27;s domain, but my dns servers (8.8.8.8 and 8.8.4.4) passed to me from my router work fine, and I can properly ping all common dns servers from cmd. I can also browse the internet just fine. I can also visit the domain for my headscale server just fine, and ping it properly.
+
+```
+2024-10-23T09:26:25.779-04:00: [v1] v1.76.3-t02acaa00e-g551df6588 peers: 37569296/7424000 1080/248 2128/4636 109014776/59720396
+2024-10-23T09:26:26.190-04:00: control: trying bootstrapDNS(&quot;derp16d.tailscale.com&quot;, &quot;2607:f740:17::475&quot;) for &quot;headscale.mydomain.com&quot; ...
+2024-10-23T09:26:26.225-04:00: control: bootstrapDNS(&quot;derp16d.tailscale.com&quot;, &quot;2607:f740:17::475&quot;) for &quot;headscale.mydomain.com&quot; error: Get &quot;https://derp16d.tailscale.com/bootstrap-dns?q=headscale.mydomain.com&quot;: dial tcp [2607:f740:17::475]:443: connectex: A socket operation was attempted to an unreachable network.
+2024-10-23T09:26:26.226-04:00: control: [v1] TryLogin: fetch control key: Get &quot;https://headscale.mydomain.com/key?v=106&quot;: failed to resolve &quot;headscale.mydomain.com&quot;: no DNS fallback candidates remain for &quot;headscale.mydomain.com&quot;
+2024-10-23T09:26:26.226-04:00: control: [v1] sendStatus: authRoutine-report: state:authenticating
+2024-10-23T09:26:26.226-04:00: control: authRoutine: [v1] backoff: 25712 msec
+2024-10-23T09:26:26.226-04:00: Received error: fetch control key: Get &quot;https://headscale.mydomain.com/key?v=106&quot;: failed to resolve &quot;headscale.mydomain.com&quot;: no DNS fallback candidates remain for &quot;headscale.mydomain.com&quot;
+```
+_Note that I changed to domain for privacy._
+
+I can sometimes get it going by disconnecting and reconnecting my internet after restarting the Tailscale service.
+
+
+### Expected Behavior
+
+I&#x27;d expect it to connect right away using the DNS from my host machine. It almost looks like it&#x27;s trying to use the tailscale magic dns, but that wont work since it&#x27;s not running yet.
+
+### Steps To Reproduce
+
+Not sure what&#x27;s unique about my environment, but all I can think of:
+
+1. Using ethernet with another secondary ethernet adapter and wifi enabled but not in use
+2. Start Windows
+
+### Environment
+
+```markdown
+- OS: Windows 10
+- Headscale version: 0.23.0
+- Tailscale version: 1.76.3
+```
+
+
+### Runtime environment
+
+- [X] Headscale is behind a (reverse) proxy
+- [X] Headscale runs in a container
+
+### Anything else?
+
+More logs: https://paste.yunohost.org/onebulayar.log</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/2209#issuecomment-2437062811">hopleus</a></h3><p>Created: 2024-10-25T07:12:49Z; updated: 2024-10-25T07:12:49Z</p><pre>1. What does HeadScale have to do with this if you say the problem is DNS resolution on your machine?
+2. Have you tried changing the configuration and connecting to HeadScale without using a domain, but directly by IP?</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2209#issuecomment-2438692458">W1BTR</a></h3><p>Created: 2024-10-25T19:59:34Z; updated: 2024-10-25T19:59:34Z</p><pre>For clarification, DNS does work fine for everything other than the Tailscale app, even with the headscale server&#x27;s domain. 
+
+I do believe it is a bug with the Tailscale app, but the docs for Headscale say to make sure and send all issues, even those with the Tailscale app to the Headscale Github, so I was following that. Every time I restart the Tailscale service, it proceeds to work.
+
+Ill have to try using an IP, I didnt think of that. Will report back.
+
+</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2209#issuecomment-2439641768">nblock</a></h3><p>Created: 2024-10-26T16:26:15Z; updated: 2024-10-26T16:26:15Z</p><pre>&gt; […] but the docs for Headscale say to make sure and send all issues, even those with the Tailscale app to the Headscale Github, so I was following that.
+
+That should probably be fixed in the docs. Do you have a pointer to the specific section?</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2209#issuecomment-2613717226">github-actions[bot]</a></h3><p>Created: 2025-01-25T01:53:33Z; updated: 2025-01-25T01:53:33Z</p><pre>This issue is stale because it has been open for 90 days with no activity.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2209#issuecomment-2628682854">github-actions[bot]</a></h3><p>Created: 2025-02-01T01:59:05Z; updated: 2025-02-01T01:59:05Z</p><pre>This issue was closed because it has been inactive for 14 days since being marked as stale.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2209#issuecomment-2675171899">mastier</a></h3><p>Created: 2025-02-21T17:39:56Z; updated: 2025-02-21T17:43:27Z</p><pre>EDIT: I saw this 
+  **# This domain _must_ be different from the server_url domain.**        
+So that answers the question. Yet that&#x27;s new behaviour since 0.23.2 I used last time....                             
+
+
+I encounter the same issue, I got nginx in front of headscale 0.25 and it&#x27;s passing request to the docker container via let&#x27;s say mydomain.example.com
+
+When I am connected tailscale to my headscale instance in mydomain.example.com the DNS is 100.100.100.100
+```
+$ dig mydomain.example.com @100.100.100.100
+
+; &lt;&lt;&gt;&gt; DiG 9.18.30-0ubuntu0.24.04.2-Ubuntu &lt;&lt;&gt;&gt; mydomain.example.com @100.100.100.100
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NXDOMAIN, id: 19081
+;; flags: qr aa rd ra ad; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;mydomain.example.com.			IN	A
+
+;; Query time: 0 msec
+;; SERVER: 100.100.100.100#53(100.100.100.100) (UDP)
+;; WHEN: Fri Feb 21 18:31:24 CET 2025
+;; MSG SIZE  rcvd: 32
+```
+
+While normally it resolves it via Google DNS
+
+That domain is also magic dns base_domain
+
+```
+dns:                                                                                                
+  # Whether to use [MagicDNS](https://tailscale.com/kb/1081/magicdns/).                             
+  magic_dns: true                                                                                   
+                                                                                                    
+  # Defines the base domain to create the hostnames for MagicDNS.                                   
+  # This domain _must_ be different from the server_url domain.                                     
+  # `base_domain` must be a FQDN, without the trailing dot.                                         
+  # The FQDN of the hosts will be                                                                   
+  # `hostname.base_domain` (e.g., _myhost.example.com_).                                            
+  base_domain:  mydomain.example.com 
+```
+
+That seems to be an issue here
+If I switch to other domain like ts.mydomain.example.com everything works as expected
+
+ dig mydomain.example.com @100.100.100.100
+```
+; &lt;&lt;&gt;&gt; DiG 9.18.30-0ubuntu0.24.04.2-Ubuntu &lt;&lt;&gt;&gt; mydomain.example.com @100.100.100.100
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 46541
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;mydomain.example.com.			IN	A
+
+;; ANSWER SECTION:
+mydomain.example.com		3600	IN	A	83.X.X.X
+
+;; Query time: 92 msec
+;; SERVER: 100.100.100.100#53(100.100.100.100) (UDP)
+;; WHEN: Fri Feb 21 18:38:12 CET 2025
+;; MSG SIZE  rcvd: 73
+```</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2209#issuecomment-2675234397">W1BTR</a></h3><p>Created: 2025-02-21T18:13:48Z; updated: 2025-02-21T18:13:58Z</p><pre>Not sure I understand what you&#x27;re saying.
+
+&gt; `# This domain must be different from the server_url domain.`
+
+What is &quot;This domain?&quot; Where was this message found?
+
+I have headscale hosted at a different domain than the one Im trying to resolve DNS to, if thats what you mean</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2209#issuecomment-2676844935">davidsmith91</a></h3><p>Created: 2025-02-23T12:53:34Z; updated: 2025-02-23T12:53:34Z</p><pre>I have same issue. 
+
+I don&#x27;t want to have tailscale making any other connection than the one between my devices and headscale. 
+But, the tailscale client on macos wants to use &quot;Bootstrap dns&quot; and connect to &quot;derp servers&quot; and doesn&#x27;t allow me to login (with tailscale up --login-server) if I don&#x27;t let it connect with that unwanted telemetry.
+
+I have a domain that&#x27;s not public. I use dns01 challenge with traefik. I simply put the ip of the domain in the /etc/hosts file. It works for everything: browsers, command line, etc.
+
+But tailscale wants to ignore that he can already know the ip of the domain. So he decides to try to use their derp servers to get the domain ip. And the real reason? So they can get telemetry data. So they can do analytics even if I put the --no-logs-no-support flag. 
+
+Help?</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2024-10-23T13:42:00Z · labeled · W1BTR</summary><pre>{
+  &quot;id&quot;: 14816852761,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz886bfSO0zwAAAANzJzsZ&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/14816852761&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;W1BTR&quot;,
+    &quot;id&quot;: 164893442,
+    &quot;node_id&quot;: &quot;U_kgDOCdQTAg&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/164893442?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/W1BTR&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/W1BTR&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/W1BTR/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/W1BTR/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/W1BTR/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/W1BTR/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/W1BTR/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/W1BTR/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/W1BTR/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/W1BTR/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/W1BTR/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-10-23T13:42:00Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-10-25T07:12:49Z · commented · hopleus</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2437062811&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2209#issuecomment-2437062811&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2209&quot;,
+  &quot;id&quot;: 2437062811,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886RQqCb&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;hopleus&quot;,
+    &quot;id&quot;: 124590925,
+    &quot;node_id&quot;: &quot;U_kgDOB20bTQ&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/124590925?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/hopleus&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/hopleus&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/hopleus/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/hopleus/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/hopleus/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/hopleus/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/hopleus/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/hopleus/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/hopleus/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/hopleus/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/hopleus/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-10-25T07:12:49Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-10-25T07:12:49Z&quot;,
+  &quot;body&quot;: &quot;1. What does HeadScale have to do with this if you say the problem is DNS resolution on your machine?\r\n2. Have you tried changing the configuration and connecting to HeadScale without using a domain, but directly by IP?&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2437062811/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;hopleus&quot;,
+    &quot;id&quot;: 124590925,
+    &quot;node_id&quot;: &quot;U_kgDOB20bTQ&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/124590925?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/hopleus&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/hopleus&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/hopleus/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/hopleus/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/hopleus/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/hopleus/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/hopleus/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/hopleus/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/hopleus/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/hopleus/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/hopleus/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-10-25T19:59:34Z · commented · W1BTR</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2438692458&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2209#issuecomment-2438692458&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2209&quot;,
+  &quot;id&quot;: 2438692458,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886RW35q&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;W1BTR&quot;,
+    &quot;id&quot;: 164893442,
+    &quot;node_id&quot;: &quot;U_kgDOCdQTAg&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/164893442?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/W1BTR&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/W1BTR&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/W1BTR/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/W1BTR/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/W1BTR/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/W1BTR/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/W1BTR/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/W1BTR/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/W1BTR/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/W1BTR/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/W1BTR/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-10-25T19:59:34Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-10-25T19:59:34Z&quot;,
+  &quot;body&quot;: &quot;For clarification, DNS does work fine for everything other than the Tailscale app, even with the headscale server&#x27;s domain. \r\n\r\nI do believe it is a bug with the Tailscale app, but the docs for Headscale say to make sure and send all issues, even those with the Tailscale app to the Headscale Github, so I was following that. Every time I restart the Tailscale service, it proceeds to work.\r\n\r\nIll have to try using an IP, I didnt think of that. Will report back.\r\n\r\n&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2438692458/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;W1BTR&quot;,
+    &quot;id&quot;: 164893442,
+    &quot;node_id&quot;: &quot;U_kgDOCdQTAg&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/164893442?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/W1BTR&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/W1BTR&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/W1BTR/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/W1BTR/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/W1BTR/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/W1BTR/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/W1BTR/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/W1BTR/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/W1BTR/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/W1BTR/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/W1BTR/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-10-26T16:26:15Z · commented · nblock</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2439641768&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2209#issuecomment-2439641768&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2209&quot;,
+  &quot;id&quot;: 2439641768,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886Rafqo&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-10-26T16:26:15Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-10-26T16:26:15Z&quot;,
+  &quot;body&quot;: &quot;&gt; […] but the docs for Headscale say to make sure and send all issues, even those with the Tailscale app to the Headscale Github, so I was following that.\r\n\r\nThat should probably be fixed in the docs. Do you have a pointer to the specific section?&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2439641768/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-01-25T01:53:33Z · commented · github-actions[bot]</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2613717226&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2209#issuecomment-2613717226&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2209&quot;,
+  &quot;id&quot;: 2613717226,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886byijq&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-01-25T01:53:33Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-01-25T01:53:33Z&quot;,
+  &quot;body&quot;: &quot;This issue is stale because it has been open for 90 days with no activity.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2613717226/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: {
+    &quot;id&quot;: 15368,
+    &quot;client_id&quot;: &quot;Iv1.05c79e9ad1f6bdfa&quot;,
+    &quot;slug&quot;: &quot;github-actions&quot;,
+    &quot;node_id&quot;: &quot;MDM6QXBwMTUzNjg=&quot;,
+    &quot;owner&quot;: {
+      &quot;login&quot;: &quot;github&quot;,
+      &quot;id&quot;: 9919,
+      &quot;node_id&quot;: &quot;MDEyOk9yZ2FuaXphdGlvbjk5MTk=&quot;,
+      &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/9919?v=4&quot;,
+      &quot;gravatar_id&quot;: &quot;&quot;,
+      &quot;url&quot;: &quot;https://api.github.com/users/github&quot;,
+      &quot;html_url&quot;: &quot;https://github.com/github&quot;,
+      &quot;followers_url&quot;: &quot;https://api.github.com/users/github/followers&quot;,
+      &quot;following_url&quot;: &quot;https://api.github.com/users/github/following{/other_user}&quot;,
+      &quot;gists_url&quot;: &quot;https://api.github.com/users/github/gists{/gist_id}&quot;,
+      &quot;starred_url&quot;: &quot;https://api.github.com/users/github/starred{/owner}{/repo}&quot;,
+      &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github/subscriptions&quot;,
+      &quot;organizations_url&quot;: &quot;https://api.github.com/users/github/orgs&quot;,
+      &quot;repos_url&quot;: &quot;https://api.github.com/users/github/repos&quot;,
+      &quot;events_url&quot;: &quot;https://api.github.com/users/github/events{/privacy}&quot;,
+      &quot;received_events_url&quot;: &quot;https://api.github.com/users/github/received_events&quot;,
+      &quot;type&quot;: &quot;Organization&quot;,
+      &quot;user_view_type&quot;: &quot;public&quot;,
+      &quot;site_admin&quot;: false
+    },
+    &quot;name&quot;: &quot;GitHub Actions&quot;,
+    &quot;description&quot;: &quot;Automate your workflow from idea to production&quot;,
+    &quot;external_url&quot;: &quot;https://help.github.com/en/actions&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;created_at&quot;: &quot;2018-07-30T09:30:17Z&quot;,
+    &quot;updated_at&quot;: &quot;2026-06-18T16:17:48Z&quot;,
+    &quot;permissions&quot;: {
+      &quot;actions&quot;: &quot;write&quot;,
+      &quot;administration&quot;: &quot;read&quot;,
+      &quot;artifact_metadata&quot;: &quot;write&quot;,
+      &quot;attestations&quot;: &quot;write&quot;,
+      &quot;checks&quot;: &quot;write&quot;,
+      &quot;code_quality&quot;: &quot;write&quot;,
+      &quot;contents&quot;: &quot;write&quot;,
+      &quot;copilot_requests&quot;: &quot;write&quot;,
+      &quot;deployments&quot;: &quot;write&quot;,
+      &quot;discussions&quot;: &quot;write&quot;,
+      &quot;drives&quot;: &quot;write&quot;,
+      &quot;issues&quot;: &quot;write&quot;,
+      &quot;merge_queues&quot;: &quot;write&quot;,
+      &quot;metadata&quot;: &quot;read&quot;,
+      &quot;models&quot;: &quot;read&quot;,
+      &quot;packages&quot;: &quot;write&quot;,
+      &quot;pages&quot;: &quot;write&quot;,
+      &quot;pull_requests&quot;: &quot;write&quot;,
+      &quot;repository_hooks&quot;: &quot;write&quot;,
+      &quot;repository_projects&quot;: &quot;write&quot;,
+      &quot;security_events&quot;: &quot;write&quot;,
+      &quot;statuses&quot;: &quot;write&quot;,
+      &quot;vulnerability_alerts&quot;: &quot;read&quot;
+    },
+    &quot;events&quot;: [
+      &quot;branch_protection_rule&quot;,
+      &quot;check_run&quot;,
+      &quot;check_suite&quot;,
+      &quot;create&quot;,
+      &quot;delete&quot;,
+      &quot;deployment&quot;,
+      &quot;deployment_status&quot;,
+      &quot;discussion&quot;,
+      &quot;discussion_comment&quot;,
+      &quot;fork&quot;,
+      &quot;gollum&quot;,
+      &quot;issues&quot;,
+      &quot;issue_comment&quot;,
+      &quot;label&quot;,
+      &quot;merge_group&quot;,
+      &quot;milestone&quot;,
+      &quot;page_build&quot;,
+      &quot;public&quot;,
+      &quot;pull_request&quot;,
+      &quot;pull_request_review&quot;,
+      &quot;pull_request_review_comment&quot;,
+      &quot;push&quot;,
+      &quot;registry_package&quot;,
+      &quot;release&quot;,
+      &quot;repository&quot;,
+      &quot;repository_dispatch&quot;,
+      &quot;status&quot;,
+      &quot;watch&quot;,
+      &quot;workflow_dispatch&quot;,
+      &quot;workflow_run&quot;
+    ]
+  },
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-01-25T01:53:34Z · labeled · github-actions[bot]</summary><pre>{
+  &quot;id&quot;: 16066095023,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz886bfSO0zwAAAAO9nSev&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/16066095023&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-01-25T01:53:34Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;stale&quot;,
+    &quot;color&quot;: &quot;ededed&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-02-01T01:59:05Z · commented · github-actions[bot]</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2628682854&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2209#issuecomment-2628682854&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2209&quot;,
+  &quot;id&quot;: 2628682854,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886croRm&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-02-01T01:59:05Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-02-01T01:59:05Z&quot;,
+  &quot;body&quot;: &quot;This issue was closed because it has been inactive for 14 days since being marked as stale.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2628682854/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: {
+    &quot;id&quot;: 15368,
+    &quot;client_id&quot;: &quot;Iv1.05c79e9ad1f6bdfa&quot;,
+    &quot;slug&quot;: &quot;github-actions&quot;,
+    &quot;node_id&quot;: &quot;MDM6QXBwMTUzNjg=&quot;,
+    &quot;owner&quot;: {
+      &quot;login&quot;: &quot;github&quot;,
+      &quot;id&quot;: 9919,
+      &quot;node_id&quot;: &quot;MDEyOk9yZ2FuaXphdGlvbjk5MTk=&quot;,
+      &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/9919?v=4&quot;,
+      &quot;gravatar_id&quot;: &quot;&quot;,
+      &quot;url&quot;: &quot;https://api.github.com/users/github&quot;,
+      &quot;html_url&quot;: &quot;https://github.com/github&quot;,
+      &quot;followers_url&quot;: &quot;https://api.github.com/users/github/followers&quot;,
+      &quot;following_url&quot;: &quot;https://api.github.com/users/github/following{/other_user}&quot;,
+      &quot;gists_url&quot;: &quot;https://api.github.com/users/github/gists{/gist_id}&quot;,
+      &quot;starred_url&quot;: &quot;https://api.github.com/users/github/starred{/owner}{/repo}&quot;,
+      &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github/subscriptions&quot;,
+      &quot;organizations_url&quot;: &quot;https://api.github.com/users/github/orgs&quot;,
+      &quot;repos_url&quot;: &quot;https://api.github.com/users/github/repos&quot;,
+      &quot;events_url&quot;: &quot;https://api.github.com/users/github/events{/privacy}&quot;,
+      &quot;received_events_url&quot;: &quot;https://api.github.com/users/github/received_events&quot;,
+      &quot;type&quot;: &quot;Organization&quot;,
+      &quot;user_view_type&quot;: &quot;public&quot;,
+      &quot;site_admin&quot;: false
+    },
+    &quot;name&quot;: &quot;GitHub Actions&quot;,
+    &quot;description&quot;: &quot;Automate your workflow from idea to production&quot;,
+    &quot;external_url&quot;: &quot;https://help.github.com/en/actions&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;created_at&quot;: &quot;2018-07-30T09:30:17Z&quot;,
+    &quot;updated_at&quot;: &quot;2026-06-18T16:17:48Z&quot;,
+    &quot;permissions&quot;: {
+      &quot;actions&quot;: &quot;write&quot;,
+      &quot;administration&quot;: &quot;read&quot;,
+      &quot;artifact_metadata&quot;: &quot;write&quot;,
+      &quot;attestations&quot;: &quot;write&quot;,
+      &quot;checks&quot;: &quot;write&quot;,
+      &quot;code_quality&quot;: &quot;write&quot;,
+      &quot;contents&quot;: &quot;write&quot;,
+      &quot;copilot_requests&quot;: &quot;write&quot;,
+      &quot;deployments&quot;: &quot;write&quot;,
+      &quot;discussions&quot;: &quot;write&quot;,
+      &quot;drives&quot;: &quot;write&quot;,
+      &quot;issues&quot;: &quot;write&quot;,
+      &quot;merge_queues&quot;: &quot;write&quot;,
+      &quot;metadata&quot;: &quot;read&quot;,
+      &quot;models&quot;: &quot;read&quot;,
+      &quot;packages&quot;: &quot;write&quot;,
+      &quot;pages&quot;: &quot;write&quot;,
+      &quot;pull_requests&quot;: &quot;write&quot;,
+      &quot;repository_hooks&quot;: &quot;write&quot;,
+      &quot;repository_projects&quot;: &quot;write&quot;,
+      &quot;security_events&quot;: &quot;write&quot;,
+      &quot;statuses&quot;: &quot;write&quot;,
+      &quot;vulnerability_alerts&quot;: &quot;read&quot;
+    },
+    &quot;events&quot;: [
+      &quot;branch_protection_rule&quot;,
+      &quot;check_run&quot;,
+      &quot;check_suite&quot;,
+      &quot;create&quot;,
+      &quot;delete&quot;,
+      &quot;deployment&quot;,
+      &quot;deployment_status&quot;,
+      &quot;discussion&quot;,
+      &quot;discussion_comment&quot;,
+      &quot;fork&quot;,
+      &quot;gollum&quot;,
+      &quot;issues&quot;,
+      &quot;issue_comment&quot;,
+      &quot;label&quot;,
+      &quot;merge_group&quot;,
+      &quot;milestone&quot;,
+      &quot;page_build&quot;,
+      &quot;public&quot;,
+      &quot;pull_request&quot;,
+      &quot;pull_request_review&quot;,
+      &quot;pull_request_review_comment&quot;,
+      &quot;push&quot;,
+      &quot;registry_package&quot;,
+      &quot;release&quot;,
+      &quot;repository&quot;,
+      &quot;repository_dispatch&quot;,
+      &quot;status&quot;,
+      &quot;watch&quot;,
+      &quot;workflow_dispatch&quot;,
+      &quot;workflow_run&quot;
+    ]
+  },
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-02-01T01:59:05Z · closed · github-actions[bot]</summary><pre>{
+  &quot;id&quot;: 16147814682,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz886bfSO0zwAAAAPCfBka&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/16147814682&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-02-01T01:59:05Z&quot;,
+  &quot;state_reason&quot;: &quot;not_planned&quot;,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-02-01T08:48:31Z · unsubscribed · mrabino1</summary><pre>{
+  &quot;id&quot;: 16149556250,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz886bfSO0zwAAAAPClqwa&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/16149556250&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mrabino1&quot;,
+    &quot;id&quot;: 4902221,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ5MDIyMjE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4902221?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mrabino1&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mrabino1&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mrabino1/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mrabino1/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mrabino1/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mrabino1/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mrabino1/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mrabino1/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mrabino1/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mrabino1/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mrabino1/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-02-01T08:48:31Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-02-21T17:39:56Z · commented · mastier</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2675171899&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2209#issuecomment-2675171899&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2209&quot;,
+  &quot;id&quot;: 2675171899,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886fc-I7&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;mastier&quot;,
+    &quot;id&quot;: 1609672,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE2MDk2NzI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/1609672?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mastier&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mastier&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mastier/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mastier/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mastier/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mastier/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mastier/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mastier/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mastier/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mastier/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mastier/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-02-21T17:39:56Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-02-21T17:43:27Z&quot;,
+  &quot;body&quot;: &quot;EDIT: I saw this \n  **# This domain _must_ be different from the server_url domain.**        \nSo that answers the question. Yet that&#x27;s new behaviour since 0.23.2 I used last time....                             \n\n\nI encounter the same issue, I got nginx in front of headscale 0.25 and it&#x27;s passing request to the docker container via let&#x27;s say mydomain.example.com\n\nWhen I am connected tailscale to my headscale instance in mydomain.example.com the DNS is 100.100.100.100\n```\n$ dig mydomain.example.com @100.100.100.100\n\n; &lt;&lt;&gt;&gt; DiG 9.18.30-0ubuntu0.24.04.2-Ubuntu &lt;&lt;&gt;&gt; mydomain.example.com @100.100.100.100\n;; global options: +cmd\n;; Got answer:\n;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NXDOMAIN, id: 19081\n;; flags: qr aa rd ra ad; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 0\n\n;; QUESTION SECTION:\n;mydomain.example.com.\t\t\tIN\tA\n\n;; Query time: 0 msec\n;; SERVER: 100.100.100.100#53(100.100.100.100) (UDP)\n;; WHEN: Fri Feb 21 18:31:24 CET 2025\n;; MSG SIZE  rcvd: 32\n```\n\nWhile normally it resolves it via Google DNS\n\nThat domain is also magic dns base_domain\n\n```\ndns:                                                                                                \n  # Whether to use [MagicDNS](https://tailscale.com/kb/1081/magicdns/).                             \n  magic_dns: true                                                                                   \n                                                                                                    \n  # Defines the base domain to create the hostnames for MagicDNS.                                   \n  # This domain _must_ be different from the server_url domain.                                     \n  # `base_domain` must be a FQDN, without the trailing dot.                                         \n  # The FQDN of the hosts will be                                                                   \n  # `hostname.base_domain` (e.g., _myhost.example.com_).                                            \n  base_domain:  mydomain.example.com \n```\n\nThat seems to be an issue here\nIf I switch to other domain like ts.mydomain.example.com everything works as expected\n\n dig mydomain.example.com @100.100.100.100\n```\n; &lt;&lt;&gt;&gt; DiG 9.18.30-0ubuntu0.24.04.2-Ubuntu &lt;&lt;&gt;&gt; mydomain.example.com @100.100.100.100\n;; global options: +cmd\n;; Got answer:\n;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 46541\n;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1\n\n;; OPT PSEUDOSECTION:\n; EDNS: version: 0, flags:; udp: 1232\n;; QUESTION SECTION:\n;mydomain.example.com.\t\t\tIN\tA\n\n;; ANSWER SECTION:\nmydomain.example.com\t\t3600\tIN\tA\t83.X.X.X\n\n;; Query time: 92 msec\n;; SERVER: 100.100.100.100#53(100.100.100.100) (UDP)\n;; WHEN: Fri Feb 21 18:38:12 CET 2025\n;; MSG SIZE  rcvd: 73\n```&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2675171899/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mastier&quot;,
+    &quot;id&quot;: 1609672,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE2MDk2NzI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/1609672?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mastier&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mastier&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mastier/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mastier/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mastier/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mastier/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mastier/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mastier/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mastier/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mastier/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mastier/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-02-21T18:13:48Z · commented · W1BTR</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2675234397&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2209#issuecomment-2675234397&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2209&quot;,
+  &quot;id&quot;: 2675234397,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886fdNZd&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;W1BTR&quot;,
+    &quot;id&quot;: 164893442,
+    &quot;node_id&quot;: &quot;U_kgDOCdQTAg&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/164893442?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/W1BTR&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/W1BTR&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/W1BTR/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/W1BTR/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/W1BTR/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/W1BTR/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/W1BTR/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/W1BTR/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/W1BTR/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/W1BTR/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/W1BTR/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-02-21T18:13:48Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-02-21T18:13:58Z&quot;,
+  &quot;body&quot;: &quot;Not sure I understand what you&#x27;re saying.\n\n&gt; `# This domain must be different from the server_url domain.`\n\nWhat is \&quot;This domain?\&quot; Where was this message found?\n\nI have headscale hosted at a different domain than the one Im trying to resolve DNS to, if thats what you mean&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2675234397/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;W1BTR&quot;,
+    &quot;id&quot;: 164893442,
+    &quot;node_id&quot;: &quot;U_kgDOCdQTAg&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/164893442?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/W1BTR&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/W1BTR&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/W1BTR/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/W1BTR/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/W1BTR/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/W1BTR/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/W1BTR/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/W1BTR/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/W1BTR/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/W1BTR/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/W1BTR/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-02-23T12:53:34Z · commented · davidsmith91</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2676844935&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2209#issuecomment-2676844935&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2209&quot;,
+  &quot;id&quot;: 2676844935,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886fjWmH&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;davidsmith91&quot;,
+    &quot;id&quot;: 183824874,
+    &quot;node_id&quot;: &quot;U_kgDOCvTx6g&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/183824874?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/davidsmith91&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/davidsmith91&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/davidsmith91/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/davidsmith91/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/davidsmith91/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/davidsmith91/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/davidsmith91/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/davidsmith91/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/davidsmith91/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/davidsmith91/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/davidsmith91/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-02-23T12:53:34Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-02-23T12:53:34Z&quot;,
+  &quot;body&quot;: &quot;I have same issue. \n\nI don&#x27;t want to have tailscale making any other connection than the one between my devices and headscale. \nBut, the tailscale client on macos wants to use \&quot;Bootstrap dns\&quot; and connect to \&quot;derp servers\&quot; and doesn&#x27;t allow me to login (with tailscale up --login-server) if I don&#x27;t let it connect with that unwanted telemetry.\n\nI have a domain that&#x27;s not public. I use dns01 challenge with traefik. I simply put the ip of the domain in the /etc/hosts file. It works for everything: browsers, command line, etc.\n\nBut tailscale wants to ignore that he can already know the ip of the domain. So he decides to try to use their derp servers to get the domain ip. And the real reason? So they can get telemetry data. So they can do analytics even if I put the --no-logs-no-support flag. \n\nHelp?&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2676844935/reactions&quot;,
+    &quot;total_count&quot;: 3,
+    &quot;+1&quot;: 3,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;davidsmith91&quot;,
+    &quot;id&quot;: 183824874,
+    &quot;node_id&quot;: &quot;U_kgDOCvTx6g&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/183824874?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/davidsmith91&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/davidsmith91&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/davidsmith91/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/davidsmith91/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/davidsmith91/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/davidsmith91/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/davidsmith91/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/davidsmith91/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/davidsmith91/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/davidsmith91/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/davidsmith91/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-10-09T21:31:49Z · subscribed · dnnr</summary><pre>{
+  &quot;id&quot;: 20194465407,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz886bfSO0zwAAAASzrxZ_&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/20194465407&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;dnnr&quot;,
+    &quot;id&quot;: 2630359,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI2MzAzNTk=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/2630359?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/dnnr&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/dnnr&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/dnnr/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/dnnr/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/dnnr/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/dnnr/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/dnnr/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/dnnr/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/dnnr/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/dnnr/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/dnnr/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-10-09T21:31:49Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-02-11T17:40:39Z · subscribed · caleb-allen</summary><pre>{
+  &quot;id&quot;: 22711214572,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz886bfSO0zwAAAAVJsaHs&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/22711214572&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;caleb-allen&quot;,
+    &quot;id&quot;: 3279748,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjMyNzk3NDg=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/3279748?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/caleb-allen&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/caleb-allen&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/caleb-allen/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/caleb-allen/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/caleb-allen/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/caleb-allen/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/caleb-allen/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/caleb-allen/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/caleb-allen/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/caleb-allen/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/caleb-allen/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-02-11T17:40:39Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

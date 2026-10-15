@@ -1,0 +1,2345 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #1637: node in exit-node mode not forwarding traffic to same network which belongs external interface</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #1637: node in exit-node mode not forwarding traffic to same network which belongs external interface</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/1637">Original issue #1637</a></p><p>Created: 2023-12-08T14:06:28Z; updated: 2026-05-13T09:45:00Z; observed state: closed; reason: not_planned</p><h2>Report body</h2><pre>## Bug description
+
+I have two nodes in headscale/tailscale network, one of them is exit-node with external IP:
+
+node1 (exit-node):
+* Internal IP: 10.1.0.2/24, External IP: 88.88.88.2/24
+
+node2 (client)
+* Internal IP 10.2.0.2/24
+
+When I try use node1 as exit-node, it works as expected except that fact I cannot access to any IP address of external subnet 88.88.88.0/24 (same network for node1):
+
+```
+ping -c1 88.88.88.3 # OK
+ping -c1 8.8.8.8 # OK, any other external IP
+tailscale up --exit-node=node1 --accept-routes --login-server=https://vpn.example.com
+ping -c1 88.88.88.3 # FAIL, no response
+ping -c1 8.8.8.8 # Still OK
+```
+After switch to exit-node there no any traffic on `tailscale0` interface on node1 related to 88.88.88.3, but any other external traffic from node2 to the Internet goes without any problems.
+
+## Environment
+
+* headscale v0.22.3
+* tailscale 1.50.1-ERR-BuildInfo
+* OS Linux on both clients, kernel 6.1.*
+
+Exit node has `-A POSTROUTING -o tailscale0 -j MASQUERADE` iptables rule in nat table.
+
+ACL related to exit-nodes (user in `admins` and `exitpoints` groups, node1 has `exitpoints` tag):
+
+```
+  - action: accept
+    src:
+      - group:admins
+      - group:exitpoints
+    dst:
+      - tag:exitpoints:*
+      # Ugly list in abscese of autogroup:internet :( https://github.com/juanfont/headscale/issues/657
+      - 0.0.0.0/5:*
+      - 8.0.0.0/7:*
+      - 11.0.0.0/8:*
+      - 12.0.0.0/6:*
+      - 16.0.0.0/4:*
+      - 32.0.0.0/3:*
+      - 64.0.0.0/3:*
+      - 96.0.0.0/6:*
+      - 100.0.0.0/10:*
+      - 100.128.0.0/9:*
+      - 101.0.0.0/8:*
+      - 102.0.0.0/7:*
+      - 104.0.0.0/5:*
+      - 112.0.0.0/5:*
+      - 120.0.0.0/6:*
+      - 124.0.0.0/7:*
+      - 126.0.0.0/8:*
+      - 128.0.0.0/3:*
+      - 160.0.0.0/5:*
+      - 168.0.0.0/6:*
+      - 172.0.0.0/12:*
+      - 172.32.0.0/11:*
+      - 172.64.0.0/10:*
+      - 172.128.0.0/9:*
+      - 173.0.0.0/8:*
+      - 174.0.0.0/7:*
+      - 176.0.0.0/4:*
+      - 192.0.0.0/9:*
+      - 192.128.0.0/11:*
+      - 192.160.0.0/13:*
+      - 192.169.0.0/16:*
+      - 192.170.0.0/15:*
+      - 192.172.0.0/14:*
+      - 192.176.0.0/12:*
+      - 192.192.0.0/10:*
+      - 193.0.0.0/8:*
+      - 194.0.0.0/7:*
+      - 196.0.0.0/6:*
+      - 200.0.0.0/5:*
+      - 208.0.0.0/4:*
+```
+
+- [ ] Headscale is behind a (reverse) proxy
+- [ ] Headscale runs in a container
+
+## To Reproduce
+
+Run two clients, one as exit-node with external interface. Add relevant ACL to allow using exit-node. Enable exit-node on second client and try to access to any IP from exit-node external subnet.
+</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-1848994476">kradalby</a></h3><p>Created: 2023-12-10T15:20:51Z; updated: 2023-12-10T15:20:51Z</p><pre>[0.23.0-alpha2](https://github.com/juanfont/headscale/releases/tag/v0.23.0-alpha2) addresses a series of issues with node synchronisation, online status and subnet routers, please test this release and report back if the issue still persist.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-1854609758">winterheart</a></h3><p>Created: 2023-12-13T19:51:57Z; updated: 2023-12-13T19:51:57Z</p><pre>Hello. Cannot verify 0.23.0-alpha2 due #1604 issue. Seems subnet router feature broken on old configuration and new version.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-1869007367">r1s1us</a></h3><p>Created: 2023-12-25T14:27:56Z; updated: 2023-12-25T14:29:06Z</p><pre>Hello, I have the same problem, because of which I can&#x27;t use the application in the enterprise(can&#x27;t get acl and exit-node to work) how to fix this problem? On 0.23.0-alpha2 the problem remains(</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-1874965688">kradalby</a></h3><p>Created: 2024-01-03T07:49:28Z; updated: 2024-01-03T07:49:28Z</p><pre>@winterheart am I correct to understand that this is a problem in versions prior to the new 0.23.0 alpha releases?</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-1875508900">winterheart</a></h3><p>Created: 2024-01-03T14:59:51Z; updated: 2024-01-03T14:59:51Z</p><pre>Yes, problem occurs in current stable 0.22.3.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-1875581789">kradalby</a></h3><p>Created: 2024-01-03T15:49:28Z; updated: 2024-01-03T15:49:28Z</p><pre>@winterheart could you attempt to run this again with https://github.com/juanfont/headscale/pull/1673? It fixes the subnet router for 0.23.0.
+
+If that does not fix it, we will move on with 0.23.0 first, as this is not a new bug (present in 0.22.3) and then fix it in future versions, not holding up 0.23.0 any longer.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-1953723563">ChibangLW</a></h3><p>Created: 2024-02-20T08:42:19Z; updated: 2024-02-20T08:42:19Z</p><pre>@winterheart tailscale has the flag `--exit-node-allow-lan-access` which is disabled by default. Did you used that flag? 
+
+Given that 10.1.0.2/24 is not in your ACL it should not be accessible to node1 via headscale. Doesn&#x27;t really matter in this case as it is directly connected anyway.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-2017495112">winterheart</a></h3><p>Created: 2024-03-25T08:52:42Z; updated: 2024-03-25T08:52:42Z</p><pre>&gt; @winterheart tailscale has the flag `--exit-node-allow-lan-access` which is disabled by default. Did you used that flag?
+&gt; 
+&gt; Given that 10.1.0.2/24 is not in your ACL it should not be accessible to node1 via headscale. Doesn&#x27;t really matter in this case as it is directly connected anyway.
+
+I&#x27;ve retested with 0.23.0-alpha5 and `--exit-node-allow-lan-access` on node2 and still same problem, no access to external IP of node1.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-2017563181">ChibangLW</a></h3><p>Created: 2024-03-25T09:27:41Z; updated: 2024-03-25T09:28:10Z</p><pre>&gt; I&#x27;ve retested with 0.23.0-alpha5 and `--exit-node-allow-lan-access` on node2 and still same problem, no access to external IP of node1.
+
+From my understanding to option should be used on node1, because you try to connect to the directly connected network on node1 from node2. It&#x27;s an option for the exit-node.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-2017678759">winterheart</a></h3><p>Created: 2024-03-25T10:28:17Z; updated: 2024-03-25T10:28:17Z</p><pre>`--exit-node-allow-lan-access` can be used only with `--exit-node=&lt;node&gt;` so I really no idea how use it on exit node but not in node that tries connect to.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-2017682082">ChibangLW</a></h3><p>Created: 2024-03-25T10:30:19Z; updated: 2024-03-25T12:11:39Z</p><pre>Okay never mind, I misunderstood the option.
+
+EDIT: for clarification from the source code: 	
+```
+// ExitNodeAllowLANAccess indicates whether locally accessible subnets should be
+// routed directly or via the exit node.
+```</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-2027947312">ElyasAsmad</a></h3><p>Created: 2024-03-30T07:03:22Z; updated: 2024-03-30T07:03:22Z</p><pre>Any update on this matter? I have been tinkering around with WireGuard &amp; OpenVPN because of this issue and by far only headscale meets my requirement</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-2111059705">winterheart</a></h3><p>Created: 2024-05-14T20:11:26Z; updated: 2024-05-14T20:11:26Z</p><pre>Retested on 0.23.0-alpha11, problem still occurs.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-2285192908">github-actions[bot]</a></h3><p>Created: 2024-08-13T01:52:30Z; updated: 2024-08-13T01:52:30Z</p><pre>This issue is stale because it has been open for 90 days with no activity.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-2300123191">github-actions[bot]</a></h3><p>Created: 2024-08-21T01:51:12Z; updated: 2024-08-21T01:51:12Z</p><pre>This issue was closed because it has been inactive for 14 days since being marked as stale.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-3070205215">arthur-lbchn</a></h3><p>Created: 2025-07-14T16:27:07Z; updated: 2025-07-14T16:27:07Z</p><pre>Hi, I&#x27;m facing exactly the same issue as the original reporter. While connected to the exit node with a public IP address from a /27 network, I cannot reach any other hosts in this /27 network. I don&#x27;t have any ACLs configured. The hosts are reachable when not connected to the exit node and are also reachable from the exit node itself.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-4259855155">pva</a></h3><p>Created: 2026-04-16T11:56:03Z; updated: 2026-04-16T11:56:03Z</p><pre>This issue still affects us. @kradalby could you, please, reopen ticket?</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-4259891387">kradalby</a></h3><p>Created: 2026-04-16T12:01:39Z; updated: 2026-04-16T12:01:39Z</p><pre>We don&#x27;t reopen tickets that are this old, we need a new ticket with reference and all the required debug data so we can replicate it. There is no way for us to meaningfully find the bug from what is in here.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-4439510460">pva</a></h3><p>Created: 2026-05-13T09:37:25Z; updated: 2026-05-13T09:37:25Z</p><pre>Looks like I found workabound. @kradalby could you comment, please?
+
+## Problem description
+
+There are two nodes in a Headscale/Tailscale network:
+
+### `node1` — exit node
+
+```text
+Internal IP: 10.1.0.2/24
+External IP: 88.88.88.2/24
+External subnet: 88.88.88.0/24
+```
+
+### `node2` — client
+
+```text
+Internal IP: 10.2.0.2/24
+```
+
+When `node2` uses `node1` as an exit node, general Internet access works as expected.  
+For example, access to external addresses such as `8.8.8.8` works.
+
+However, `node2` cannot access other addresses from the same external subnet that is directly connected to `node1`.
+
+Example:
+
+```bash
+# Before enabling node1 as exit node
+node2$ ping -c1 88.88.88.3
+# OK
+
+node2$ ping -c1 8.8.8.8
+# OK
+
+# Enable node1 as exit node
+node2$ tailscale up --exit-node=node1 --accept-routes --login-server=https://vpn.example.com
+
+# After enabling node1 as exit node
+node2$ ping -c1 88.88.88.3
+# FAIL
+
+node2$ ping -c1 8.8.8.8
+# Still OK
+```
+
+So the problem is not with exit-node forwarding in general.  
+The problem appears only for destinations that belong to the external subnet directly connected to the exit node itself, in this example:
+
+```text
+88.88.88.0/24
+```
+
+## Cause
+
+When `node2` selects `node1` as the exit node, all external IPv4 traffic from `node2` is routed through the Tailscale default route: `0.0.0.0/0`. Therefore, a packet from `node2` to `88.88.88.3` is sent via `tailscale0` and delivered through WireGuard to `node1`.
+
+When Tailscale builds the inbound filter for a node advertising an exit node, it explicitly subtracts locally reachable interface networks of the exit node from the advertised default route.
+
+Relevant code:
+
+`tailscale/ipn/ipnlocal/local.go`, around line `2997`:
+
+```go
+if prefs.Valid() {
+    if buildfeatures.HasAdvertiseRoutes {
+        for _, r := range prefs.AdvertiseRoutes().All() {
+            if r.Bits() == 0 {
+                // When offering a default route to the world, we
+                // filter out locally reachable LANs, so that the
+                // default route effectively appears to be a &quot;guest
+                // wifi&quot;: you get internet access, but to additionally
+                // get LAN access the LAN(s) need to be offered
+                // explicitly as well.
+                localInterfaceRoutes, hostIPs, err := interfaceRoutes()
+                if err != nil {
+                    b.logf(&quot;getting local interface routes: %v&quot;, err)
+                    continue
+                }
+                s, err := shrinkDefaultRoute(r, localInterfaceRoutes, hostIPs)
+                if err != nil {
+                    b.logf(&quot;computing default route filter: %v&quot;, err)
+                    continue
+                }
+                localNetsB.AddSet(s)
+```
+
+On `node1`, the external interface has: `88.88.88.2/24`. Therefore, the whole network is treated as a locally connected network of the exit node.
+
+Inside `shrinkDefaultRoute`, this local interface network is removed from the allowed default route. Then only the host&#x27;s own IP address, `88.88.88.2`, is added back. But neighbouring addresses from the same subnet, e.g. `88.88.88.3` are not added back. Relevant code:
+
+`tailscale/ipn/ipnlocal/local.go`, around line `3237`:
+
+```go
+// shrinkDefaultRoute returns an IPSet representing the IPs in route,
+// minus those in removeFromDefaultRoute and localInterfaceRoutes,
+// plus the IPs in hostIPs.
+func shrinkDefaultRoute(route netip.Prefix, localInterfaceRoutes *netipx.IPSet, hostIPs []netip.Addr) (*netipx.IPSet, error) {
+    var b netipx.IPSetBuilder
+    // Add the default route.
+    b.AddPrefix(route)
+    // Remove the local interface routes.
+    b.RemoveSet(localInterfaceRoutes)
+
+    // Having removed all the LAN subnets, re-add the hosts&#x27;s own
+    // IPs. It&#x27;s fine for clients to connect to an exit node&#x27;s public
+    // IP address, just not the attached subnet.
+    //
+    // Truly forbidden subnets (in removeFromDefaultRoute) will still
+    // be stripped back out by the next step.
+    for _, ip := range hostIPs {
+        if route.Contains(ip) {
+            b.Add(ip)
+        }
+    }
+
+    for _, pfx := range removeFromDefaultRoute {
+        b.RemovePrefix(pfx)
+    }
+    return b.IPSet()
+}
+```
+
+After the packet is decrypted on `node1`, the inbound filter checks whether the destination address belongs to a network that this node is allowed to receive from Tailscale. For destination `88.88.88.3`, this check fails, because `88.88.88.0/24` was removed from the effective default route and was not explicitly advertised as a subnet route.
+
+As a result, the packet is dropped inside `tailscaled`.
+
+## Proposed workaround / solution that works for us
+
+On the exit node, explicitly advertise the external subnet:
+
+```bash
+tailscale up \
+  --advertise-exit-node \
+  --advertise-routes=88.88.88.0/24
+```
+
+However, this route should **not** be approved or enabled in Headscale.
+
+The purpose of advertising this route is not to distribute it as a subnet route to other clients.
+
+The purpose is only to make the local `tailscaled` instance on `node1` treat this subnet as an allowed destination network, so that it does not drop inbound packets received from `node2`.
+
+As long as the route is not approved in Headscale, it will not be distributed to clients as a subnet route.
+
+Therefore, when `node1` is not selected as an exit node, traffic to `88.88.88.0/24` will continue to use the normal Internet route.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/1637#issuecomment-4439583139">kradalby</a></h3><p>Created: 2026-05-13T09:45:00Z; updated: 2026-05-13T09:45:00Z</p><pre>Please open a new issue, this seems intricate so please validate the expected behaviour with Tailscale SaaS aswell so we understand where the issue lies. Ensure you add all the information that we ask for in full in the issue template, not only what the AI gives you. </pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2023-12-08T14:06:29Z · labeled · winterheart</summary><pre>{
+  &quot;id&quot;: 11193869218,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz8855KNPgzwAAAAKbNOOi&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/11193869218&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2023-12-08T14:06:29Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2023-12-10T13:59:51Z · milestoned · kradalby</summary><pre>{
+  &quot;id&quot;: 11202941775,
+  &quot;node_id&quot;: &quot;MIE_lADOEFLz8855KNPgzwAAAAKbv1NP&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/11202941775&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;milestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2023-12-10T13:59:51Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.23.0&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2023-12-10T15:20:51Z · commented · kradalby</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1848994476&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-1848994476&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 1848994476,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885uNWqs&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2023-12-10T15:20:51Z&quot;,
+  &quot;updated_at&quot;: &quot;2023-12-10T15:20:51Z&quot;,
+  &quot;body&quot;: &quot;[0.23.0-alpha2](https://github.com/juanfont/headscale/releases/tag/v0.23.0-alpha2) addresses a series of issues with node synchronisation, online status and subnet routers, please test this release and report back if the issue still persist.&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1848994476/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2023-12-13T19:51:57Z · commented · winterheart</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1854609758&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-1854609758&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 1854609758,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885uixle&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2023-12-13T19:51:57Z&quot;,
+  &quot;updated_at&quot;: &quot;2023-12-13T19:51:57Z&quot;,
+  &quot;body&quot;: &quot;Hello. Cannot verify 0.23.0-alpha2 due #1604 issue. Seems subnet router feature broken on old configuration and new version.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1854609758/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2023-12-25T14:27:56Z · commented · r1s1us</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1869007367&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-1869007367&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 1869007367,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885vZsoH&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;r1s1us&quot;,
+    &quot;id&quot;: 153471129,
+    &quot;node_id&quot;: &quot;U_kgDOCSXImQ&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/153471129?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/r1s1us&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/r1s1us&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/r1s1us/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/r1s1us/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/r1s1us/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/r1s1us/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/r1s1us/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/r1s1us/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/r1s1us/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/r1s1us/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/r1s1us/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2023-12-25T14:27:56Z&quot;,
+  &quot;updated_at&quot;: &quot;2023-12-25T14:29:06Z&quot;,
+  &quot;body&quot;: &quot;Hello, I have the same problem, because of which I can&#x27;t use the application in the enterprise(can&#x27;t get acl and exit-node to work) how to fix this problem? On 0.23.0-alpha2 the problem remains(&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1869007367/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;r1s1us&quot;,
+    &quot;id&quot;: 153471129,
+    &quot;node_id&quot;: &quot;U_kgDOCSXImQ&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/153471129?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/r1s1us&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/r1s1us&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/r1s1us/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/r1s1us/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/r1s1us/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/r1s1us/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/r1s1us/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/r1s1us/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/r1s1us/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/r1s1us/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/r1s1us/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-01-03T07:49:28Z · commented · kradalby</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1874965688&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-1874965688&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 1874965688,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885vwbS4&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-01-03T07:49:28Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-01-03T07:49:28Z&quot;,
+  &quot;body&quot;: &quot;@winterheart am I correct to understand that this is a problem in versions prior to the new 0.23.0 alpha releases?&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1874965688/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-01-03T07:49:29Z · mentioned · winterheart</summary><pre>{
+  &quot;id&quot;: 11376394454,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz8855KNPgzwAAAAKmFgDW&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/11376394454&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-01-03T07:49:29Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-01-03T07:49:29Z · subscribed · winterheart</summary><pre>{
+  &quot;id&quot;: 11376394463,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz8855KNPgzwAAAAKmFgDf&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/11376394463&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-01-03T07:49:29Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-01-03T14:59:51Z · commented · winterheart</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1875508900&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-1875508900&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 1875508900,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885vyf6k&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-01-03T14:59:51Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-01-03T14:59:51Z&quot;,
+  &quot;body&quot;: &quot;Yes, problem occurs in current stable 0.22.3.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1875508900/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-01-03T15:49:28Z · commented · kradalby</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1875581789&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-1875581789&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 1875581789,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz885vyxtd&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-01-03T15:49:28Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-01-03T15:49:28Z&quot;,
+  &quot;body&quot;: &quot;@winterheart could you attempt to run this again with https://github.com/juanfont/headscale/pull/1673? It fixes the subnet router for 0.23.0.\r\n\r\nIf that does not fix it, we will move on with 0.23.0 first, as this is not a new bug (present in 0.22.3) and then fix it in future versions, not holding up 0.23.0 any longer.&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1875581789/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-01-03T15:49:29Z · mentioned · winterheart</summary><pre>{
+  &quot;id&quot;: 11380626368,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz8855KNPgzwAAAAKmVpPA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/11380626368&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-01-03T15:49:29Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-01-03T15:49:29Z · subscribed · winterheart</summary><pre>{
+  &quot;id&quot;: 11380626376,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz8855KNPgzwAAAAKmVpPI&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/11380626376&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-01-03T15:49:29Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-01-04T14:59:13Z · demilestoned · kradalby</summary><pre>{
+  &quot;id&quot;: 11390970233,
+  &quot;node_id&quot;: &quot;DEME_lADOEFLz8855KNPgzwAAAAKm9Gl5&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/11390970233&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;demilestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-01-04T14:59:13Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.23.0&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-02-20T08:42:19Z · commented · ChibangLW</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1953723563&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-1953723563&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 1953723563,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8850c3Sr&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;ChibangLW&quot;,
+    &quot;id&quot;: 22293464,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIyMjkzNDY0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/22293464?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ChibangLW&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ChibangLW&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ChibangLW/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ChibangLW/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ChibangLW/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ChibangLW/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ChibangLW/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ChibangLW/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ChibangLW/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ChibangLW/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ChibangLW/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-02-20T08:42:19Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-02-20T08:42:19Z&quot;,
+  &quot;body&quot;: &quot;@winterheart tailscale has the flag `--exit-node-allow-lan-access` which is disabled by default. Did you used that flag? \r\n\r\nGiven that 10.1.0.2/24 is not in your ACL it should not be accessible to node1 via headscale. Doesn&#x27;t really matter in this case as it is directly connected anyway.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/1953723563/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;ChibangLW&quot;,
+    &quot;id&quot;: 22293464,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIyMjkzNDY0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/22293464?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ChibangLW&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ChibangLW&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ChibangLW/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ChibangLW/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ChibangLW/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ChibangLW/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ChibangLW/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ChibangLW/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ChibangLW/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ChibangLW/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ChibangLW/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-02-20T08:42:20Z · mentioned · winterheart</summary><pre>{
+  &quot;id&quot;: 11858401820,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz8855KNPgzwAAAALC0Noc&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/11858401820&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-02-20T08:42:20Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-02-20T08:42:20Z · subscribed · winterheart</summary><pre>{
+  &quot;id&quot;: 11858401831,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz8855KNPgzwAAAALC0Non&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/11858401831&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-02-20T08:42:20Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-03-25T08:52:42Z · commented · winterheart</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2017495112&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-2017495112&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 2017495112,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8854QIhI&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-03-25T08:52:42Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-03-25T08:52:42Z&quot;,
+  &quot;body&quot;: &quot;&gt; @winterheart tailscale has the flag `--exit-node-allow-lan-access` which is disabled by default. Did you used that flag?\r\n&gt; \r\n&gt; Given that 10.1.0.2/24 is not in your ACL it should not be accessible to node1 via headscale. Doesn&#x27;t really matter in this case as it is directly connected anyway.\r\n\r\nI&#x27;ve retested with 0.23.0-alpha5 and `--exit-node-allow-lan-access` on node2 and still same problem, no access to external IP of node1.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2017495112/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-03-25T08:52:43Z · mentioned · winterheart</summary><pre>{
+  &quot;id&quot;: 12231286530,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz8855KNPgzwAAAALZCp8C&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/12231286530&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-03-25T08:52:43Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-03-25T08:52:43Z · subscribed · winterheart</summary><pre>{
+  &quot;id&quot;: 12231286540,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz8855KNPgzwAAAALZCp8M&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/12231286540&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-03-25T08:52:43Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-03-25T09:27:41Z · commented · ChibangLW</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2017563181&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-2017563181&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 2017563181,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8854QZIt&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;ChibangLW&quot;,
+    &quot;id&quot;: 22293464,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIyMjkzNDY0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/22293464?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ChibangLW&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ChibangLW&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ChibangLW/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ChibangLW/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ChibangLW/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ChibangLW/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ChibangLW/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ChibangLW/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ChibangLW/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ChibangLW/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ChibangLW/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-03-25T09:27:41Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-03-25T09:28:10Z&quot;,
+  &quot;body&quot;: &quot;&gt; I&#x27;ve retested with 0.23.0-alpha5 and `--exit-node-allow-lan-access` on node2 and still same problem, no access to external IP of node1.\r\n\r\nFrom my understanding to option should be used on node1, because you try to connect to the directly connected network on node1 from node2. It&#x27;s an option for the exit-node.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2017563181/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;ChibangLW&quot;,
+    &quot;id&quot;: 22293464,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIyMjkzNDY0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/22293464?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ChibangLW&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ChibangLW&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ChibangLW/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ChibangLW/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ChibangLW/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ChibangLW/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ChibangLW/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ChibangLW/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ChibangLW/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ChibangLW/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ChibangLW/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-03-25T10:28:17Z · commented · winterheart</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2017678759&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-2017678759&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 2017678759,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8854Q1Wn&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-03-25T10:28:17Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-03-25T10:28:17Z&quot;,
+  &quot;body&quot;: &quot;`--exit-node-allow-lan-access` can be used only with `--exit-node=&lt;node&gt;` so I really no idea how use it on exit node but not in node that tries connect to.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2017678759/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-03-25T10:30:19Z · commented · ChibangLW</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2017682082&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-2017682082&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 2017682082,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8854Q2Ki&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;ChibangLW&quot;,
+    &quot;id&quot;: 22293464,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIyMjkzNDY0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/22293464?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ChibangLW&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ChibangLW&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ChibangLW/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ChibangLW/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ChibangLW/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ChibangLW/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ChibangLW/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ChibangLW/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ChibangLW/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ChibangLW/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ChibangLW/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-03-25T10:30:19Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-03-25T12:11:39Z&quot;,
+  &quot;body&quot;: &quot;Okay never mind, I misunderstood the option.\r\n\r\nEDIT: for clarification from the source code: \t\r\n```\r\n// ExitNodeAllowLANAccess indicates whether locally accessible subnets should be\r\n// routed directly or via the exit node.\r\n```&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2017682082/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;ChibangLW&quot;,
+    &quot;id&quot;: 22293464,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIyMjkzNDY0&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/22293464?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ChibangLW&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ChibangLW&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ChibangLW/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ChibangLW/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ChibangLW/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ChibangLW/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ChibangLW/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ChibangLW/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ChibangLW/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ChibangLW/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ChibangLW/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-03-30T07:03:22Z · commented · ElyasAsmad</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2027947312&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-2027947312&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 2027947312,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz88544AUw&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;ElyasAsmad&quot;,
+    &quot;id&quot;: 78308067,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjc4MzA4MDY3&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/78308067?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ElyasAsmad&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ElyasAsmad&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ElyasAsmad/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ElyasAsmad/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ElyasAsmad/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ElyasAsmad/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ElyasAsmad/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ElyasAsmad/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ElyasAsmad/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ElyasAsmad/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ElyasAsmad/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-03-30T07:03:22Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-03-30T07:03:22Z&quot;,
+  &quot;body&quot;: &quot;Any update on this matter? I have been tinkering around with WireGuard &amp; OpenVPN because of this issue and by far only headscale meets my requirement&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2027947312/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;ElyasAsmad&quot;,
+    &quot;id&quot;: 78308067,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjc4MzA4MDY3&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/78308067?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/ElyasAsmad&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/ElyasAsmad&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/ElyasAsmad/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/ElyasAsmad/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/ElyasAsmad/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/ElyasAsmad/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/ElyasAsmad/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/ElyasAsmad/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/ElyasAsmad/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/ElyasAsmad/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/ElyasAsmad/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-05-14T20:11:26Z · commented · winterheart</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2111059705&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-2111059705&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 2111059705,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz88591Db5&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-05-14T20:11:26Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-05-14T20:11:26Z&quot;,
+  &quot;body&quot;: &quot;Retested on 0.23.0-alpha11, problem still occurs.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2111059705/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;winterheart&quot;,
+    &quot;id&quot;: 81112,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjgxMTEy&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/81112?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/winterheart&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/winterheart&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/winterheart/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/winterheart/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/winterheart/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/winterheart/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/winterheart/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/winterheart/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/winterheart/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/winterheart/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/winterheart/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-08-13T01:52:30Z · commented · github-actions[bot]</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2285192908&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-2285192908&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 2285192908,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886INUbM&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-08-13T01:52:30Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-08-13T01:52:30Z&quot;,
+  &quot;body&quot;: &quot;This issue is stale because it has been open for 90 days with no activity.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2285192908/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: {
+    &quot;id&quot;: 15368,
+    &quot;client_id&quot;: &quot;Iv1.05c79e9ad1f6bdfa&quot;,
+    &quot;slug&quot;: &quot;github-actions&quot;,
+    &quot;node_id&quot;: &quot;MDM6QXBwMTUzNjg=&quot;,
+    &quot;owner&quot;: {
+      &quot;login&quot;: &quot;github&quot;,
+      &quot;id&quot;: 9919,
+      &quot;node_id&quot;: &quot;MDEyOk9yZ2FuaXphdGlvbjk5MTk=&quot;,
+      &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/9919?v=4&quot;,
+      &quot;gravatar_id&quot;: &quot;&quot;,
+      &quot;url&quot;: &quot;https://api.github.com/users/github&quot;,
+      &quot;html_url&quot;: &quot;https://github.com/github&quot;,
+      &quot;followers_url&quot;: &quot;https://api.github.com/users/github/followers&quot;,
+      &quot;following_url&quot;: &quot;https://api.github.com/users/github/following{/other_user}&quot;,
+      &quot;gists_url&quot;: &quot;https://api.github.com/users/github/gists{/gist_id}&quot;,
+      &quot;starred_url&quot;: &quot;https://api.github.com/users/github/starred{/owner}{/repo}&quot;,
+      &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github/subscriptions&quot;,
+      &quot;organizations_url&quot;: &quot;https://api.github.com/users/github/orgs&quot;,
+      &quot;repos_url&quot;: &quot;https://api.github.com/users/github/repos&quot;,
+      &quot;events_url&quot;: &quot;https://api.github.com/users/github/events{/privacy}&quot;,
+      &quot;received_events_url&quot;: &quot;https://api.github.com/users/github/received_events&quot;,
+      &quot;type&quot;: &quot;Organization&quot;,
+      &quot;user_view_type&quot;: &quot;public&quot;,
+      &quot;site_admin&quot;: false
+    },
+    &quot;name&quot;: &quot;GitHub Actions&quot;,
+    &quot;description&quot;: &quot;Automate your workflow from idea to production&quot;,
+    &quot;external_url&quot;: &quot;https://help.github.com/en/actions&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;created_at&quot;: &quot;2018-07-30T09:30:17Z&quot;,
+    &quot;updated_at&quot;: &quot;2026-06-18T16:17:48Z&quot;,
+    &quot;permissions&quot;: {
+      &quot;actions&quot;: &quot;write&quot;,
+      &quot;administration&quot;: &quot;read&quot;,
+      &quot;artifact_metadata&quot;: &quot;write&quot;,
+      &quot;attestations&quot;: &quot;write&quot;,
+      &quot;checks&quot;: &quot;write&quot;,
+      &quot;code_quality&quot;: &quot;write&quot;,
+      &quot;contents&quot;: &quot;write&quot;,
+      &quot;copilot_requests&quot;: &quot;write&quot;,
+      &quot;deployments&quot;: &quot;write&quot;,
+      &quot;discussions&quot;: &quot;write&quot;,
+      &quot;drives&quot;: &quot;write&quot;,
+      &quot;issues&quot;: &quot;write&quot;,
+      &quot;merge_queues&quot;: &quot;write&quot;,
+      &quot;metadata&quot;: &quot;read&quot;,
+      &quot;models&quot;: &quot;read&quot;,
+      &quot;packages&quot;: &quot;write&quot;,
+      &quot;pages&quot;: &quot;write&quot;,
+      &quot;pull_requests&quot;: &quot;write&quot;,
+      &quot;repository_hooks&quot;: &quot;write&quot;,
+      &quot;repository_projects&quot;: &quot;write&quot;,
+      &quot;security_events&quot;: &quot;write&quot;,
+      &quot;statuses&quot;: &quot;write&quot;,
+      &quot;vulnerability_alerts&quot;: &quot;read&quot;
+    },
+    &quot;events&quot;: [
+      &quot;branch_protection_rule&quot;,
+      &quot;check_run&quot;,
+      &quot;check_suite&quot;,
+      &quot;create&quot;,
+      &quot;delete&quot;,
+      &quot;deployment&quot;,
+      &quot;deployment_status&quot;,
+      &quot;discussion&quot;,
+      &quot;discussion_comment&quot;,
+      &quot;fork&quot;,
+      &quot;gollum&quot;,
+      &quot;issues&quot;,
+      &quot;issue_comment&quot;,
+      &quot;label&quot;,
+      &quot;merge_group&quot;,
+      &quot;milestone&quot;,
+      &quot;page_build&quot;,
+      &quot;public&quot;,
+      &quot;pull_request&quot;,
+      &quot;pull_request_review&quot;,
+      &quot;pull_request_review_comment&quot;,
+      &quot;push&quot;,
+      &quot;registry_package&quot;,
+      &quot;release&quot;,
+      &quot;repository&quot;,
+      &quot;repository_dispatch&quot;,
+      &quot;status&quot;,
+      &quot;watch&quot;,
+      &quot;workflow_dispatch&quot;,
+      &quot;workflow_run&quot;
+    ]
+  },
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-08-13T01:52:31Z · labeled · github-actions[bot]</summary><pre>{
+  &quot;id&quot;: 13856623121,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz8855KNPgzwAAAAM560oR&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/13856623121&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-08-13T01:52:31Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;stale&quot;,
+    &quot;color&quot;: &quot;ededed&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2024-08-21T01:51:12Z · commented · github-actions[bot]</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2300123191&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-2300123191&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 2300123191,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz886JGRg3&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2024-08-21T01:51:12Z&quot;,
+  &quot;updated_at&quot;: &quot;2024-08-21T01:51:12Z&quot;,
+  &quot;body&quot;: &quot;This issue was closed because it has been inactive for 14 days since being marked as stale.&quot;,
+  &quot;author_association&quot;: &quot;CONTRIBUTOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/2300123191/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: {
+    &quot;id&quot;: 15368,
+    &quot;client_id&quot;: &quot;Iv1.05c79e9ad1f6bdfa&quot;,
+    &quot;slug&quot;: &quot;github-actions&quot;,
+    &quot;node_id&quot;: &quot;MDM6QXBwMTUzNjg=&quot;,
+    &quot;owner&quot;: {
+      &quot;login&quot;: &quot;github&quot;,
+      &quot;id&quot;: 9919,
+      &quot;node_id&quot;: &quot;MDEyOk9yZ2FuaXphdGlvbjk5MTk=&quot;,
+      &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/9919?v=4&quot;,
+      &quot;gravatar_id&quot;: &quot;&quot;,
+      &quot;url&quot;: &quot;https://api.github.com/users/github&quot;,
+      &quot;html_url&quot;: &quot;https://github.com/github&quot;,
+      &quot;followers_url&quot;: &quot;https://api.github.com/users/github/followers&quot;,
+      &quot;following_url&quot;: &quot;https://api.github.com/users/github/following{/other_user}&quot;,
+      &quot;gists_url&quot;: &quot;https://api.github.com/users/github/gists{/gist_id}&quot;,
+      &quot;starred_url&quot;: &quot;https://api.github.com/users/github/starred{/owner}{/repo}&quot;,
+      &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github/subscriptions&quot;,
+      &quot;organizations_url&quot;: &quot;https://api.github.com/users/github/orgs&quot;,
+      &quot;repos_url&quot;: &quot;https://api.github.com/users/github/repos&quot;,
+      &quot;events_url&quot;: &quot;https://api.github.com/users/github/events{/privacy}&quot;,
+      &quot;received_events_url&quot;: &quot;https://api.github.com/users/github/received_events&quot;,
+      &quot;type&quot;: &quot;Organization&quot;,
+      &quot;user_view_type&quot;: &quot;public&quot;,
+      &quot;site_admin&quot;: false
+    },
+    &quot;name&quot;: &quot;GitHub Actions&quot;,
+    &quot;description&quot;: &quot;Automate your workflow from idea to production&quot;,
+    &quot;external_url&quot;: &quot;https://help.github.com/en/actions&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;created_at&quot;: &quot;2018-07-30T09:30:17Z&quot;,
+    &quot;updated_at&quot;: &quot;2026-06-18T16:17:48Z&quot;,
+    &quot;permissions&quot;: {
+      &quot;actions&quot;: &quot;write&quot;,
+      &quot;administration&quot;: &quot;read&quot;,
+      &quot;artifact_metadata&quot;: &quot;write&quot;,
+      &quot;attestations&quot;: &quot;write&quot;,
+      &quot;checks&quot;: &quot;write&quot;,
+      &quot;code_quality&quot;: &quot;write&quot;,
+      &quot;contents&quot;: &quot;write&quot;,
+      &quot;copilot_requests&quot;: &quot;write&quot;,
+      &quot;deployments&quot;: &quot;write&quot;,
+      &quot;discussions&quot;: &quot;write&quot;,
+      &quot;drives&quot;: &quot;write&quot;,
+      &quot;issues&quot;: &quot;write&quot;,
+      &quot;merge_queues&quot;: &quot;write&quot;,
+      &quot;metadata&quot;: &quot;read&quot;,
+      &quot;models&quot;: &quot;read&quot;,
+      &quot;packages&quot;: &quot;write&quot;,
+      &quot;pages&quot;: &quot;write&quot;,
+      &quot;pull_requests&quot;: &quot;write&quot;,
+      &quot;repository_hooks&quot;: &quot;write&quot;,
+      &quot;repository_projects&quot;: &quot;write&quot;,
+      &quot;security_events&quot;: &quot;write&quot;,
+      &quot;statuses&quot;: &quot;write&quot;,
+      &quot;vulnerability_alerts&quot;: &quot;read&quot;
+    },
+    &quot;events&quot;: [
+      &quot;branch_protection_rule&quot;,
+      &quot;check_run&quot;,
+      &quot;check_suite&quot;,
+      &quot;create&quot;,
+      &quot;delete&quot;,
+      &quot;deployment&quot;,
+      &quot;deployment_status&quot;,
+      &quot;discussion&quot;,
+      &quot;discussion_comment&quot;,
+      &quot;fork&quot;,
+      &quot;gollum&quot;,
+      &quot;issues&quot;,
+      &quot;issue_comment&quot;,
+      &quot;label&quot;,
+      &quot;merge_group&quot;,
+      &quot;milestone&quot;,
+      &quot;page_build&quot;,
+      &quot;public&quot;,
+      &quot;pull_request&quot;,
+      &quot;pull_request_review&quot;,
+      &quot;pull_request_review_comment&quot;,
+      &quot;push&quot;,
+      &quot;registry_package&quot;,
+      &quot;release&quot;,
+      &quot;repository&quot;,
+      &quot;repository_dispatch&quot;,
+      &quot;status&quot;,
+      &quot;watch&quot;,
+      &quot;workflow_dispatch&quot;,
+      &quot;workflow_run&quot;
+    ]
+  },
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2024-08-21T01:51:12Z · closed · github-actions[bot]</summary><pre>{
+  &quot;id&quot;: 13952763252,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz8855KNPgzwAAAAM_pkV0&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/13952763252&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;github-actions[bot]&quot;,
+    &quot;id&quot;: 41898282,
+    &quot;node_id&quot;: &quot;MDM6Qm90NDE4OTgyODI=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/in/15368?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/apps/github-actions&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/github-actions%5Bbot%5D/received_events&quot;,
+    &quot;type&quot;: &quot;Bot&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2024-08-21T01:51:12Z&quot;,
+  &quot;state_reason&quot;: &quot;not_planned&quot;,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-07-14T16:27:07Z · commented · arthur-lbchn</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3070205215&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-3070205215&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 3070205215,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz8862_50f&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;arthur-lbchn&quot;,
+    &quot;id&quot;: 9682681,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk2ODI2ODE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/9682681?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/arthur-lbchn&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/arthur-lbchn&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/arthur-lbchn/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/arthur-lbchn/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/arthur-lbchn/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/arthur-lbchn/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/arthur-lbchn/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/arthur-lbchn/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/arthur-lbchn/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/arthur-lbchn/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/arthur-lbchn/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-07-14T16:27:07Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-07-14T16:27:07Z&quot;,
+  &quot;body&quot;: &quot;Hi, I&#x27;m facing exactly the same issue as the original reporter. While connected to the exit node with a public IP address from a /27 network, I cannot reach any other hosts in this /27 network. I don&#x27;t have any ACLs configured. The hosts are reachable when not connected to the exit node and are also reachable from the exit node itself.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3070205215/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;arthur-lbchn&quot;,
+    &quot;id&quot;: 9682681,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk2ODI2ODE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/9682681?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/arthur-lbchn&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/arthur-lbchn&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/arthur-lbchn/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/arthur-lbchn/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/arthur-lbchn/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/arthur-lbchn/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/arthur-lbchn/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/arthur-lbchn/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/arthur-lbchn/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/arthur-lbchn/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/arthur-lbchn/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-07-15T05:41:20Z · unsubscribed · mrabino1</summary><pre>{
+  &quot;id&quot;: 18630428030,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz8855KNPgzwAAAARWdcV-&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/18630428030&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mrabino1&quot;,
+    &quot;id&quot;: 4902221,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ5MDIyMjE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4902221?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mrabino1&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mrabino1&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mrabino1/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mrabino1/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mrabino1/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mrabino1/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mrabino1/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mrabino1/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mrabino1/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mrabino1/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mrabino1/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-07-15T05:41:20Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-04-16T11:56:03Z · commented · pva</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4259855155&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-4259855155&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 4259855155,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz88796Dsz&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;pva&quot;,
+    &quot;id&quot;: 92356,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjkyMzU2&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/92356?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/pva&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/pva&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/pva/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/pva/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/pva/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/pva/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/pva/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/pva/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/pva/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/pva/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/pva/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-04-16T11:56:03Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-04-16T11:56:03Z&quot;,
+  &quot;body&quot;: &quot;This issue still affects us. @kradalby could you, please, reopen ticket?&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4259855155/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;pva&quot;,
+    &quot;id&quot;: 92356,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjkyMzU2&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/92356?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/pva&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/pva&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/pva/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/pva/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/pva/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/pva/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/pva/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/pva/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/pva/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/pva/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/pva/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-04-16T11:56:05Z · mentioned · kradalby</summary><pre>{
+  &quot;id&quot;: 24565295422,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz8855KNPgzwAAAAW4NKk-&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/24565295422&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-04-16T11:56:05Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-04-16T11:56:05Z · subscribed · kradalby</summary><pre>{
+  &quot;id&quot;: 24565295454,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz8855KNPgzwAAAAW4NKle&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/24565295454&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-04-16T11:56:05Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-04-16T12:01:39Z · commented · kradalby</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4259891387&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-4259891387&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 4259891387,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz88796Mi7&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-04-16T12:01:39Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-04-16T12:01:39Z&quot;,
+  &quot;body&quot;: &quot;We don&#x27;t reopen tickets that are this old, we need a new ticket with reference and all the required debug data so we can replicate it. There is no way for us to meaningfully find the bug from what is in here.&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4259891387/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-05-13T09:37:25Z · commented · pva</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4439510460&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-4439510460&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 4439510460,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABCJ2NvA&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;pva&quot;,
+    &quot;id&quot;: 92356,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjkyMzU2&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/92356?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/pva&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/pva&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/pva/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/pva/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/pva/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/pva/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/pva/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/pva/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/pva/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/pva/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/pva/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-05-13T09:37:25Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-05-13T09:37:25Z&quot;,
+  &quot;body&quot;: &quot;Looks like I found workabound. @kradalby could you comment, please?\n\n## Problem description\n\nThere are two nodes in a Headscale/Tailscale network:\n\n### `node1` — exit node\n\n```text\nInternal IP: 10.1.0.2/24\nExternal IP: 88.88.88.2/24\nExternal subnet: 88.88.88.0/24\n```\n\n### `node2` — client\n\n```text\nInternal IP: 10.2.0.2/24\n```\n\nWhen `node2` uses `node1` as an exit node, general Internet access works as expected.  \nFor example, access to external addresses such as `8.8.8.8` works.\n\nHowever, `node2` cannot access other addresses from the same external subnet that is directly connected to `node1`.\n\nExample:\n\n```bash\n# Before enabling node1 as exit node\nnode2$ ping -c1 88.88.88.3\n# OK\n\nnode2$ ping -c1 8.8.8.8\n# OK\n\n# Enable node1 as exit node\nnode2$ tailscale up --exit-node=node1 --accept-routes --login-server=https://vpn.example.com\n\n# After enabling node1 as exit node\nnode2$ ping -c1 88.88.88.3\n# FAIL\n\nnode2$ ping -c1 8.8.8.8\n# Still OK\n```\n\nSo the problem is not with exit-node forwarding in general.  \nThe problem appears only for destinations that belong to the external subnet directly connected to the exit node itself, in this example:\n\n```text\n88.88.88.0/24\n```\n\n## Cause\n\nWhen `node2` selects `node1` as the exit node, all external IPv4 traffic from `node2` is routed through the Tailscale default route: `0.0.0.0/0`. Therefore, a packet from `node2` to `88.88.88.3` is sent via `tailscale0` and delivered through WireGuard to `node1`.\n\nWhen Tailscale builds the inbound filter for a node advertising an exit node, it explicitly subtracts locally reachable interface networks of the exit node from the advertised default route.\n\nRelevant code:\n\n`tailscale/ipn/ipnlocal/local.go`, around line `2997`:\n\n```go\nif prefs.Valid() {\n    if buildfeatures.HasAdvertiseRoutes {\n        for _, r := range prefs.AdvertiseRoutes().All() {\n            if r.Bits() == 0 {\n                // When offering a default route to the world, we\n                // filter out locally reachable LANs, so that the\n                // default route effectively appears to be a \&quot;guest\n                // wifi\&quot;: you get internet access, but to additionally\n                // get LAN access the LAN(s) need to be offered\n                // explicitly as well.\n                localInterfaceRoutes, hostIPs, err := interfaceRoutes()\n                if err != nil {\n                    b.logf(\&quot;getting local interface routes: %v\&quot;, err)\n                    continue\n                }\n                s, err := shrinkDefaultRoute(r, localInterfaceRoutes, hostIPs)\n                if err != nil {\n                    b.logf(\&quot;computing default route filter: %v\&quot;, err)\n                    continue\n                }\n                localNetsB.AddSet(s)\n```\n\nOn `node1`, the external interface has: `88.88.88.2/24`. Therefore, the whole network is treated as a locally connected network of the exit node.\n\nInside `shrinkDefaultRoute`, this local interface network is removed from the allowed default route. Then only the host&#x27;s own IP address, `88.88.88.2`, is added back. But neighbouring addresses from the same subnet, e.g. `88.88.88.3` are not added back. Relevant code:\n\n`tailscale/ipn/ipnlocal/local.go`, around line `3237`:\n\n```go\n// shrinkDefaultRoute returns an IPSet representing the IPs in route,\n// minus those in removeFromDefaultRoute and localInterfaceRoutes,\n// plus the IPs in hostIPs.\nfunc shrinkDefaultRoute(route netip.Prefix, localInterfaceRoutes *netipx.IPSet, hostIPs []netip.Addr) (*netipx.IPSet, error) {\n    var b netipx.IPSetBuilder\n    // Add the default route.\n    b.AddPrefix(route)\n    // Remove the local interface routes.\n    b.RemoveSet(localInterfaceRoutes)\n\n    // Having removed all the LAN subnets, re-add the hosts&#x27;s own\n    // IPs. It&#x27;s fine for clients to connect to an exit node&#x27;s public\n    // IP address, just not the attached subnet.\n    //\n    // Truly forbidden subnets (in removeFromDefaultRoute) will still\n    // be stripped back out by the next step.\n    for _, ip := range hostIPs {\n        if route.Contains(ip) {\n            b.Add(ip)\n        }\n    }\n\n    for _, pfx := range removeFromDefaultRoute {\n        b.RemovePrefix(pfx)\n    }\n    return b.IPSet()\n}\n```\n\nAfter the packet is decrypted on `node1`, the inbound filter checks whether the destination address belongs to a network that this node is allowed to receive from Tailscale. For destination `88.88.88.3`, this check fails, because `88.88.88.0/24` was removed from the effective default route and was not explicitly advertised as a subnet route.\n\nAs a result, the packet is dropped inside `tailscaled`.\n\n## Proposed workaround / solution that works for us\n\nOn the exit node, explicitly advertise the external subnet:\n\n```bash\ntailscale up \\\n  --advertise-exit-node \\\n  --advertise-routes=88.88.88.0/24\n```\n\nHowever, this route should **not** be approved or enabled in Headscale.\n\nThe purpose of advertising this route is not to distribute it as a subnet route to other clients.\n\nThe purpose is only to make the local `tailscaled` instance on `node1` treat this subnet as an allowed destination network, so that it does not drop inbound packets received from `node2`.\n\nAs long as the route is not approved in Headscale, it will not be distributed to clients as a subnet route.\n\nTherefore, when `node1` is not selected as an exit node, traffic to `88.88.88.0/24` will continue to use the normal Internet route.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4439510460/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;pva&quot;,
+    &quot;id&quot;: 92356,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjkyMzU2&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/92356?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/pva&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/pva&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/pva/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/pva/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/pva/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/pva/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/pva/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/pva/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/pva/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/pva/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/pva/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-05-13T09:37:26Z · mentioned · kradalby</summary><pre>{
+  &quot;id&quot;: 25474665660,
+  &quot;node_id&quot;: &quot;MEE_lADOEFLz8855KNPgzwAAAAXuaIy8&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25474665660&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;mentioned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-05-13T09:37:26Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-05-13T09:37:26Z · subscribed · kradalby</summary><pre>{
+  &quot;id&quot;: 25474665702,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz8855KNPgzwAAAAXuaIzm&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25474665702&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-05-13T09:37:26Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-05-13T09:45:00Z · commented · kradalby</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4439583139&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/1637#issuecomment-4439583139&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/1637&quot;,
+  &quot;id&quot;: 4439583139,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABCJ6pow&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-05-13T09:45:00Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-05-13T09:45:00Z&quot;,
+  &quot;body&quot;: &quot;Please open a new issue, this seems intricate so please validate the expected behaviour with Tailscale SaaS aswell so we understand where the issue lies. Ensure you add all the information that we ask for in full in the issue template, not only what the AI gives you. &quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4439583139/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

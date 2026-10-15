@@ -1,0 +1,368 @@
+[
+  {
+    "stage": "Start",
+    "tag": "v0.1.0",
+    "cumulative_range": "v0.1.0",
+    "segment_range": "v0.1.0",
+    "m1": {
+      "events": 313,
+      "entities": 67,
+      "hhi": 0.03755269524033112,
+      "effective_entities": 26.629247078010334,
+      "top1_percent": 9.26517571884984,
+      "top2_percent": 17.57188498402556,
+      "top10_percent": 51.11821086261981,
+      "contributors_for_50_percent": 10
+    },
+    "top_files": [
+      [
+        "cmd/headscale/headscale.go",
+        29
+      ],
+      [
+        "README.md",
+        26
+      ],
+      [
+        "api.go",
+        22
+      ]
+    ],
+    "m2": {
+      "events": 121,
+      "entities": 7,
+      "hhi": 0.5825421760808688,
+      "effective_entities": 1.7166139054988863,
+      "top1_percent": 74.3801652892562,
+      "top2_percent": 90.08264462809917,
+      "top10_percent": 100.0,
+      "contributors_for_50_percent": 1,
+      "legacy_effective_authors": 1.72
+    },
+    "m3": {
+      "handoff_percent": 23.983739837398375,
+      "samples": 59,
+      "mean_days": 13.119948995605775,
+      "median_days": 4.038206018518519,
+      "p75_days": 13.373599537037038,
+      "mathematical_median_days": 4.032430555555556
+    },
+    "m4a": {
+      "samples": 11,
+      "mean_days": 8.166452020202021,
+      "median_days": 0.809375,
+      "p75_days": 8.44478587962963
+    },
+    "m4b_cached_closed_issues": {
+      "samples": 0,
+      "mean_days": null,
+      "median_days": null,
+      "p75_days": null
+    }
+  },
+  {
+    "stage": "Early growth",
+    "tag": "v0.12.1",
+    "cumulative_range": "v0.1.0..v0.12.1",
+    "segment_range": "v0.1.0..v0.12.1",
+    "m1": {
+      "events": 1322,
+      "entities": 159,
+      "hhi": 0.023757155183660204,
+      "effective_entities": 42.09258188824663,
+      "top1_percent": 6.354009077155824,
+      "top2_percent": 12.556732223903177,
+      "top10_percent": 40.468986384266266,
+      "contributors_for_50_percent": 16
+    },
+    "top_files": [
+      [
+        "app.go",
+        84
+      ],
+      [
+        "api.go",
+        82
+      ],
+      [
+        "machine.go",
+        70
+      ]
+    ],
+    "m2": {
+      "events": 611,
+      "entities": 32,
+      "hhi": 0.3113647504426486,
+      "effective_entities": 3.2116673405655582,
+      "top1_percent": 50.57283142389525,
+      "top2_percent": 68.73977086743044,
+      "top10_percent": 95.25368248772504,
+      "contributors_for_50_percent": 1,
+      "legacy_effective_authors": 3.21
+    },
+    "m3": {
+      "handoff_percent": 30.438521066208082,
+      "samples": 354,
+      "mean_days": 18.666870030341077,
+      "median_days": 6.295046296296296,
+      "p75_days": 20.226747685185185,
+      "mathematical_median_days": 6.295046296296296
+    },
+    "m4a": {
+      "samples": 93,
+      "mean_days": 3.1188625049780963,
+      "median_days": 0.8575810185185185,
+      "p75_days": 3.1919328703703704
+    },
+    "m4b_cached_closed_issues": {
+      "samples": 5,
+      "mean_days": 16.002335648148147,
+      "median_days": 6.868043981481481,
+      "p75_days": 27.91193287037037
+    }
+  },
+  {
+    "stage": "Expansion",
+    "tag": "v0.17.1",
+    "cumulative_range": "v0.1.0..v0.17.1",
+    "segment_range": "v0.12.1..v0.17.1",
+    "m1": {
+      "events": 3455,
+      "entities": 301,
+      "hhi": 0.016420423011596273,
+      "effective_entities": 60.89977093122325,
+      "top1_percent": 5.615050651230101,
+      "top2_percent": 10.361794500723589,
+      "top10_percent": 31.432706222865413,
+      "contributors_for_50_percent": 23
+    },
+    "top_files": [
+      [
+        "app.go",
+        194
+      ],
+      [
+        "machine.go",
+        164
+      ],
+      [
+        "api.go",
+        140
+      ]
+    ],
+    "m2": {
+      "events": 1740,
+      "entities": 96,
+      "hhi": 0.24189985467036598,
+      "effective_entities": 4.133942128087212,
+      "top1_percent": 42.87356321839081,
+      "top2_percent": 64.36781609195403,
+      "top10_percent": 86.4367816091954,
+      "contributors_for_50_percent": 2,
+      "legacy_effective_authors": 4.13
+    },
+    "m3": {
+      "handoff_percent": 42.21635883905013,
+      "samples": 800,
+      "mean_days": 20.81443706597222,
+      "median_days": 9.37199074074074,
+      "p75_days": 26.775925925925925,
+      "mathematical_median_days": 9.37199074074074
+    },
+    "m4a": {
+      "samples": 157,
+      "mean_days": 8.339378391129983,
+      "median_days": 0.7735416666666667,
+      "p75_days": 8.449259259259259
+    },
+    "m4b_cached_closed_issues": {
+      "samples": 103,
+      "mean_days": 31.860553870010786,
+      "median_days": 5.604861111111111,
+      "p75_days": 43.17287037037037
+    }
+  },
+  {
+    "stage": "Maturity",
+    "tag": "v0.22.3",
+    "cumulative_range": "v0.1.0..v0.22.3",
+    "segment_range": "v0.17.1..v0.22.3",
+    "m1": {
+      "events": 4436,
+      "entities": 466,
+      "hhi": 0.012900739990291744,
+      "effective_entities": 77.51493331022367,
+      "top1_percent": 4.6212804328223624,
+      "top2_percent": 9.017132551848512,
+      "top10_percent": 27.27682596934175,
+      "contributors_for_50_percent": 31
+    },
+    "top_files": [
+      [
+        "app.go",
+        205
+      ],
+      [
+        "machine.go",
+        195
+      ],
+      [
+        "CHANGELOG.md",
+        168
+      ]
+    ],
+    "m2": {
+      "events": 2005,
+      "entities": 130,
+      "hhi": 0.23331820075745796,
+      "effective_entities": 4.285992249012469,
+      "top1_percent": 42.69326683291771,
+      "top2_percent": 61.39650872817955,
+      "top10_percent": 84.53865336658355,
+      "contributors_for_50_percent": 2,
+      "legacy_effective_authors": 4.29
+    },
+    "m3": {
+      "handoff_percent": 34.07738095238095,
+      "samples": 229,
+      "mean_days": 24.450495107552968,
+      "median_days": 15.313425925925927,
+      "p75_days": 43.56815972222222,
+      "mathematical_median_days": 15.313425925925927
+    },
+    "m4a": {
+      "samples": 20,
+      "mean_days": 15.376581018518518,
+      "median_days": 2.2175636574074074,
+      "p75_days": 24.912962962962965
+    },
+    "m4b_cached_closed_issues": {
+      "samples": 74,
+      "mean_days": 64.1672339527027,
+      "median_days": 12.924091435185186,
+      "p75_days": 82.83578414351852
+    }
+  },
+  {
+    "stage": "Original cutoff",
+    "tag": "v0.28.0",
+    "cumulative_range": "v0.1.0..v0.28.0",
+    "segment_range": "v0.22.3..v0.28.0",
+    "m1": {
+      "events": 9314,
+      "entities": 1043,
+      "hhi": 0.005920374310742487,
+      "effective_entities": 168.90823916074115,
+      "top1_percent": 3.467897788275714,
+      "top2_percent": 5.668885548636461,
+      "top10_percent": 16.888554863646124,
+      "contributors_for_50_percent": 71
+    },
+    "top_files": [
+      [
+        "CHANGELOG.md",
+        323
+      ],
+      [
+        "app.go",
+        205
+      ],
+      [
+        "machine.go",
+        195
+      ]
+    ],
+    "m2": {
+      "events": 2803,
+      "entities": 238,
+      "hhi": 0.2602060200267055,
+      "effective_entities": 3.8431086256089224,
+      "top1_percent": 48.16268283981449,
+      "top2_percent": 61.541205850874064,
+      "top10_percent": 81.9835890117731,
+      "contributors_for_50_percent": 2,
+      "legacy_effective_authors": 3.84
+    },
+    "m3": {
+      "handoff_percent": 32.4853228962818,
+      "samples": 1328,
+      "mean_days": 45.180429591630414,
+      "median_days": 21.273842592592594,
+      "p75_days": 60.075266203703706,
+      "mathematical_median_days": 21.273842592592594
+    },
+    "m4a": {
+      "samples": 122,
+      "mean_days": 19.48564492258652,
+      "median_days": 5.05152199074074,
+      "p75_days": 19.222543402777777
+    },
+    "m4b_cached_closed_issues": {
+      "samples": 479,
+      "mean_days": 81.12110386221295,
+      "median_days": 20.050150462962964,
+      "p75_days": 102.22393518518518
+    }
+  },
+  {
+    "stage": "Update",
+    "tag": "v0.29.5",
+    "cumulative_range": "v0.1.0..v0.29.5",
+    "segment_range": "v0.28.0..v0.29.5",
+    "m1": {
+      "events": 14924,
+      "entities": 2899,
+      "hhi": 0.003088569326614446,
+      "effective_entities": 323.7745034190817,
+      "top1_percent": 2.5060305548110424,
+      "top2_percent": 3.879656928437416,
+      "top10_percent": 11.578665237201822,
+      "contributors_for_50_percent": 154
+    },
+    "top_files": [
+      [
+        "CHANGELOG.md",
+        374
+      ],
+      [
+        "app.go",
+        205
+      ],
+      [
+        "machine.go",
+        195
+      ]
+    ],
+    "m2": {
+      "events": 3401,
+      "entities": 259,
+      "hhi": 0.32017832761193005,
+      "effective_entities": 3.123259489355704,
+      "top1_percent": 54.77800646868568,
+      "top2_percent": 65.80417524257571,
+      "top10_percent": 84.03410761540724,
+      "contributors_for_50_percent": 1,
+      "legacy_effective_authors": 3.12
+    },
+    "m3": {
+      "handoff_percent": 4.562303963501568,
+      "samples": 160,
+      "mean_days": 23.75262622974537,
+      "median_days": 13.947685185185186,
+      "p75_days": 33.06200231481481,
+      "mathematical_median_days": 13.947685185185186
+    },
+    "m4a": {
+      "samples": 70,
+      "mean_days": 13.348550595238095,
+      "median_days": 4.348645833333333,
+      "p75_days": 17.30582175925926
+    },
+    "m4b_cached_closed_issues": {
+      "samples": 25,
+      "mean_days": 80.76771990740741,
+      "median_days": 10.550787037037036,
+      "p75_days": 23.05869212962963
+    }
+  }
+]

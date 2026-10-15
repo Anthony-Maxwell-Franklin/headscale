@@ -1,0 +1,240 @@
+{
+  "schema_version": 1,
+  "repository": "juanfont/headscale",
+  "started_at_utc": "2026-10-13T13:36:48.864962+00:00",
+  "complete": true,
+  "endpoint": "/repos/juanfont/headscale/issues?state=all&sort=created&direction=asc&per_page=100",
+  "pages": [
+    {
+      "file": "issues_page_0001.json",
+      "records": 100,
+      "sha256": "6f8e6be9e9d3fbf6397de6907283caae6e93e017a95b4f6134e6959a690f4718",
+      "fetched_at_utc": "2026-10-13T13:36:50.520105+00:00"
+    },
+    {
+      "file": "issues_page_0002.json",
+      "records": 100,
+      "sha256": "f32d5077bc420fb38d1217bc9493ef92f202b51b6317f27abba29633b3968f2d",
+      "fetched_at_utc": "2026-10-13T13:36:52.147554+00:00"
+    },
+    {
+      "file": "issues_page_0003.json",
+      "records": 100,
+      "sha256": "d311fc37fd8fe4025ad620df51816b4c5785c7e9f38a88b64226159a5aa84b88",
+      "fetched_at_utc": "2026-10-13T13:36:53.862256+00:00"
+    },
+    {
+      "file": "issues_page_0004.json",
+      "records": 100,
+      "sha256": "64d5520441aed6c70c809313488bee0beb78b11d3206a8f8dec5b72e46d000cc",
+      "fetched_at_utc": "2026-10-13T13:36:55.482289+00:00"
+    },
+    {
+      "file": "issues_page_0005.json",
+      "records": 100,
+      "sha256": "961dee77f88ce98b7e2c442a5920f2d5ff76f0159fb494181affc5f0441be697",
+      "fetched_at_utc": "2026-10-13T13:36:57.000624+00:00"
+    },
+    {
+      "file": "issues_page_0006.json",
+      "records": 100,
+      "sha256": "6789dbf5db89387fa7f421be632e3cfdffec52887be10a56fa2eed6f0c542f8d",
+      "fetched_at_utc": "2026-10-13T13:36:58.718743+00:00"
+    },
+    {
+      "file": "issues_page_0007.json",
+      "records": 100,
+      "sha256": "3f5439d409e9795a51890df003810275adcebfded07fcb30f14a8b0c0ff1b4c1",
+      "fetched_at_utc": "2026-10-13T13:37:00.332853+00:00"
+    },
+    {
+      "file": "issues_page_0008.json",
+      "records": 100,
+      "sha256": "0c97b815058b395f88af5dbd58d7112e59563ab18250f6acf3c4c0be2988bd74",
+      "fetched_at_utc": "2026-10-13T13:37:02.065274+00:00"
+    },
+    {
+      "file": "issues_page_0009.json",
+      "records": 100,
+      "sha256": "73c122ad4ee78c7d9d109f99644ed922ed921e81010e30cbec687a9f103900d6",
+      "fetched_at_utc": "2026-10-13T13:37:03.803404+00:00"
+    },
+    {
+      "file": "issues_page_0010.json",
+      "records": 100,
+      "sha256": "4c7186c1dbbf21bfb4c2b0f2d0746e70a80f40f62a7359a75126cb4b44f19a40",
+      "fetched_at_utc": "2026-10-13T13:37:05.344779+00:00"
+    },
+    {
+      "file": "issues_page_0011.json",
+      "records": 100,
+      "sha256": "0b7b06a3ab022776063754299e5e879b3e08f9a0531710b8207c297d1b940058",
+      "fetched_at_utc": "2026-10-13T13:43:17.260848+00:00"
+    },
+    {
+      "file": "issues_page_0012.json",
+      "records": 100,
+      "sha256": "55771077dd1b875c0dd33ac6f9a4e533357c4515b3b4c5951d401feb7350a8eb",
+      "fetched_at_utc": "2026-10-13T13:43:20.445405+00:00"
+    },
+    {
+      "file": "issues_page_0013.json",
+      "records": 100,
+      "sha256": "5a4fdbf0da8bc44e09330f1e89d36a1c8787906646d046f8c4f33fcf9d74accf",
+      "fetched_at_utc": "2026-10-13T13:43:26.057164+00:00"
+    },
+    {
+      "file": "issues_page_0014.json",
+      "records": 100,
+      "sha256": "3d5ec8575d8c32bd4f61f8fe1540f9b47c106eab335ee85bfad5838d21c6fcc6",
+      "fetched_at_utc": "2026-10-13T13:43:29.630431+00:00"
+    },
+    {
+      "file": "issues_page_0015.json",
+      "records": 100,
+      "sha256": "44e741caf036d5c0d530d4df2421c50435b6aba492a2ae652fb7e0c98ba38b08",
+      "fetched_at_utc": "2026-10-13T13:43:34.511294+00:00"
+    },
+    {
+      "file": "issues_page_0016.json",
+      "records": 100,
+      "sha256": "314f0320f1ece275f85016ccb38c8227de01067b73d28b06761ec24c2cb8ff81",
+      "fetched_at_utc": "2026-10-13T13:43:38.591439+00:00"
+    },
+    {
+      "file": "issues_page_0017.json",
+      "records": 100,
+      "sha256": "69c6f4268a184ab68e388d73249604b9b85b78bc3b3baa33914421b489256548",
+      "fetched_at_utc": "2026-10-13T13:43:46.957821+00:00"
+    },
+    {
+      "file": "issues_page_0018.json",
+      "records": 100,
+      "sha256": "45fc26856f5875be7a16556c7338da434e894c6ea6032676e8f9079ae7549442",
+      "fetched_at_utc": "2026-10-13T13:43:51.634130+00:00"
+    },
+    {
+      "file": "issues_page_0019.json",
+      "records": 100,
+      "sha256": "772eaed3b07e6095dd9b58b7a2a25c2e858b712824012f5179d2ce7b7b501d5f",
+      "fetched_at_utc": "2026-10-13T13:43:55.263640+00:00"
+    },
+    {
+      "file": "issues_page_0020.json",
+      "records": 100,
+      "sha256": "4626a9a9590e9aee327943ce75415658518e6fe5d1f7b8e6e66aac3301dfb1e9",
+      "fetched_at_utc": "2026-10-13T13:43:59.298698+00:00"
+    },
+    {
+      "file": "issues_page_0021.json",
+      "records": 100,
+      "sha256": "d8e49e23d42041ffab8862f3fec4fa9183e98b64e77259e9c03688a19230cff3",
+      "fetched_at_utc": "2026-10-13T13:44:07.957102+00:00"
+    },
+    {
+      "file": "issues_page_0022.json",
+      "records": 100,
+      "sha256": "73b0db203068d3d09e2502c978a000bca0653b0434edf03d4ad82567afe1a93b",
+      "fetched_at_utc": "2026-10-13T13:44:17.248358+00:00"
+    },
+    {
+      "file": "issues_page_0023.json",
+      "records": 100,
+      "sha256": "20f64abf7868199b24b3c48001513e6e1ae3bd61925d20952ba0aff8aae4a1be",
+      "fetched_at_utc": "2026-10-13T13:44:21.805397+00:00"
+    },
+    {
+      "file": "issues_page_0024.json",
+      "records": 100,
+      "sha256": "62e985a138d25c2d57924be631fedc33530dc823c4b5a4cb9dd25ab112df19d7",
+      "fetched_at_utc": "2026-10-13T13:44:27.851943+00:00"
+    },
+    {
+      "file": "issues_page_0025.json",
+      "records": 100,
+      "sha256": "b607f8f1161e1d2b3e860cadec57f8178769262ce88ea1046ade9176b61327d2",
+      "fetched_at_utc": "2026-10-13T13:44:31.798503+00:00"
+    },
+    {
+      "file": "issues_page_0026.json",
+      "records": 100,
+      "sha256": "a4b8fb215906a4da4612377b2481f974d077e578718cf81483f02aacbfd3968d",
+      "fetched_at_utc": "2026-10-13T13:44:35.494073+00:00"
+    },
+    {
+      "file": "issues_page_0027.json",
+      "records": 100,
+      "sha256": "8fb7053ec93d242db641f223e95077f0801e4b94009708a69c5b97362039b1f2",
+      "fetched_at_utc": "2026-10-13T13:44:39.550000+00:00"
+    },
+    {
+      "file": "issues_page_0028.json",
+      "records": 100,
+      "sha256": "1ff32adf3a51c872441b4791c0d8a27894ab1b6a58191d1118eb6f861172c37e",
+      "fetched_at_utc": "2026-10-13T13:44:46.949715+00:00"
+    },
+    {
+      "file": "issues_page_0029.json",
+      "records": 100,
+      "sha256": "0eb7fcb66d95df70c8beed20034234a188f42fc6b0006cb49d95da035a07fa3d",
+      "fetched_at_utc": "2026-10-13T13:44:52.720692+00:00"
+    },
+    {
+      "file": "issues_page_0030.json",
+      "records": 100,
+      "sha256": "6d5b90fb81c972dee6f03901f35d416787ad02b31021cf996fd9ce7b81f78db7",
+      "fetched_at_utc": "2026-10-13T13:44:57.737188+00:00"
+    },
+    {
+      "file": "issues_page_0031.json",
+      "records": 100,
+      "sha256": "1396ceaacfb48cc218653001a95335d3aa766d8d74a74c7962fe4aea88ffe675",
+      "fetched_at_utc": "2026-10-13T13:45:02.827069+00:00"
+    },
+    {
+      "file": "issues_page_0032.json",
+      "records": 100,
+      "sha256": "a9bc0da444994244f5cd64dc326b84bfb78ba3666c9cc2c21015086acf5181f1",
+      "fetched_at_utc": "2026-10-13T13:45:06.187283+00:00"
+    },
+    {
+      "file": "issues_page_0033.json",
+      "records": 100,
+      "sha256": "ea66409ba68c5de0d0a39d9a2d7c11d4d6169830fec6a0aeb71f23f04b38457a",
+      "fetched_at_utc": "2026-10-13T13:45:10.514210+00:00"
+    },
+    {
+      "file": "issues_page_0034.json",
+      "records": 100,
+      "sha256": "11c6e695046ef7bce744d0a20decbe1c95bc8b964bd2f2cbcee0ea11af9553ec",
+      "fetched_at_utc": "2026-10-13T13:45:14.719138+00:00"
+    },
+    {
+      "file": "issues_page_0035.json",
+      "records": 100,
+      "sha256": "029e16e967d3eeebd899cf63498624f7ba53c4443f65aecd45c0a82c4436fd88",
+      "fetched_at_utc": "2026-10-13T13:45:22.358168+00:00"
+    },
+    {
+      "file": "issues_page_0036.json",
+      "records": 35,
+      "sha256": "910125288f4b43050e8dc23dc6aa3d843d5917ee5007d28f8bc79f506eba61b3",
+      "fetched_at_utc": "2026-10-13T13:45:24.890982+00:00"
+    }
+  ],
+  "limitations": [
+    "Collection is not an atomic server snapshot; records may change during pagination.",
+    "Labels and state are observed at collection time, not reconstructed as of a release.",
+    "PR list entries omit reviews, merge metadata and linked repair evidence.",
+    "Closed issue is not equivalent to repaired defect."
+  ],
+  "next_url": null,
+  "finished_at_utc": "2026-10-13T13:45:25.174735+00:00",
+  "records": 3535,
+  "issues": 1371,
+  "pull_requests": 2164,
+  "recovered_errors": {
+    "last_error": "ValueError",
+    "last_http_status": 422
+  }
+}

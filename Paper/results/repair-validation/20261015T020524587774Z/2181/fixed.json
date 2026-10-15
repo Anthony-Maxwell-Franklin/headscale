@@ -1,0 +1,33 @@
+{
+  "variant": "fixed",
+  "command": [
+    "go",
+    "test",
+    "-mod=readonly",
+    "-p=2",
+    "-count=1",
+    "-timeout=120s",
+    "-json",
+    "-run",
+    "^TestFilterNodesByACL$/(subnet-router-with-only-route-smaller-mask-2181|node-to-subnet-router-with-only-route-smaller-mask-2181|subnet-router-with-only-route)$",
+    "./hscontrol/policy"
+  ],
+  "exit_code": 0,
+  "test_outcomes": {
+    "TestFilterNodesByACL/subnet-router-with-only-route-smaller-mask-2181": "pass",
+    "TestFilterNodesByACL/node-to-subnet-router-with-only-route-smaller-mask-2181": "pass",
+    "TestFilterNodesByACL/subnet-router-with-only-route": "pass"
+  },
+  "expected_behavior_demonstrated": true,
+  "source_provenance": {
+    "commit": "d810597414df46826671eef3d0605eba9a5a0a5f",
+    "source_archive_sha256": "9deb05a8284d98c13b9157dfc20494baaee25e905dd01219fa70d9ddfab4e447",
+    "fixture_sha256": "ff967e81491bb30869c165a99608cf7d700c49e42272db15df1282ffc836d793",
+    "dependency_sha256": {
+      "go.mod": "6068eafcf7c002d9cbacaa543eba5d49c01ae7543072c0f3fd478689efa2d414",
+      "go.sum": "fb8ac7a5eda3b0f37beb26337a98566bd49101715710ed573cc64ba29d500158"
+    }
+  },
+  "stdout_sha256": "0dd1c5232f8832146a3ccf6ab90e23c083ec2345624387accab427e87b4fc537",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

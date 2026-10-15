@@ -1,0 +1,106 @@
+commit a4e56d7bf1d73a8738a1d390f0d864fa59e299d9
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Fri Oct 9 12:47:30 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Tue Oct 13 14:35:52 2026 +0200
+
+    policy/v2: skip route resolution without via grants
+    
+    Updates #3512, #3538
+    
+    (cherry picked from commit f8018f177aa870b7b4163c4b5ff2ed8e8de6a0fd)
+---
+ hscontrol/policy/v2/policy.go      |  9 +++++++
+ hscontrol/policy/v2/policy_test.go | 52 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 61 insertions(+)
+
+diff --git a/hscontrol/policy/v2/policy.go b/hscontrol/policy/v2/policy.go
+index 8fec0439..a561f9a3 100644
+--- a/hscontrol/policy/v2/policy.go
++++ b/hscontrol/policy/v2/policy.go
+@@ -1185,6 +1185,11 @@ func (pm *PolicyManager) ViaRoutesForPeer(viewer, peer types.NodeView) types.Via
+ 		return result
+ 	}
+ 
++	// Only via grants can add to the result, and ACLs never carry via.
++	if !slices.ContainsFunc(pm.pol.Grants, grantHasVia) {
++		return result
++	}
++
+ 	grants := pm.pol.Grants
+ 	for _, acl := range pm.pol.ACLs {
+ 		grants = append(grants, aclToGrants(acl)...)
+@@ -1389,6 +1394,10 @@ func (pm *PolicyManager) ViaRoutesForPeer(viewer, peer types.NodeView) types.Via
+ 	return result
+ }
+ 
++func grantHasVia(grant Grant) bool {
++	return len(grant.Via) > 0
++}
++
+ // grantReachesInternet reports whether a grant's destinations include
+ // the internet. Neither the wildcard nor autogroup:internet resolves
+ // to 0.0.0.0/0, so check the aliases themselves.
+diff --git a/hscontrol/policy/v2/policy_test.go b/hscontrol/policy/v2/policy_test.go
+index 5d9fe399..8d07c970 100644
+--- a/hscontrol/policy/v2/policy_test.go
++++ b/hscontrol/policy/v2/policy_test.go
+@@ -1846,6 +1846,58 @@ func TestViaRoutesForPeer(t *testing.T) {
+ 		require.Empty(t, result.Exclude)
+ 	})
+ 
++	t.Run("no_via_grant_returns_empty", func(t *testing.T) {
++		t.Parallel()
++
++		nodes := types.Nodes{
++			{
++				ID:       1,
++				Hostname: "viewer",
++				IPv4:     ap("100.64.0.1"),
++				User:     new(users[0]),
++				UserID:   new(users[0].ID),
++				Hostinfo: &tailcfg.Hostinfo{},
++			},
++			{
++				ID:       2,
++				Hostname: "router",
++				IPv4:     ap("100.64.0.2"),
++				User:     new(users[0]),
++				UserID:   new(users[0].ID),
++				Tags:     []string{"tag:router"},
++				Hostinfo: &tailcfg.Hostinfo{
++					RoutableIPs: []netip.Prefix{mp("10.0.0.0/24")},
++				},
++				ApprovedRoutes: []netip.Prefix{mp("10.0.0.0/24")},
++			},
++		}
++
++		// An ACL and a grant both cover the route, neither with via.
++		pol := `{
++			"tagOwners": {
++				"tag:router": ["user1@"]
++			},
++			"acls": [{
++				"action": "accept",
++				"src": ["autogroup:member"],
++				"dst": ["10.0.0.0/24:*"]
++			}],
++			"grants": [{
++				"src": ["user1@"],
++				"dst": ["10.0.0.0/24"],
++				"ip": ["*"]
++			}]
++		}`
++
++		pm, err := NewPolicyManager([]byte(pol), users, nodes.ViewSlice())
++		require.NoError(t, err)
++
++		result := pm.ViaRoutesForPeer(nodes[0].View(), nodes[1].View())
++		require.Empty(t, result.Include)
++		require.Empty(t, result.Exclude)
++		require.Empty(t, result.UsePrimary)
++	})
++
+ 	t.Run("peer_does_not_advertise_destination", func(t *testing.T) {
+ 		t.Parallel()
+ 

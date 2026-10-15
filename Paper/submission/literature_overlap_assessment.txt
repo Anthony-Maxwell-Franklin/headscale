@@ -1,0 +1,76 @@
+Literature overlap assessment — 14 October 2026
+
+Purpose and scope
+Assess prior work on Headscale itself and on the proposed maintenance-analysis
+questions. This is a targeted scoping search, not a completed systematic review.
+Public web discovery was followed by primary publisher/author/institutional
+sources where accessible. Full Scopus, Web of Science and Google Scholar corpus
+coverage has not been established. Search ranking and inaccessible material limit
+negative findings. The companion literature_search_log.json records queries,
+verified sources and unresolved leads.
+
+Same project: verified peer-reviewed study
+Kjorveziroski et al., Software: Practice and Experience, 2024,
+DOI 10.1002/spe.3329. The publisher and institutional full text were inspected.
+Headscale is evaluated alongside Netbird and ZeroTier for VPN throughput and
+Kubernetes API behavior under adverse network conditions. This is a deployment
+performance study; it does not supply the proposed longitudinal maintenance-role,
+PR-episode and responsibility-boundary analysis.
+Primary source: https://doi.org/10.1002/spe.3329
+
+Same repository appears in a mining-tool thesis: qualified finding
+The University of Macedonia's 2025 master's-thesis record describes DevSkill,
+a tool for developer-skill recognition from repositories. An indexed PDF
+illustration includes juanfont/headscale among repository rows. The institutional
+abstract is readable, but direct PDF retrieval encountered an access challenge.
+Repository appearance is therefore supported by an indexed illustration, while
+the extent of Headscale-specific analysis remains unverified. Do not equate
+dataset/screenshot inclusion with a dedicated maintenance case study.
+Primary metadata:
+https://dspace.lib.uom.gr/handle/2159/33341
+Indexed PDF lead:
+https://dspace.lib.uom.gr/bitstream/2159/33341/1/MachairasPanagiotisMsc2025.pdf
+
+Closest direction: strong prior precedent
+- Bus Factor In Practice, ICSE-SEIP 2022: reviews and meetings supplement commit
+  data, with engineer validation. Its senior-reviewer example directly precedes
+  our observation that author-only activity omits some maintenance participants.
+  https://doi.org/10.1145/3510457.3513082
+- Review-aware ownership, ICSE 2016: distinguishes authoring from reviewing and
+  relates ownership to software quality. Our matched role comparisons apply an
+  established distinction.
+  https://doi.org/10.1145/2884781.2884852
+- Issue misclassification, ICSE 2013: directly precedes our concern about treating
+  bug-labelled records as verified defects.
+  https://www.microsoft.com/en-us/research/publication/its-not-a-bug-its-a-feature-how-misclassification-impacts-bug-prediction/
+- CODEOWNERS and review dynamics: a large-scale author preprint already studies
+  declared ownership and responsibility distribution. A single static owner
+  file cannot establish new policy effects.
+  https://arxiv.org/abs/2512.05551v2
+- OSS-health assessment, 2026: already considers governance concentration and
+  organisational context. Role separation is not a new health framework.
+  https://doi.org/10.1007/s10664-026-10846-y
+
+Other leads and non-academic material
+A claimed 2026 sovereign-cluster preprint appeared in discovery, but its primary
+Zenodo/DataCite record was not retrieved; it is not treated as verified
+peer-reviewed related work. The FOSDEM maintainer presentation is contextual
+testimony. OSSInsight and Linux Foundation dashboards already expose repository
+activity; dashboard existence does not validate a new empirical mechanism.
+False positives using HeadScale for transformer attention scaling were excluded
+because they do not concern juanfont/headscale or the Tailscale control server.
+
+Implication for the manuscript
+Do not claim the first academic study of Headscale, the first separation of
+authors and reviewers, or a new validated bus-factor measure. The current
+quantitative audit is case evidence supporting a narrower explanatory question:
+how an explicit component-responsibility decision leads to a treatment outcome
+and changes the interpretation of repository maintenance indicators.
+That mechanism remains unvalidated, and actual human coding is deferred.
+Another project name or additional activity charts cannot establish novelty.
+
+Bounded negative finding
+The inspected results did not establish a peer-reviewed study centered on this
+specific Headscale maintenance-process question. This is not proof that none
+exists. The mining-tool thesis remains an unresolved overlap lead; further
+bibliographic checking is needed before any exhaustive novelty claim.

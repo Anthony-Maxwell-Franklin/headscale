@@ -1,0 +1,611 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #2757: [Bug] tailscale switch hangs when using MagicDNS on FreeBSD and breaks whole system DNS resolution</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #2757: [Bug] tailscale switch hangs when using MagicDNS on FreeBSD and breaks whole system DNS resolution</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/2757">Original issue #2757</a></p><p>Created: 2025-09-03T09:46:50Z; updated: 2026-06-12T19:48:04Z; observed state: open; reason: None</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+I have two headscale instances.
+
+When I am using tailscale --accept-dns=true and I do tailscale switch xxx it hangs forever...
+
+Some investigations show that my system is not able to do any DNS resolution, which is the reason why tailscale switch is not successful.
+
+My /etc/resolv.conf has nameserver 100.100.100.100 which is correct but no more DNS resolution on my system is done until I restart tailscaled.
+
+I also confirmed that this is only when using MagicDNS, if do tailscale set --accept-dns=false, the switch is working perfectly as my /etc/resolv.conf is untouched.
+
+It seems that switching is touching the internal resolver too quickly even before doing the resolution to the new headscale instance to know where to connect to.
+
+### Expected Behavior
+
+tailscale switch to work like when no MagicDNS is used
+
+### Steps To Reproduce
+
+tailscale --accept-dns=true
+service tailscaled start
+check your /etc/resolv.conf -&gt; nameserver 100.100.100.100
+check some random DNS resolution and connect to some nodes in the first tailnet
+tailscale switch xxx
+check again to do any DNS resolution -&gt; fail
+service tailscaled restart -&gt; DNS resolution is working again and tailscale has switched correctly to the new tailnet
+
+### Environment
+
+```markdown
+- OS:FreeBSD 14.3
+- Headscale version: dev (0.26.1)
+- Tailscale version:1.86.4
+```
+
+### Runtime environment
+
+- [x] Headscale is behind a (reverse) proxy
+- [x] Headscale runs in a container
+
+### Debug information
+
+Please let me know if anything is needed as this this easy to reproduce on any fresh install</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/2757#issuecomment-3393955114">nblock</a></h3><p>Created: 2025-10-12T05:41:30Z; updated: 2025-10-12T05:41:30Z</p><pre>&gt; Please let me know if anything is needed as this this easy to reproduce on any fresh install
+
+I could reproduce this on a fresh FreeBSD 14.3 installation and two (internal) Headscale servers. The `tailscaled debug daemon-logs` logs this after a switch:
+
+```
+Persist{o=, n=[1PTWC] u=&quot;alice&quot;}}
+resetDialPlan: did reset
+active login:
+Switching ipn state Running -&gt; NoState (WantRunning=true, nm=false)
+magicsock: SetPrivateKey called (zeroed)
+magicsock: closing connection to derp-26 (zero-private-key), age 1m55s
+magicsock: closing connection to derp-4 (zero-private-key), age 44s
+magicsock: 0 active derp conns
+wgengine: Reconfig: configuring userspace WireGuard config (with 0/0 peers)
+wgengine: Reconfig: configuring router
+router: addr del failed: [ifconfig tailscale0 inet 100.64.0.4/32 -alias] =&gt; exit status 1
+ifconfig: ioctl (SIOCDIFADDR): Can&#x27;t assign requested address
+router: addr del failed: [ifconfig tailscale0 inet6 fd7a:115c:a1e0::4/128 -alias] =&gt; exit status 1
+ifconfig: ioctl (SIOCDIFADDR): Can&#x27;t assign requested address
+Reconfig(down): exit status 1
+Start
+Backend: logs: be:93629e19baafc5c76467c56dc7d56af814fa341ad3791c7fc251e2fd0dc3ca08 fe:
+control: client.Login(0)
+control: client.Shutdown ...
+control: doLogin(regen=false, hasUrl=false)
+control: authRoutine: exiting
+control: updateRoutine: exiting
+control: mapRoutine: exiting
+control: Client.Shutdown done.
+[RATELIMIT] format(&quot;health(warnable=%s): ok&quot;) (2 dropped)
+health(warnable=no-derp-connection): ok
+[RATELIMIT] format(&quot;health(warnable=%s): error: %s&quot;) (8 dropped)
+health(warnable=no-derp-connection): error: Tailscale could not connect to the &#x27;Nuremberg&#x27; relay server. Your Internet connection might be down, or the server might be temporarily unavailable.
+health(warnable=no-derp-connection): error: Tailscale could not connect to the &#x27;Nuremberg&#x27; relay server. Your Internet connection might be down, or the server might be temporarily unavailable.
+control: trying bootstrapDNS(&quot;derp17d.tailscale.com&quot;, &quot;208.111.40.216&quot;) for &quot;headscale1.internal&quot; ...
+control: trying bootstrapDNS(&quot;derp9c.tailscale.com&quot;, &quot;2001:19f0:6401:fe7:5400:3ff:fe8d:6d9c&quot;) for &quot;headscale1.internal&quot; ...
+control: trying bootstrapDNS(&quot;derp3f.tailscale.com&quot;, &quot;172.237.72.8&quot;) for &quot;headscale1.internal&quot; ...
+control: trying bootstrapDNS(&quot;derp27e.tailscale.com&quot;, &quot;2a01:4ff:f0:28d4::1&quot;) for &quot;headscale1.internal&quot; ...
+control: trying bootstrapDNS(&quot;derp15d.tailscale.com&quot;, &quot;102.67.165.36&quot;) for &quot;headscale1.internal&quot; ...
+[RATELIMIT] format(&quot;control: trying bootstrapDNS(%q, %q) for %q ...&quot;)
+health(warnable=no-derp-connection): ok
+health(warnable=login-state): error: You are logged out. The last login error was: fetch control key: Get &quot;https://headscale1.internal:8443/key?v=125&quot;: failed to resolve &quot;headscale1.internal&quot;: no DNS fallback candidates remain for &quot;headscale1.internal&quot;
+Received error: fetch control key: Get &quot;https://headscale1.internal:8443/key?v=125&quot;: failed to resolve &quot;headscale1.internal&quot;: no DNS fallback candidates remain for &quot;headscale1.internal&quot;
+control: doLogin(regen=false, hasUrl=false)
+health(warnable=no-derp-connection): error: Tailscale could not connect to the &#x27;Nuremberg&#x27; relay server. Your Internet connection might be down, or the server might be temporarily unavailable.
+[RATELIMIT] format(&quot;control: trying bootstrapDNS(%q, %q) for %q ...&quot;) (7 dropped)
+control: trying bootstrapDNS(&quot;derp4g.tailscale.com&quot;, &quot;185.40.234.113&quot;) for &quot;headscale1.internal&quot; ...
+control: trying bootstrapDNS(&quot;derp12d.tailscale.com&quot;, &quot;2607:f740:e::811&quot;) for &quot;headscale1.internal&quot; ...
+control: trying bootstrapDNS(&quot;derp8g.tailscale.com&quot;, &quot;176.58.92.254&quot;) for &quot;headscale1.internal&quot; ...
+[RATELIMIT] format(&quot;control: trying bootstrapDNS(%q, %q) for %q ...&quot;)
+Received error: fetch control key: Get &quot;https://headscale1.internal:8443/key?v=125&quot;: failed to resolve &quot;headscale1.internal&quot;: no DNS fallback candidates remain for &quot;headscale1.internal&quot;
+health(warnable=no-derp-connection): ok
+control: doLogin(regen=false, hasUrl=false)
+health(warnable=no-derp-connection): error: Tailscale could not connect to the &#x27;Nuremberg&#x27; relay server. Your Internet connection might be down, or the server might be temporarily unavailable.
+[RATELIMIT] format(&quot;control: trying bootstrapDNS(%q, %q) for %q ...&quot;) (9 dropped)
+control: trying bootstrapDNS(&quot;derp12b.tailscale.com&quot;, &quot;45.63.71.144&quot;) for &quot;headscale1.internal&quot; ...
+control: trying bootstrapDNS(&quot;derp24b.tailscale.com&quot;, &quot;2001:19f0:c000:c586:5400:4ff:fe26:2ba6&quot;) for &quot;headscale1.internal&quot; ...
+[RATELIMIT] format(&quot;control: trying bootstrapDNS(%q, %q) for %q ...&quot;)
+```
+
+The connection also hangs for some time when using a Tailscale SaaS account but it is able to recover using the BootstrapDNS mechanism. Logs via `tailscaled debug daemon-logs`:
+
+```
+health(warnable=no-derp-connection): error: Tailscale could not connect to the &#x27;Nuremberg&#x27; relay server. Your Internet connection might be down, or the server might be temporarily unavailable.
+control: trying bootstrapDNS(&quot;derp16c.tailscale.com&quot;, &quot;192.73.243.229&quot;) for &quot;controlplane.tailscale.com&quot; ...
+health(warnable=no-derp-connection): error: Tailscale could not connect to the &#x27;Nuremberg&#x27; relay server. Your Internet connection might be down, or the server might be temporarily unavailable.
+control: bootstrapDNS(&quot;derp16c.tailscale.com&quot;, &quot;192.73.243.229&quot;) for &quot;controlplane.tailscale.com&quot; = [2606:b740:49::110 2606:b740:49::111 192.200.0.116 192.200.0.101 192.200.0.114 2606:b740:49::112 2606:b740:49::107 192.200.0.115 2606:b740:49::116 2606:b740:49::105 192.200.0.113 2606:b740:49::109 2606:b740:49::106 192.200.0.105 2606:b740:49::115 192.200.0.107 2606:b740:49::103 192.200.0.110 192.200.0.104 192.200.0.106 2606:b740:49::102 192.200.0.112 192.200.0.103 2606:b740:49::108 192.200.0.108 192.200.0.111 2606:b740:49::114 2606:b740:49::113 2606:b740:49::101 192.200.0.102 2606:b740:49::104 192.200.0.109]
+control: control server key from https://controlplane.tailscale.com: ts2021=[fSeS+], legacy=[nlFWp]
+control: RegisterReq: onode= node=[ItrV3] fup=false nks=false
+control: controlhttp: forcing port 443 dial due to recent noise dial
+control: RegisterReq: got response; nodeKeyExpired=false, machineAuthorized=true; authURL=false
+health(warnable=no-derp-connection): ok
+health(warnable=no-derp-connection): ok
+control: netmap: got new dial plan from control
+health(warnable=not-in-map-poll): ok
+```
+
+The client probably uses its cached DERP map (or the static fallback) to connect to some DERP server and get IPs for some well-known Tailscale URLs, example: `https://derp10.tailscale.com/bootstrap-dns`.</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2757#issuecomment-3695857808">fine77</a></h3><p>Created: 2025-12-29T08:39:52Z; updated: 2025-12-29T08:39:52Z</p><pre>same behavior here. thats the reason why i&#x27;ve disable magicDNS and added a bunch of DNS split for several sub domains but this is only a fix for the moment :-)
+
+i also tried to modify my systemd resolved configuration and added the following:
+
+DNS=100.100.100.100, the DNS of my main exit node.
+DOMAINS= my official headscale DNS
+
+this did fix a little bit but sadly it doesn&#x27;t works like a dream.
+
+i appreciate suggestions to fix it in a better way here.
+At least i&#x27;m not the only one who got in trouble with DNS with magicDNS :-)
+</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/2757#issuecomment-4694732650">nblock</a></h3><p>Created: 2026-06-12T19:48:04Z; updated: 2026-06-12T19:48:04Z</p><pre>Ref: https://github.com/tailscale/tailscale/issues/17019</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2025-09-03T09:46:51Z · labeled · 2Belette</summary><pre>{
+  &quot;id&quot;: 19478351123,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz887JaZ8WzwAAAASJAA0T&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/19478351123&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;2Belette&quot;,
+    &quot;id&quot;: 2325706,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIzMjU3MDY=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/2325706?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/2Belette&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/2Belette&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/2Belette/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/2Belette/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/2Belette/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/2Belette/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/2Belette/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/2Belette/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/2Belette/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/2Belette/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/2Belette/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-09-03T09:46:51Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-09-03T15:02:53Z · unsubscribed · mrabino1</summary><pre>{
+  &quot;id&quot;: 19484542043,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz887JaZ8WzwAAAASJXoRb&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/19484542043&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mrabino1&quot;,
+    &quot;id&quot;: 4902221,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ5MDIyMjE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4902221?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mrabino1&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mrabino1&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mrabino1/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mrabino1/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mrabino1/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mrabino1/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mrabino1/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mrabino1/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mrabino1/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mrabino1/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mrabino1/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-09-03T15:02:53Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-09-09T08:59:11Z · labeled · kradalby</summary><pre>{
+  &quot;id&quot;: 19583423506,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz887JaZ8WzwAAAASPQ1QS&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/19583423506&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-09-09T08:59:11Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;no-stale-bot&quot;,
+    &quot;color&quot;: &quot;6ECABC&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-09-09T08:59:11Z · labeled · kradalby</summary><pre>{
+  &quot;id&quot;: 19583423521,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz887JaZ8WzwAAAASPQ1Qh&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/19583423521&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-09-09T08:59:11Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;DNS&quot;,
+    &quot;color&quot;: &quot;F1BAA8&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-10-12T05:21:21Z · labeled · nblock</summary><pre>{
+  &quot;id&quot;: 20228602784,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz887JaZ8WzwAAAAS1t_ug&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/20228602784&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2025-10-12T05:21:21Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;well described ❤️&quot;,
+    &quot;color&quot;: &quot;C2E0C6&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2025-10-12T05:41:30Z · commented · nblock</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3393955114&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2757#issuecomment-3393955114&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2757&quot;,
+  &quot;id&quot;: 3393955114,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz887KS6Uq&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-10-12T05:41:30Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-10-12T05:41:30Z&quot;,
+  &quot;body&quot;: &quot;&gt; Please let me know if anything is needed as this this easy to reproduce on any fresh install\n\nI could reproduce this on a fresh FreeBSD 14.3 installation and two (internal) Headscale servers. The `tailscaled debug daemon-logs` logs this after a switch:\n\n```\nPersist{o=, n=[1PTWC] u=\&quot;alice\&quot;}}\nresetDialPlan: did reset\nactive login:\nSwitching ipn state Running -&gt; NoState (WantRunning=true, nm=false)\nmagicsock: SetPrivateKey called (zeroed)\nmagicsock: closing connection to derp-26 (zero-private-key), age 1m55s\nmagicsock: closing connection to derp-4 (zero-private-key), age 44s\nmagicsock: 0 active derp conns\nwgengine: Reconfig: configuring userspace WireGuard config (with 0/0 peers)\nwgengine: Reconfig: configuring router\nrouter: addr del failed: [ifconfig tailscale0 inet 100.64.0.4/32 -alias] =&gt; exit status 1\nifconfig: ioctl (SIOCDIFADDR): Can&#x27;t assign requested address\nrouter: addr del failed: [ifconfig tailscale0 inet6 fd7a:115c:a1e0::4/128 -alias] =&gt; exit status 1\nifconfig: ioctl (SIOCDIFADDR): Can&#x27;t assign requested address\nReconfig(down): exit status 1\nStart\nBackend: logs: be:93629e19baafc5c76467c56dc7d56af814fa341ad3791c7fc251e2fd0dc3ca08 fe:\ncontrol: client.Login(0)\ncontrol: client.Shutdown ...\ncontrol: doLogin(regen=false, hasUrl=false)\ncontrol: authRoutine: exiting\ncontrol: updateRoutine: exiting\ncontrol: mapRoutine: exiting\ncontrol: Client.Shutdown done.\n[RATELIMIT] format(\&quot;health(warnable=%s): ok\&quot;) (2 dropped)\nhealth(warnable=no-derp-connection): ok\n[RATELIMIT] format(\&quot;health(warnable=%s): error: %s\&quot;) (8 dropped)\nhealth(warnable=no-derp-connection): error: Tailscale could not connect to the &#x27;Nuremberg&#x27; relay server. Your Internet connection might be down, or the server might be temporarily unavailable.\nhealth(warnable=no-derp-connection): error: Tailscale could not connect to the &#x27;Nuremberg&#x27; relay server. Your Internet connection might be down, or the server might be temporarily unavailable.\ncontrol: trying bootstrapDNS(\&quot;derp17d.tailscale.com\&quot;, \&quot;208.111.40.216\&quot;) for \&quot;headscale1.internal\&quot; ...\ncontrol: trying bootstrapDNS(\&quot;derp9c.tailscale.com\&quot;, \&quot;2001:19f0:6401:fe7:5400:3ff:fe8d:6d9c\&quot;) for \&quot;headscale1.internal\&quot; ...\ncontrol: trying bootstrapDNS(\&quot;derp3f.tailscale.com\&quot;, \&quot;172.237.72.8\&quot;) for \&quot;headscale1.internal\&quot; ...\ncontrol: trying bootstrapDNS(\&quot;derp27e.tailscale.com\&quot;, \&quot;2a01:4ff:f0:28d4::1\&quot;) for \&quot;headscale1.internal\&quot; ...\ncontrol: trying bootstrapDNS(\&quot;derp15d.tailscale.com\&quot;, \&quot;102.67.165.36\&quot;) for \&quot;headscale1.internal\&quot; ...\n[RATELIMIT] format(\&quot;control: trying bootstrapDNS(%q, %q) for %q ...\&quot;)\nhealth(warnable=no-derp-connection): ok\nhealth(warnable=login-state): error: You are logged out. The last login error was: fetch control key: Get \&quot;https://headscale1.internal:8443/key?v=125\&quot;: failed to resolve \&quot;headscale1.internal\&quot;: no DNS fallback candidates remain for \&quot;headscale1.internal\&quot;\nReceived error: fetch control key: Get \&quot;https://headscale1.internal:8443/key?v=125\&quot;: failed to resolve \&quot;headscale1.internal\&quot;: no DNS fallback candidates remain for \&quot;headscale1.internal\&quot;\ncontrol: doLogin(regen=false, hasUrl=false)\nhealth(warnable=no-derp-connection): error: Tailscale could not connect to the &#x27;Nuremberg&#x27; relay server. Your Internet connection might be down, or the server might be temporarily unavailable.\n[RATELIMIT] format(\&quot;control: trying bootstrapDNS(%q, %q) for %q ...\&quot;) (7 dropped)\ncontrol: trying bootstrapDNS(\&quot;derp4g.tailscale.com\&quot;, \&quot;185.40.234.113\&quot;) for \&quot;headscale1.internal\&quot; ...\ncontrol: trying bootstrapDNS(\&quot;derp12d.tailscale.com\&quot;, \&quot;2607:f740:e::811\&quot;) for \&quot;headscale1.internal\&quot; ...\ncontrol: trying bootstrapDNS(\&quot;derp8g.tailscale.com\&quot;, \&quot;176.58.92.254\&quot;) for \&quot;headscale1.internal\&quot; ...\n[RATELIMIT] format(\&quot;control: trying bootstrapDNS(%q, %q) for %q ...\&quot;)\nReceived error: fetch control key: Get \&quot;https://headscale1.internal:8443/key?v=125\&quot;: failed to resolve \&quot;headscale1.internal\&quot;: no DNS fallback candidates remain for \&quot;headscale1.internal\&quot;\nhealth(warnable=no-derp-connection): ok\ncontrol: doLogin(regen=false, hasUrl=false)\nhealth(warnable=no-derp-connection): error: Tailscale could not connect to the &#x27;Nuremberg&#x27; relay server. Your Internet connection might be down, or the server might be temporarily unavailable.\n[RATELIMIT] format(\&quot;control: trying bootstrapDNS(%q, %q) for %q ...\&quot;) (9 dropped)\ncontrol: trying bootstrapDNS(\&quot;derp12b.tailscale.com\&quot;, \&quot;45.63.71.144\&quot;) for \&quot;headscale1.internal\&quot; ...\ncontrol: trying bootstrapDNS(\&quot;derp24b.tailscale.com\&quot;, \&quot;2001:19f0:c000:c586:5400:4ff:fe26:2ba6\&quot;) for \&quot;headscale1.internal\&quot; ...\n[RATELIMIT] format(\&quot;control: trying bootstrapDNS(%q, %q) for %q ...\&quot;)\n```\n\nThe connection also hangs for some time when using a Tailscale SaaS account but it is able to recover using the BootstrapDNS mechanism. Logs via `tailscaled debug daemon-logs`:\n\n```\nhealth(warnable=no-derp-connection): error: Tailscale could not connect to the &#x27;Nuremberg&#x27; relay server. Your Internet connection might be down, or the server might be temporarily unavailable.\ncontrol: trying bootstrapDNS(\&quot;derp16c.tailscale.com\&quot;, \&quot;192.73.243.229\&quot;) for \&quot;controlplane.tailscale.com\&quot; ...\nhealth(warnable=no-derp-connection): error: Tailscale could not connect to the &#x27;Nuremberg&#x27; relay server. Your Internet connection might be down, or the server might be temporarily unavailable.\ncontrol: bootstrapDNS(\&quot;derp16c.tailscale.com\&quot;, \&quot;192.73.243.229\&quot;) for \&quot;controlplane.tailscale.com\&quot; = [2606:b740:49::110 2606:b740:49::111 192.200.0.116 192.200.0.101 192.200.0.114 2606:b740:49::112 2606:b740:49::107 192.200.0.115 2606:b740:49::116 2606:b740:49::105 192.200.0.113 2606:b740:49::109 2606:b740:49::106 192.200.0.105 2606:b740:49::115 192.200.0.107 2606:b740:49::103 192.200.0.110 192.200.0.104 192.200.0.106 2606:b740:49::102 192.200.0.112 192.200.0.103 2606:b740:49::108 192.200.0.108 192.200.0.111 2606:b740:49::114 2606:b740:49::113 2606:b740:49::101 192.200.0.102 2606:b740:49::104 192.200.0.109]\ncontrol: control server key from https://controlplane.tailscale.com: ts2021=[fSeS+], legacy=[nlFWp]\ncontrol: RegisterReq: onode= node=[ItrV3] fup=false nks=false\ncontrol: controlhttp: forcing port 443 dial due to recent noise dial\ncontrol: RegisterReq: got response; nodeKeyExpired=false, machineAuthorized=true; authURL=false\nhealth(warnable=no-derp-connection): ok\nhealth(warnable=no-derp-connection): ok\ncontrol: netmap: got new dial plan from control\nhealth(warnable=not-in-map-poll): ok\n```\n\nThe client probably uses its cached DERP map (or the static fallback) to connect to some DERP server and get IPs for some well-known Tailscale URLs, example: `https://derp10.tailscale.com/bootstrap-dns`.&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3393955114/reactions&quot;,
+    &quot;total_count&quot;: 2,
+    &quot;+1&quot;: 2,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2025-12-29T08:39:52Z · commented · fine77</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3695857808&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2757#issuecomment-3695857808&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2757&quot;,
+  &quot;id&quot;: 3695857808,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz887cSlCQ&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;fine77&quot;,
+    &quot;id&quot;: 7015189,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjcwMTUxODk=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/7015189?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/fine77&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/fine77&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/fine77/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/fine77/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/fine77/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/fine77/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/fine77/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/fine77/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/fine77/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/fine77/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/fine77/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2025-12-29T08:39:52Z&quot;,
+  &quot;updated_at&quot;: &quot;2025-12-29T08:39:52Z&quot;,
+  &quot;body&quot;: &quot;same behavior here. thats the reason why i&#x27;ve disable magicDNS and added a bunch of DNS split for several sub domains but this is only a fix for the moment :-)\n\ni also tried to modify my systemd resolved configuration and added the following:\n\nDNS=100.100.100.100, the DNS of my main exit node.\nDOMAINS= my official headscale DNS\n\nthis did fix a little bit but sadly it doesn&#x27;t works like a dream.\n\ni appreciate suggestions to fix it in a better way here.\nAt least i&#x27;m not the only one who got in trouble with DNS with magicDNS :-)\n&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/3695857808/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;fine77&quot;,
+    &quot;id&quot;: 7015189,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjcwMTUxODk=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/7015189?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/fine77&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/fine77&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/fine77/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/fine77/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/fine77/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/fine77/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/fine77/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/fine77/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/fine77/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/fine77/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/fine77/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-05-21T08:14:25Z · milestoned · kradalby</summary><pre>{
+  &quot;id&quot;: 25794471698,
+  &quot;node_id&quot;: &quot;MIE_lADOEFLz887JaZ8WzwAAAAYBeGcS&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25794471698&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;milestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-05-21T08:14:25Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.31.0&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-05-23T19:08:37Z · renamed · 2Belette</summary><pre>{
+  &quot;id&quot;: 25888061871,
+  &quot;node_id&quot;: &quot;RTE_lADOEFLz887JaZ8WzwAAAAYHDHmv&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/25888061871&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;2Belette&quot;,
+    &quot;id&quot;: 2325706,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIzMjU3MDY=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/2325706?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/2Belette&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/2Belette&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/2Belette/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/2Belette/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/2Belette/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/2Belette/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/2Belette/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/2Belette/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/2Belette/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/2Belette/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/2Belette/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;renamed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-05-23T19:08:37Z&quot;,
+  &quot;rename&quot;: {
+    &quot;from&quot;: &quot;[Bug] tailscale switch hangs when using MagicDNS on FreeBSD and breakds whole system DNS resolution&quot;,
+    &quot;to&quot;: &quot;[Bug] tailscale switch hangs when using MagicDNS on FreeBSD and breaks whole system DNS resolution&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-06-12T19:48:04Z · commented · nblock</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4694732650&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/2757#issuecomment-4694732650&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/2757&quot;,
+  &quot;id&quot;: 4694732650,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABF9Pvag&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-06-12T19:48:04Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-06-12T19:48:04Z&quot;,
+  &quot;body&quot;: &quot;Ref: https://github.com/tailscale/tailscale/issues/17019&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4694732650/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-09-09T07:55:16Z · referenced · trancong12102</summary><pre>{
+  &quot;id&quot;: 30811800602,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz887JaZ8WzwAAAAcshsQa&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/30811800602&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;trancong12102&quot;,
+    &quot;id&quot;: 52101938,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjUyMTAxOTM4&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/52101938?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/trancong12102&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/trancong12102&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/trancong12102/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/trancong12102/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/trancong12102/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/trancong12102/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/trancong12102/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/trancong12102/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/trancong12102/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/trancong12102/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/trancong12102/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;4922e817c56a987140762977cb52602e8eca3bb0&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/aislopware/slopscale/commits/4922e817c56a987140762977cb52602e8eca3bb0&quot;,
+  &quot;created_at&quot;: &quot;2026-09-09T07:55:16Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><article><h3><a href="https://api.github.com/repos/aislopware/slopscale/commits/4922e817c56a987140762977cb52602e8eca3bb0">4922e817c56a987140762977cb52602e8eca3bb0</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/30811800602">referenced</a> · 2026-09-09T07:55:16Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article></body></html>

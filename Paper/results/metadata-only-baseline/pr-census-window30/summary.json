@@ -1,0 +1,19 @@
+{
+  "metadata_complete": true,
+  "total_prs": 2166,
+  "human_prs": 1667,
+  "lookback_days": 30,
+  "known_mergers": 1318,
+  "merge_events": 1318,
+  "unique_merger_accounts": 5,
+  "self_merges": 783,
+  "analysis_scope": "Complete PR metadata; model results are stored separately",
+  "limitations": [
+    "PR labels/current draft states are not historical submission covariates.",
+    "Final size variables are post-submission descriptions and excluded from the primary model.",
+    "Reopened PRs may have multiple disposition episodes; first episode is not reconstructed.",
+    "User logins are observed at collection time; account rename effects remain a sensitivity.",
+    "Prior integrator means a recorded earlier merge action, not verified organisational authority.",
+    "Review-event census remains incomplete; metadata coverage is not review coverage."
+  ]
+}

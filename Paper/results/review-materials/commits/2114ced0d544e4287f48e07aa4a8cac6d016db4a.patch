@@ -1,0 +1,488 @@
+commit 2114ced0d544e4287f48e07aa4a8cac6d016db4a
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Thu Apr 30 08:44:38 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Wed Sep 23 15:18:34 2026 +0200
+
+    cli: classify Serve errors with operator hints
+    
+    A *ListenerBindError that wraps syscall.EADDRINUSE now ends with a
+    "sudo ss -tlnp 'sport = :PORT'" pointer, and one wrapping
+    syscall.EACCES with a CAP_NET_BIND_SERVICE / setcap pointer. The
+    underlying chain is preserved via fmt.Errorf("%w"), so errors.Is /
+    errors.As continue to walk to the typed bind error and the syscall
+    errno.
+    
+    Drop the "headscale ran into an error and had to shut down" wrap,
+    which only restated the symptom.
+    
+    Export types.PortFromAddr so the classifier can render the port
+    number in the hint.
+    
+    Updates #3227
+---
+ cmd/headscale/cli/serve.go       |  44 +++++++++++++-
+ cmd/headscale/cli/serve_test.go  | 122 +++++++++++++++++++++++++++++++++++++++
+ hscontrol/types/listener.go      |  93 +++++++++++++++--------------
+ hscontrol/types/listener_test.go |  73 ++++++++++++++++-------
+ 4 files changed, 265 insertions(+), 67 deletions(-)
+
+diff --git a/cmd/headscale/cli/serve.go b/cmd/headscale/cli/serve.go
+index af8065e9..f5b84378 100644
+--- a/cmd/headscale/cli/serve.go
++++ b/cmd/headscale/cli/serve.go
+@@ -4,7 +4,9 @@ import (
+ 	"errors"
+ 	"fmt"
+ 	"net/http"
++	"syscall"
+ 
++	"github.com/juanfont/headscale/hscontrol/types"
+ 	"github.com/spf13/cobra"
+ 	"github.com/tailscale/squibble"
+ )
+@@ -28,10 +30,46 @@ var serveCmd = &cobra.Command{
+ 		}
+ 
+ 		err = app.Serve()
+-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+-			return fmt.Errorf("headscale ran into an error and had to shut down: %w", err)
++		if err == nil || errors.Is(err, http.ErrServerClosed) {
++			return nil
+ 		}
+ 
+-		return nil
++		return classifyServeError(err)
+ 	},
+ }
++
++// classifyServeError augments specific error classes with operator
++// hints. The underlying chain is left intact so errors.Is / errors.As
++// continue to walk to ListenerBindError, syscall.EADDRINUSE, etc.
++func classifyServeError(err error) error {
++	var bindErr *types.ListenerBindError
++	if !errors.As(err, &bindErr) {
++		return err
++	}
++
++	switch {
++	case errors.Is(err, syscall.EADDRINUSE):
++		port, perr := types.PortFromAddr(bindErr.Addr)
++		if perr != nil {
++			return fmt.Errorf(
++				"%w\n\nHint: another process on this host is bound to the same address. "+
++					"Find it with: sudo ss -tlnp",
++				err)
++		}
++
++		return fmt.Errorf(
++			"%w\n\nHint: another process on this host is bound to the same address. "+
++				"Find it with: sudo ss -tlnp 'sport = :%d'",
++			err, port)
++
++	case errors.Is(err, syscall.EACCES):
++		return fmt.Errorf(
++			"%w\n\nHint: binding to a privileged port (<1024) requires root or "+
++				"CAP_NET_BIND_SERVICE. The shipped systemd unit grants this capability; "+
++				"if running manually, use sudo or "+
++				"`setcap cap_net_bind_service=+ep ./headscale`",
++			err)
++	}
++
++	return err
++}
+diff --git a/cmd/headscale/cli/serve_test.go b/cmd/headscale/cli/serve_test.go
+new file mode 100644
+index 00000000..bba34ac5
+--- /dev/null
++++ b/cmd/headscale/cli/serve_test.go
+@@ -0,0 +1,122 @@
++package cli
++
++import (
++	"errors"
++	"fmt"
++	"net"
++	"syscall"
++	"testing"
++
++	"github.com/juanfont/headscale/hscontrol/types"
++	"github.com/stretchr/testify/assert"
++	"github.com/stretchr/testify/require"
++)
++
++var errClassifierUnrelated = errors.New("not a bind error")
++
++func TestClassifyServeError(t *testing.T) {
++	tests := []struct {
++		name              string
++		err               error
++		wantHintSubstr    []string
++		wantHintNotSubstr []string
++		wantUnchanged     bool
++	}{
++		{
++			name: "eaddrinuse-numeric-port",
++			err: &types.ListenerBindError{
++				Listener: "main HTTP",
++				YAMLKey:  "listen_addr",
++				Addr:     "0.0.0.0:443",
++				Err:      &net.OpError{Op: "listen", Net: "tcp", Err: syscall.EADDRINUSE},
++			},
++			wantHintSubstr: []string{
++				"another process on this host is bound to the same address",
++				"sudo ss -tlnp 'sport = :443'",
++			},
++		},
++		{
++			name: "eaddrinuse-named-port",
++			err: &types.ListenerBindError{
++				Listener: "ACME HTTP-01 challenge",
++				YAMLKey:  "tls_letsencrypt_listen",
++				Addr:     ":http",
++				Err:      &net.OpError{Op: "listen", Net: "tcp", Err: syscall.EADDRINUSE},
++			},
++			wantHintSubstr: []string{"sudo ss -tlnp 'sport = :80'"},
++		},
++		{
++			name: "eaccess-privileged-port",
++			err: &types.ListenerBindError{
++				Listener: "main HTTP",
++				YAMLKey:  "listen_addr",
++				Addr:     "0.0.0.0:80",
++				Err:      &net.OpError{Op: "listen", Net: "tcp", Err: syscall.EACCES},
++			},
++			wantHintSubstr: []string{
++				"privileged port",
++				"CAP_NET_BIND_SERVICE",
++				"setcap cap_net_bind_service=+ep ./headscale`",
++			},
++		},
++		{
++			name:          "non-bind-error-passes-through",
++			err:           errClassifierUnrelated,
++			wantUnchanged: true,
++		},
++		{
++			name: "bind-error-without-known-syscall",
++			err: &types.ListenerBindError{
++				Listener: "main HTTP",
++				YAMLKey:  "listen_addr",
++				Addr:     "0.0.0.0:80",
++				Err:      errClassifierUnrelated,
++			},
++			wantUnchanged: true,
++		},
++		{
++			name: "wrapped-eaddrinuse-still-classified",
++			err: fmt.Errorf("serve: %w", &types.ListenerBindError{
++				Listener: "gRPC",
++				YAMLKey:  "grpc_listen_addr",
++				Addr:     "0.0.0.0:50443",
++				Err:      &net.OpError{Op: "listen", Net: "tcp", Err: syscall.EADDRINUSE},
++			}),
++			wantHintSubstr: []string{"sudo ss -tlnp 'sport = :50443'"},
++		},
++		{
++			name: "eaddrinuse-unparseable-addr-omits-port",
++			err: &types.ListenerBindError{
++				Listener: "main HTTP",
++				YAMLKey:  "listen_addr",
++				Addr:     "garbage",
++				Err:      &net.OpError{Op: "listen", Net: "tcp", Err: syscall.EADDRINUSE},
++			},
++			wantHintSubstr:    []string{"sudo ss -tlnp"},
++			wantHintNotSubstr: []string{":0", "sport ="},
++		},
++	}
++
++	for _, tt := range tests {
++		t.Run(tt.name, func(t *testing.T) {
++			got := classifyServeError(tt.err)
++
++			if tt.wantUnchanged {
++				require.ErrorIs(t, got, tt.err)
++				assert.Equal(t, tt.err.Error(), got.Error())
++
++				return
++			}
++
++			require.ErrorIs(t, got, tt.err)
++
++			for _, want := range tt.wantHintSubstr {
++				assert.Contains(t, got.Error(), want)
++			}
++
++			for _, unwanted := range tt.wantHintNotSubstr {
++				assert.NotContains(t, got.Error(), unwanted)
++			}
++		})
++	}
++}
+diff --git a/hscontrol/types/listener.go b/hscontrol/types/listener.go
+index 5024209a..d6c8853b 100644
+--- a/hscontrol/types/listener.go
++++ b/hscontrol/types/listener.go
+@@ -31,12 +31,12 @@ func (e *ListenerBindError) Error() string {
+ 
+ func (e *ListenerBindError) Unwrap() error { return e.Err }
+ 
+-// portFromAddr resolves the numeric port of a TCP listen address.
++// PortFromAddr resolves the numeric port of a TCP listen address.
+ // Accepts host:port form with either a numeric port or one of the named
+ // services "http" / "https". The named-service table is intentionally
+ // hardcoded so this stays a pure string->int mapping with no network or
+ // /etc/services lookups.
+-func portFromAddr(addr string) (int, error) {
++func PortFromAddr(addr string) (int, error) {
+ 	if addr == "" {
+ 		return 0, errEmptyListenAddr
+ 	}
+@@ -61,35 +61,22 @@ func portFromAddr(addr string) (int, error) {
+ 	return p, nil
+ }
+ 
+-// listenersOverlap reports whether two TCP listen addresses would
++// listenersOverlap reports whether two parsed TCP listen addresses would
+ // compete for the same kernel socket. Mirrors kernel rules:
+ //   - different ports                              → false
+ //   - same port + a wildcard host on either side   → true
+ //   - same port + identical specific host          → true
+ //   - same port + different specific hosts         → false
+-func listenersOverlap(a, b string) (bool, error) {
+-	aPort, err := portFromAddr(a)
+-	if err != nil {
+-		return false, err
+-	}
+-
+-	bPort, err := portFromAddr(b)
+-	if err != nil {
+-		return false, err
+-	}
+-
++func listenersOverlap(aHost string, aPort int, bHost string, bPort int) bool {
+ 	if aPort != bPort {
+-		return false, nil
++		return false
+ 	}
+ 
+-	aHost, _, _ := net.SplitHostPort(a)
+-	bHost, _, _ := net.SplitHostPort(b)
+-
+ 	if isWildcardHost(aHost) || isWildcardHost(bHost) {
+-		return true, nil
++		return true
+ 	}
+ 
+-	return aHost == bHost, nil
++	return aHost == bHost
+ }
+ 
+ func isWildcardHost(h string) bool {
+@@ -105,9 +92,17 @@ func isWildcardHost(h string) bool {
+ // configured TCP listeners that would bind the same kernel socket. The
+ // ACME HTTP-01 challenge listener is only considered when a hostname is
+ // set and the HTTP-01 challenge is selected.
++//
++// Parsing happens up-front, once per listener: a malformed address
++// produces a ConfigError tied to its own YAML key, so an operator can
++// see exactly which value to fix instead of guessing from a paired
++// comparison.
+ func validateListenerCollisions(v *configValidator) {
+ 	type spec struct {
+ 		key, addr string
++		host      string
++		port      int
++		parsed    bool
+ 		active    bool
+ 	}
+ 
+@@ -117,9 +112,9 @@ func validateListenerCollisions(v *configValidator) {
+ 	acmeAddr := viper.GetString("tls_letsencrypt_listen")
+ 
+ 	listeners := []spec{
+-		{"listen_addr", listenAddr, listenAddr != ""},
+-		{"grpc_listen_addr", grpcAddr, grpcAddr != ""},
+-		{"metrics_listen_addr", metricsAddr, metricsAddr != ""},
++		{key: "listen_addr", addr: listenAddr, active: listenAddr != ""},
++		{key: "grpc_listen_addr", addr: grpcAddr, active: grpcAddr != ""},
++		{key: "metrics_listen_addr", addr: metricsAddr, active: metricsAddr != ""},
+ 		{
+ 			key:  "tls_letsencrypt_listen",
+ 			addr: acmeAddr,
+@@ -129,34 +124,48 @@ func validateListenerCollisions(v *configValidator) {
+ 		},
+ 	}
+ 
++	for i := range listeners {
++		l := &listeners[i]
++		if !l.active {
++			continue
++		}
++
++		port, err := PortFromAddr(l.addr)
++		if err != nil {
++			v.Add(&ConfigError{
++				Reason:  "cannot parse " + l.key,
++				Current: []KV{{l.key, l.addr}},
++				Detail:  err.Error(),
++				Hint:    `use host:port form, e.g. "0.0.0.0:8080"`,
++			})
++
++			continue
++		}
++
++		host, _, _ := net.SplitHostPort(l.addr)
++		l.host = host
++		l.port = port
++		l.parsed = true
++	}
++
+ 	for i := range listeners {
+ 		for j := i + 1; j < len(listeners); j++ {
+ 			a, b := listeners[i], listeners[j]
+-			if !a.active || !b.active {
++			if !a.parsed || !b.parsed {
+ 				continue
+ 			}
+ 
+-			overlap, err := listenersOverlap(a.addr, b.addr)
+-			if err != nil {
+-				v.Add(&ConfigError{
+-					Reason:  "cannot parse " + a.key,
+-					Current: []KV{{a.key, a.addr}},
+-					Detail:  err.Error(),
+-					Hint:    `use host:port form, e.g. "0.0.0.0:8080"`,
+-				})
+-
++			if !listenersOverlap(a.host, a.port, b.host, b.port) {
+ 				continue
+ 			}
+ 
+-			if overlap {
+-				v.Add(&ConfigError{
+-					Reason:        fmt.Sprintf("%s and %s would bind the same TCP socket", a.key, b.key),
+-					Current:       []KV{{a.key, a.addr}},
+-					ConflictsWith: []KV{{b.key, b.addr}},
+-					Hint:          "give each listener a distinct port, or bind them to different non-wildcard hosts",
+-					See:           "https://headscale.net/stable/ref/tls/",
+-				})
+-			}
++			v.Add(&ConfigError{
++				Reason:        fmt.Sprintf("%s and %s would bind the same TCP socket", a.key, b.key),
++				Current:       []KV{{a.key, a.addr}},
++				ConflictsWith: []KV{{b.key, b.addr}},
++				Hint:          "give each listener a distinct port, or bind them to different non-wildcard hosts",
++				See:           "https://headscale.net/stable/ref/tls/",
++			})
+ 		}
+ 	}
+ }
+diff --git a/hscontrol/types/listener_test.go b/hscontrol/types/listener_test.go
+index b104f38e..88b56070 100644
+--- a/hscontrol/types/listener_test.go
++++ b/hscontrol/types/listener_test.go
+@@ -7,6 +7,7 @@ import (
+ 	"syscall"
+ 	"testing"
+ 
++	"github.com/spf13/viper"
+ 	"github.com/stretchr/testify/assert"
+ 	"github.com/stretchr/testify/require"
+ )
+@@ -33,7 +34,7 @@ func TestPortFromAddr(t *testing.T) {
+ 	}
+ 	for _, tt := range tests {
+ 		t.Run(tt.name, func(t *testing.T) {
+-			got, err := portFromAddr(tt.addr)
++			got, err := PortFromAddr(tt.addr)
+ 			if tt.wantErr {
+ 				require.Error(t, err)
+ 				return
+@@ -48,37 +49,65 @@ func TestPortFromAddr(t *testing.T) {
+ func TestListenersOverlap(t *testing.T) {
+ 	tests := []struct {
+ 		name        string
+-		a, b        string
++		aHost       string
++		aPort       int
++		bHost       string
++		bPort       int
+ 		wantOverlap bool
+-		wantErr     bool
+ 	}{
+-		{"different-ports", ":80", ":443", false, false},
+-		{"same-port-numeric", ":80", ":80", true, false},
+-		{"http-vs-numeric", ":http", ":80", true, false},
+-		{"https-vs-numeric", ":443", ":https", true, false},
+-		{"wildcard-vs-loopback-same-port", "0.0.0.0:80", "127.0.0.1:80", true, false},
+-		{"loopback-vs-wildcard-same-port", "127.0.0.1:80", "0.0.0.0:80", true, false},
+-		{"ipv6-wildcard-vs-numeric", "[::]:80", "0.0.0.0:80", true, false},
+-		{"different-specific-hosts-same-port", "192.168.1.1:80", "192.168.1.2:80", false, false},
+-		{"same-specific-host-same-port", "127.0.0.1:80", "127.0.0.1:80", true, false},
+-		{"same-specific-host-different-port", "127.0.0.1:80", "127.0.0.1:81", false, false},
+-		{"bad-input-a", "garbage", "", false, true},
+-		{"bad-input-b", ":80", "garbage", false, true},
++		{"different-ports", "", 80, "", 443, false},
++		{"same-port-wildcard", "", 80, "", 80, true},
++		{"wildcard-vs-loopback-same-port", "0.0.0.0", 80, "127.0.0.1", 80, true},
++		{"loopback-vs-wildcard-same-port", "127.0.0.1", 80, "0.0.0.0", 80, true},
++		{"ipv6-wildcard-vs-numeric", "[::]", 80, "0.0.0.0", 80, true},
++		{"different-specific-hosts-same-port", "192.168.1.1", 80, "192.168.1.2", 80, false},
++		{"same-specific-host-same-port", "127.0.0.1", 80, "127.0.0.1", 80, true},
++		{"same-specific-host-different-port", "127.0.0.1", 80, "127.0.0.1", 81, false},
+ 	}
+ 	for _, tt := range tests {
+ 		t.Run(tt.name, func(t *testing.T) {
+-			got, err := listenersOverlap(tt.a, tt.b)
+-			if tt.wantErr {
+-				require.Error(t, err)
+-				return
+-			}
+-
+-			require.NoError(t, err)
++			got := listenersOverlap(tt.aHost, tt.aPort, tt.bHost, tt.bPort)
+ 			assert.Equal(t, tt.wantOverlap, got)
+ 		})
+ 	}
+ }
+ 
++// TestValidateListenerCollisions_BlamesParseFailure pins each parse
++// error to the listener whose address is malformed, even when paired
++// with a well-formed sibling.
++func TestValidateListenerCollisions_BlamesParseFailure(t *testing.T) {
++	tests := []struct {
++		name    string
++		bad     string // YAML key whose addr is malformed
++		good    string // sibling key with a valid addr
++		badAddr string
++	}{
++		{"bad-listen_addr", "listen_addr", "grpc_listen_addr", "garbage"},
++		{"bad-grpc_listen_addr", "grpc_listen_addr", "listen_addr", "also-garbage"},
++		{"bad-metrics_listen_addr", "metrics_listen_addr", "listen_addr", "no-port"},
++	}
++	for _, tt := range tests {
++		t.Run(tt.name, func(t *testing.T) {
++			viper.Reset()
++			viper.Set(tt.bad, tt.badAddr)
++			viper.Set(tt.good, ":9999")
++
++			v := &configValidator{}
++			validateListenerCollisions(v)
++
++			err := v.Err()
++			require.Error(t, err)
++
++			errs := ConfigErrors(err)
++			require.Len(t, errs, 1, "expected exactly one parse error")
++			assert.Equal(t, "cannot parse "+tt.bad, errs[0].Reason)
++			require.Len(t, errs[0].Current, 1)
++			assert.Equal(t, tt.bad, errs[0].Current[0].Key)
++			assert.Equal(t, tt.badAddr, errs[0].Current[0].Value)
++		})
++	}
++}
++
+ func TestListenerBindError_IsEADDRINUSE(t *testing.T) {
+ 	inner := &net.OpError{
+ 		Op:  "listen",

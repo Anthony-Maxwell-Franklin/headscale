@@ -1,0 +1,14 @@
+{
+  "cases": 100,
+  "cutoff_utc": "2026-10-13T13:45:25.174735+00:00",
+  "commit_pointer_events": 254,
+  "cases_with_commit_pointers": 26,
+  "distinct_commit_pointers": 243,
+  "locally_available_commits": 48,
+  "cases_with_exact_merge_commit_match": 10,
+  "distinct_matched_prs": 12,
+  "cross_referenced_events": 0,
+  "annotations_included": false,
+  "repair_labels_inferred": false,
+  "interpretation": "Evidence pointers for a stratified sample; no population prevalence or independently verified repair claimed"
+}

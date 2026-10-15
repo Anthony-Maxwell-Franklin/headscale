@@ -1,0 +1,299 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #3546: Unable to get drive sharing working, and unable to log in to Discord to ask for help</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #3546: Unable to get drive sharing working, and unable to log in to Discord to ask for help</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/3546">Original issue #3546</a></p><p>Created: 2026-10-11T01:03:55Z; updated: 2026-10-12T00:33:17Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+This _is_ actually a support request, due to being unable to access the Discord server.
+
+i try to actively avoid using Discord, for multiple reasons, but i do have a Discord account for when there&#x27;s no other choice, so that&#x27;s what i&#x27;ve just tried to use to log in to the Discord server for Headscale. However, after getting through multiple security challenges, all i get is the &quot;Did you know&quot; screen, and nothing more. i&#x27;ve gone through this process twice.
+
+Since i also no longer have an account on X, which is where Discord tells me to go if i have connection issues, and since (as far as i can tell?) there&#x27;s no support channel on another platform (e.g. IRC - i&#x27;m a regular user of, and help-provider on, Libera.Chat), i&#x27;m opening a support request here.
+
+i&#x27;m trying to set up a share.
+
+As a starting point, things are overall working well, and e.g. `tailscale file cp` is working fine.
+
+The &quot;get the basics working&quot; configuration i have for Headscale is valid according to `headscale policy check`. Here&#x27;s the output of `headscale policy get`:
+
+```
+{
+  &quot;nodeAttrs&quot;: [
+    {
+      &quot;target&quot;: [&quot;autogroup:member&quot;],
+      &quot;attr&quot;: [
+        &quot;drive:share&quot;,
+        &quot;drive:access&quot;,
+      ],
+    },
+  ],
+  &quot;grants&quot;: [
+    {
+      &quot;src&quot;: [&quot;autogroup:member&quot;],
+      &quot;dst&quot;: [&quot;autogroup:member&quot;],
+      &quot;app&quot;: {
+        &quot;tailscale.com/cap/drive&quot;: [{
+          &quot;shares&quot;: [&quot;*&quot;],
+          &quot;access&quot;: &quot;rw&quot;,
+        }],
+      },
+    },
+  ],
+}
+```
+However, on the Gentoo box:
+
+```
+# tailscale drive list 
+Access denied: taildrive sharing not enabled, please add the attribute &quot;drive:share&quot; to this node in your ACLs&#x27; &quot;nodeAttrs&quot; section
+```
+What might i be doing wrong?
+
+### Expected Behavior
+
+Running `tailscale drive list` succeeds.
+
+### Steps To Reproduce
+
+As per above.
+
+### Environment
+
+```markdown
+- Headscale version: 0.26.1 on OpenBSD 7.9
+- Tailscale version: 1.102.2 on Gentoo 
+- Number of nodes: 3 (1 Gentoo, 2 Android)
+```
+
+### Runtime environment
+
+- [ ] Headscale is behind a (reverse) proxy
+- [ ] Headscale runs in a container
+
+### Debug information
+
+i have created two JSON files containing the dumps described above. However, with a `.json` extension, GitHub tells me &quot;Failed to upload files&quot;. Without that extension, i get no error message, but the files are not uploaded. Please let me know how to proceed.</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/3546#issuecomment-6110743314">nblock</a></h3><p>Created: 2026-10-11T15:44:34Z; updated: 2026-10-11T15:44:34Z</p><pre>&gt; - Headscale version: 0.26.1 on OpenBSD 7.9
+
+This feature needs Headscale 0.29.x. Are you sure you&#x27;re running on 0.26.1?</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/3546#issuecomment-6115647221">flexibeast</a></h3><p>Created: 2026-10-12T00:33:17Z; updated: 2026-10-12T00:33:17Z</p><pre>&gt; &gt; * Headscale version: 0.26.1 on OpenBSD 7.9
+&gt; 
+&gt; This feature needs Headscale 0.29.x. Are you sure you&#x27;re running on 0.26.1?
+
+Yes:
+
+```
+$ headscale version
+0.26.1
+$ pkg_info headscale
+Information for inst:headscale-0.26.1
+...
+```
+That would certainly explain why i can&#x27;t use shares! i&#x27;ll either have to wait until the package is updated appropriately, or try to manually install a more recent version. (Probably the former, as i&#x27;m already overloaded with all the volunteer ICT stuff i have on my plate.)
+
+Thanks, closing.</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2026-10-11T01:03:56Z · labeled · flexibeast</summary><pre>{
+  &quot;id&quot;: 32965485130,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABWYREGc8AAAAHrOViSg&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32965485130&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;flexibeast&quot;,
+    &quot;id&quot;: 190652,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE5MDY1Mg==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/190652?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/flexibeast&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/flexibeast&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/flexibeast/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/flexibeast/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/flexibeast/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/flexibeast/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/flexibeast/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/flexibeast/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/flexibeast/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/flexibeast/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/flexibeast/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-10-11T01:03:56Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-11T15:44:34Z · commented · nblock</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/6110743314&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3546#issuecomment-6110743314&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3546&quot;,
+  &quot;id&quot;: 6110743314,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABbDqLEg&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-10-11T15:44:34Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-10-11T15:44:34Z&quot;,
+  &quot;body&quot;: &quot;&gt; - Headscale version: 0.26.1 on OpenBSD 7.9\n\nThis feature needs Headscale 0.29.x. Are you sure you&#x27;re running on 0.26.1?&quot;,
+  &quot;author_association&quot;: &quot;COLLABORATOR&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/6110743314/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-10-12T00:33:17Z · commented · flexibeast</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/6115647221&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3546#issuecomment-6115647221&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3546&quot;,
+  &quot;id&quot;: 6115647221,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABbIVe9Q&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;flexibeast&quot;,
+    &quot;id&quot;: 190652,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE5MDY1Mg==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/190652?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/flexibeast&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/flexibeast&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/flexibeast/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/flexibeast/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/flexibeast/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/flexibeast/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/flexibeast/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/flexibeast/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/flexibeast/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/flexibeast/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/flexibeast/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-10-12T00:33:17Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-10-12T00:33:17Z&quot;,
+  &quot;body&quot;: &quot;&gt; &gt; * Headscale version: 0.26.1 on OpenBSD 7.9\n&gt; \n&gt; This feature needs Headscale 0.29.x. Are you sure you&#x27;re running on 0.26.1?\n\nYes:\n\n```\n$ headscale version\n0.26.1\n$ pkg_info headscale\nInformation for inst:headscale-0.26.1\n...\n```\nThat would certainly explain why i can&#x27;t use shares! i&#x27;ll either have to wait until the package is updated appropriately, or try to manually install a more recent version. (Probably the former, as i&#x27;m already overloaded with all the volunteer ICT stuff i have on my plate.)\n\nThanks, closing.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/6115647221/reactions&quot;,
+    &quot;total_count&quot;: 1,
+    &quot;+1&quot;: 1,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;flexibeast&quot;,
+    &quot;id&quot;: 190652,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE5MDY1Mg==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/190652?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/flexibeast&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/flexibeast&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/flexibeast/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/flexibeast/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/flexibeast/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/flexibeast/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/flexibeast/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/flexibeast/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/flexibeast/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/flexibeast/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/flexibeast/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-10-12T00:33:17Z · closed · flexibeast</summary><pre>{
+  &quot;id&quot;: 33010532368,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz888AAAABWYREGc8AAAAHr5TAEA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/33010532368&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;flexibeast&quot;,
+    &quot;id&quot;: 190652,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjE5MDY1Mg==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/190652?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/flexibeast&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/flexibeast&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/flexibeast/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/flexibeast/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/flexibeast/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/flexibeast/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/flexibeast/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/flexibeast/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/flexibeast/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/flexibeast/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/flexibeast/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-10-12T00:33:17Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

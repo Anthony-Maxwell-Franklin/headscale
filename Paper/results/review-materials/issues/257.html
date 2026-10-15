@@ -1,0 +1,143 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #257: not able to register node</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #257: not able to register node</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/257">Original issue #257</a></p><p>Created: 2021-12-27T07:51:37Z; updated: 2021-12-27T09:51:43Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>here are my steps in a new VPS to run headscale
+
+#### check firewall status
+```
+chchang@headscale:~/git/headscale$ sudo ufw status numbered
+Status: active
+
+     To                         Action      From
+     --                         ------      ----
+[ 1] 22                         ALLOW IN    Anywhere                  
+[ 2] 80                         ALLOW IN    Anywhere                  
+[ 3] 443                        ALLOW IN    Anywhere                  
+[ 4] 8080                       ALLOW IN    Anywhere                  
+[ 5] 8000                       ALLOW IN    Anywhere                  
+[ 6] 22 (v6)                    ALLOW IN    Anywhere (v6)             
+[ 7] 80 (v6)                    ALLOW IN    Anywhere (v6)             
+[ 8] 443 (v6)                   ALLOW IN    Anywhere (v6)             
+[ 9] 8080 (v6)                  ALLOW IN    Anywhere (v6)             
+[10] 8000 (v6)                  ALLOW IN    Anywhere (v6)             
+
+chchang@headscale:~/git/headscale$ 
+```
+
+#### check headscale status
+```
+chchang@headscale:~/git/headscale$ headscale_0.11.0 namespaces list
+An updated version of Headscale has been found (0.12.1 vs. your current v0.11.0). Check it out https://github.com/juanfont/headscale/releases
+ID | Name | Created            
+1  | mc   | 2021-12-27 05:55:45
+chchang@headscale:~/git/headscale$ 
+```
+#### check if headscale running
+
+```
+chchang@headscale:~/git/headscale$ sudo netstat -antlp |grep head
+tcp6       0      0 :::8080                 :::*                    LISTEN      39364/./headscale_0 
+chchang@headscale:~/git/headscale$ 
+```
+
+#### check if 8080 port open
+```
+chchang@c039:~$ telnet headscale.abc.com 8080
+Trying 45.76.199.171...
+Connected to headscale.abc.com.
+Escape character is &#x27;^]&#x27;.
+```
+
+#### generate preauthkey
+```
+chchang@headscale:~/git/headscale$ headscale_0.11.0 -n mc preauthkeys create --reusable --expiration 24h
+An updated version of Headscale has been found (0.12.1 vs. your current v0.11.0). Check it out https://github.com/juanfont/headscale/releases
+2d7cdc6c1a0a559235123123411852206e574b8490a4337b3c
+chchang@headscale:~/git/headscale$ 
+```
+
+#### try to register my first node using preauthkey
+
+```
+chchang@c039:~$ sudo tailscale up --login-server http://headscale.abc.com --authkey 2312312c852206e574b8490a4337b3c --force-reauth
+^Ccontext canceled
+chchang@c039:~$ date
+Mon 27 Dec 2021 03:28:06 PM CST
+```
+
+as yo ucan see , it tooks hours to register but no response , and no error in server console
+
+```
+chchang@headscale:/etc/default$ [GIN] 2021/12/27 - 06:42:53 | 404 |      82.171µs |  23.225.163.214 | GET      &quot;/&quot;
+[GIN] 2021/12/27 - 06:43:13 | 404 |      85.879µs |  23.225.163.214 | GET      &quot;/favicon.ico&quot;
+[GIN] 2021/12/27 - 06:43:13 | 404 |     101.204µs |  23.225.163.214 | GET      &quot;/robots.txt&quot;
+[GIN] 2021/12/27 - 06:43:13 | 404 |      87.598µs |  23.225.163.214 | GET      &quot;/sitemap.xml&quot;
+[GIN] 2021/12/27 - 07:13:25 | 404 |     214.227µs |   139.59.235.12 | GET      &quot;/&quot;
+```
+
+any suggestion ??
+</pre><h2>Comments, in creation order</h2><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2021-12-27T07:51:37Z · labeled · changchichung</summary><pre>{
+  &quot;id&quot;: 5816882179,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz885A6XhOzwAAAAFatpQD&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/5816882179&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;changchichung&quot;,
+    &quot;id&quot;: 20943335,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIwOTQzMzM1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/20943335?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/changchichung&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/changchichung&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/changchichung/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/changchichung/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/changchichung/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/changchichung/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/changchichung/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/changchichung/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/changchichung/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/changchichung/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/changchichung/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2021-12-27T07:51:37Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2021-12-27T09:51:43Z · closed · changchichung</summary><pre>{
+  &quot;id&quot;: 5817278171,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz885A6XhOzwAAAAFavJ7b&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/5817278171&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;changchichung&quot;,
+    &quot;id&quot;: 20943335,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIwOTQzMzM1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/20943335?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/changchichung&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/changchichung&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/changchichung/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/changchichung/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/changchichung/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/changchichung/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/changchichung/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/changchichung/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/changchichung/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/changchichung/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/changchichung/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2021-12-27T09:51:43Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

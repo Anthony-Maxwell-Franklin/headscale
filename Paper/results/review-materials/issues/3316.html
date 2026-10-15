@@ -1,0 +1,518 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #3316: [Feature] DNS - Allow Emitting Routes for Domain Names Outside of base_domain / Arbitrary DNS Records</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #3316: [Feature] DNS - Allow Emitting Routes for Domain Names Outside of base_domain / Arbitrary DNS Records</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/3316">Original issue #3316</a></p><p>Created: 2026-06-15T22:28:02Z; updated: 2026-07-07T20:12:24Z; observed state: open; reason: None</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+**This issue&#x27;s original body is framed somewhat inaccurately due to a lack of ability to test upstream Tailscale behavior.** See [this comment for more details](https://github.com/juanfont/headscale/issues/3316#issuecomment-4879253307). Headscale appears consistent with Tailscale&#x27;s behavior, and this is a feature request to allow formally emitting routes for domain names outside of base_domain.
+
+---
+
+### Current Behavior
+
+Setting Extra DNS Records in Headscale that don&#x27;t correspond to entries under dns.base_domain do not propagate to clients. 
+
+Additionally, attempting to then set a custom dns server in split dns for an affected domain in the extra dns entries will cause the split dns resolver to be overridden by the extra dns entries, passing the extra dns entries through to clients.
+
+### Expected Behavior
+
+I&#x27;m not entirely sure *which* case if either is supposed to be valid. I was originally going to file domain support outside of base_domain sub entries as a feature request, but seeing the second part of this issue makes me question if it is supposed to work.
+
+The desired behavior is in some way be able to set extra DNS entries for any domain on A, AAAA records. If it isn&#x27;t intended to be possible, then split DNS entries shouldn&#x27;t be able to cause normally filtered extra DNS entries to override the split DNS targets. 
+
+If this is intentional, the current requirement to set supplementary split dns entries for extra dns records that should work isn&#x27;t documented, nor to what extent one should write in split dns entries. Optimally, one shouldn&#x27;t need to define split DNS entries for extra DNS records outside of dns.base_domain.
+
+### Steps To Reproduce
+
+Case A:
+1. Create Headscale deployment with extra DNS records, at least one under the set dns.base_domain and one not under.
+2. Register and connect a node, and test where each record points, if propagated to the node.
+3. Note the record(s) under dns.base_domain register, but others don&#x27;t.
+
+Case B:
+1. Use existing configurations from Case A.
+2. Create Split DNS entry with a functional DNS server for each previously failed extra DNS record.
+3. (Re)start Headscale deployment.
+4. Connect the node again and test where each record points.
+5. Note that each record now points based on extra DNS entries rather using the configured DNS server(s) in split DNS config
+
+### Environment
+
+```markdown
+- OS: OpenSUSE Leap 16.0
+- Headscale version: v0.28 (tag, ghcr.io)
+- Podman version: 5.4.2
+- Podman variant: Rootful
+- deployment type: Quadlet
+```
+
+### Runtime environment
+
+- [x] Headscale is behind a (reverse) proxy
+- [x] Headscale runs in a container
+
+### Debug information
+
+## Case A:
+
+**Config DNS Segment:**
+
+```YAML
+dns:
+  magic_dns: true
+  base_domain: tailnet.example.com
+  override_local_dns: false
+  nameservers:
+    global: []
+    split: {}
+  search_domains: []
+  extra_records_path: /etc/headscale/dns_records.json
+```
+
+**Extra Records JSON:**
+
+```JSON
+[
+    {
+        &quot;name&quot;: &quot;test.tailnet.example.com&quot;,
+        &quot;type&quot;: &quot;A&quot;,
+        &quot;value&quot;: &quot;100.64.13.163&quot;
+    },
+    {
+        &quot;name&quot;: &quot;test.example.com&quot;,
+        &quot;type&quot;: &quot;A&quot;,
+        &quot;value&quot;: &quot;100.64.17.94&quot;
+    }
+]
+```
+
+## Case B:
+
+**Modified Config DNS Segment**:
+
+```YAML
+dns:
+  magic_dns: true
+  base_domain: tailnet.example.com
+  override_local_dns: false
+  nameservers:
+    global: []
+    split:
+      test.example.com:
+        - 1.1.1.1
+  search_domains: []
+  extra_records_path: /etc/headscale/dns_records.json
+```</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/3316#issuecomment-4879253307">maximilize</a></h3><p>Created: 2026-07-03T20:45:51Z; updated: 2026-07-03T20:45:51Z</p><pre>Both behaviours here are the documented tailscaled MagicDNS semantics rather than a headscale bug — here&#x27;s the mechanism.
+
+**Why a record outside `base_domain` doesn&#x27;t resolve (case 1).** headscale only marks a name as &quot;route this to MagicDNS&quot; for `base_domain` + search domains and for explicitly configured split-DNS nameservers — `ExtraRecords` are passed through verbatim with no matching suffix generated (`hscontrol/types/config.go`: `cfg.ExtraRecords = dns.ExtraRecords`, `cfg.Routes = splitResolvers()`, `cfg.Domains = [BaseDomain]+SearchDomains`). On the client, a static record only resolves if the query is actually routed to the internal resolver, and Tailscale documents exactly this on the `Hosts` field:
+
+&gt; Adding an entry to Hosts merely creates the record. If you want it to resolve, you also need to add appropriate routes to Routes. — `tailscale.com/net/dns/config.go`
+
+With native split-DNS (systemd-resolved / Windows NRPT) the OS only forwards suffixes in `MatchDomains` (= the keys of `Routes`, `net/dns/config.go` `matchDomains()`) to `100.100.100.100`; a name outside every route/suffix goes to the system resolver and the extra record is never consulted.
+
+**Why adding a split-DNS entry makes the static record &quot;win&quot; (case 2).** That split entry creates a `Routes` suffix, so the client now routes the name to the internal resolver — and there `resolveLocal` checks the host table *before* forwarding (`net/dns/resolver/tsdns.go`: `hosts[domain]` is matched at the top, forwarding only happens on the `RCodeRefused` fall-through). So the static record answers instead of your `1.1.1.1` resolver.
+
+One caveat that explains the &quot;odd/inconsistent&quot; feel: on Apple platforms (and whenever Tailscale is set as a *global* resolver) everything is intercepted, so an extra record resolves even without a matching route (`net/dns/manager.go`, the non-split-DNS branch). So the &quot;outside base_domain&quot; case is platform-dependent.
+
+Net: resolving arbitrary names outside `base_domain` would require headscale to emit a matching route/suffix for them, which is a feature rather than a fix.
+</pre></article><article><h3><a href="https://github.com/juanfont/headscale/issues/3316#issuecomment-4908233109">j-heffron</a></h3><p>Created: 2026-07-07T20:12:23Z; updated: 2026-07-07T20:12:23Z</p><pre>Yep, cool to see that it is defined, but obtuse behavior. Updated the issue title and body to be more accurate. This issue needs its labels updated accordingly.</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2026-06-15T22:28:03Z · labeled · j-heffron</summary><pre>{
+  &quot;id&quot;: 26781585492,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABFlEpMc8AAAAGPE6QVA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/26781585492&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;j-heffron&quot;,
+    &quot;id&quot;: 141463227,
+    &quot;node_id&quot;: &quot;U_kgDOCG6Ouw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/141463227?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/j-heffron&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/j-heffron&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/j-heffron/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/j-heffron/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/j-heffron/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/j-heffron/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/j-heffron/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/j-heffron/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/j-heffron/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/j-heffron/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/j-heffron/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-06-15T22:28:03Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-06-16T01:36:19Z · unsubscribed · mrabino1</summary><pre>{
+  &quot;id&quot;: 26786318105,
+  &quot;node_id&quot;: &quot;UE_lADOEFLz888AAAABFlEpMc8AAAAGPJbHGQ&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/26786318105&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;mrabino1&quot;,
+    &quot;id&quot;: 4902221,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjQ5MDIyMjE=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/4902221?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/mrabino1&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/mrabino1&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/mrabino1/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/mrabino1/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/mrabino1/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/mrabino1/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/mrabino1/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/mrabino1/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/mrabino1/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/mrabino1/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/mrabino1/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;unsubscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-06-16T01:36:19Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-06-16T15:38:01Z · labeled · nblock</summary><pre>{
+  &quot;id&quot;: 26816886121,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABFlEpMc8AAAAGPmk1aQ&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/26816886121&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-06-16T15:38:01Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;DNS&quot;,
+    &quot;color&quot;: &quot;F1BAA8&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-06-16T15:38:04Z · milestoned · nblock</summary><pre>{
+  &quot;id&quot;: 26816887855,
+  &quot;node_id&quot;: &quot;MIE_lADOEFLz888AAAABFlEpMc8AAAAGPmk8Lw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/26816887855&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;milestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-06-16T15:38:04Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.31.0&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-06-17T07:56:56Z · labeled · nblock</summary><pre>{
+  &quot;id&quot;: 26848681484,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABFlEpMc8AAAAGQE5eDA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/26848681484&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;nblock&quot;,
+    &quot;id&quot;: 131119,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjEzMTExOQ==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/131119?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/nblock&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/nblock&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/nblock/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/nblock/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/nblock/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/nblock/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/nblock/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/nblock/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/nblock/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/nblock/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/nblock/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-06-17T07:56:56Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;no-stale-bot&quot;,
+    &quot;color&quot;: &quot;6ECABC&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-06-17T15:26:22Z · subscribed · olemyhre</summary><pre>{
+  &quot;id&quot;: 26868552594,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz888AAAABFlEpMc8AAAAGQX2Tkg&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/26868552594&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;olemyhre&quot;,
+    &quot;id&quot;: 6302887,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjYzMDI4ODc=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/6302887?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/olemyhre&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/olemyhre&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/olemyhre/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/olemyhre/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/olemyhre/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/olemyhre/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/olemyhre/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/olemyhre/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/olemyhre/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/olemyhre/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/olemyhre/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-06-17T15:26:22Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-07-03T20:45:51Z · commented · maximilize</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4879253307&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3316#issuecomment-4879253307&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3316&quot;,
+  &quot;id&quot;: 4879253307,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABItN_Ow&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;maximilize&quot;,
+    &quot;id&quot;: 3752128,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjM3NTIxMjg=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/3752128?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/maximilize&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/maximilize&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/maximilize/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/maximilize/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/maximilize/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/maximilize/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/maximilize/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/maximilize/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/maximilize/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/maximilize/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/maximilize/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-07-03T20:45:51Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-07-03T20:45:51Z&quot;,
+  &quot;body&quot;: &quot;Both behaviours here are the documented tailscaled MagicDNS semantics rather than a headscale bug — here&#x27;s the mechanism.\n\n**Why a record outside `base_domain` doesn&#x27;t resolve (case 1).** headscale only marks a name as \&quot;route this to MagicDNS\&quot; for `base_domain` + search domains and for explicitly configured split-DNS nameservers — `ExtraRecords` are passed through verbatim with no matching suffix generated (`hscontrol/types/config.go`: `cfg.ExtraRecords = dns.ExtraRecords`, `cfg.Routes = splitResolvers()`, `cfg.Domains = [BaseDomain]+SearchDomains`). On the client, a static record only resolves if the query is actually routed to the internal resolver, and Tailscale documents exactly this on the `Hosts` field:\n\n&gt; Adding an entry to Hosts merely creates the record. If you want it to resolve, you also need to add appropriate routes to Routes. — `tailscale.com/net/dns/config.go`\n\nWith native split-DNS (systemd-resolved / Windows NRPT) the OS only forwards suffixes in `MatchDomains` (= the keys of `Routes`, `net/dns/config.go` `matchDomains()`) to `100.100.100.100`; a name outside every route/suffix goes to the system resolver and the extra record is never consulted.\n\n**Why adding a split-DNS entry makes the static record \&quot;win\&quot; (case 2).** That split entry creates a `Routes` suffix, so the client now routes the name to the internal resolver — and there `resolveLocal` checks the host table *before* forwarding (`net/dns/resolver/tsdns.go`: `hosts[domain]` is matched at the top, forwarding only happens on the `RCodeRefused` fall-through). So the static record answers instead of your `1.1.1.1` resolver.\n\nOne caveat that explains the \&quot;odd/inconsistent\&quot; feel: on Apple platforms (and whenever Tailscale is set as a *global* resolver) everything is intercepted, so an extra record resolves even without a matching route (`net/dns/manager.go`, the non-split-DNS branch). So the \&quot;outside base_domain\&quot; case is platform-dependent.\n\nNet: resolving arbitrary names outside `base_domain` would require headscale to emit a matching route/suffix for them, which is a feature rather than a fix.\n&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4879253307/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;maximilize&quot;,
+    &quot;id&quot;: 3752128,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjM3NTIxMjg=&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/3752128?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/maximilize&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/maximilize&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/maximilize/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/maximilize/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/maximilize/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/maximilize/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/maximilize/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/maximilize/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/maximilize/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/maximilize/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/maximilize/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-07-07T20:10:22Z · renamed · j-heffron</summary><pre>{
+  &quot;id&quot;: 27683321210,
+  &quot;node_id&quot;: &quot;RTE_lADOEFLz888AAAABFlEpMc8AAAAGcg31eg&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/27683321210&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;j-heffron&quot;,
+    &quot;id&quot;: 141463227,
+    &quot;node_id&quot;: &quot;U_kgDOCG6Ouw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/141463227?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/j-heffron&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/j-heffron&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/j-heffron/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/j-heffron/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/j-heffron/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/j-heffron/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/j-heffron/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/j-heffron/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/j-heffron/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/j-heffron/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/j-heffron/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;renamed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-07-07T20:10:22Z&quot;,
+  &quot;rename&quot;: {
+    &quot;from&quot;: &quot;[Bug] Extra Records Odd Propagation Behavior for Records Outside Base Domain&quot;,
+    &quot;to&quot;: &quot;[Feature] DNS - Allow Emitting Routes for Domain Names Outside of base_domain / Arbitrary DNS Records&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-07-07T20:12:23Z · commented · j-heffron</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4908233109&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3316#issuecomment-4908233109&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3316&quot;,
+  &quot;id&quot;: 4908233109,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABJI2xlQ&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;j-heffron&quot;,
+    &quot;id&quot;: 141463227,
+    &quot;node_id&quot;: &quot;U_kgDOCG6Ouw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/141463227?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/j-heffron&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/j-heffron&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/j-heffron/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/j-heffron/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/j-heffron/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/j-heffron/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/j-heffron/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/j-heffron/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/j-heffron/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/j-heffron/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/j-heffron/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-07-07T20:12:23Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-07-07T20:12:23Z&quot;,
+  &quot;body&quot;: &quot;Yep, cool to see that it is defined, but obtuse behavior. Updated the issue title and body to be more accurate. This issue needs its labels updated accordingly.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/4908233109/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;j-heffron&quot;,
+    &quot;id&quot;: 141463227,
+    &quot;node_id&quot;: &quot;U_kgDOCG6Ouw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/141463227?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/j-heffron&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/j-heffron&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/j-heffron/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/j-heffron/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/j-heffron/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/j-heffron/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/j-heffron/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/j-heffron/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/j-heffron/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/j-heffron/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/j-heffron/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-09-21T13:03:41Z · subscribed · r-ml</summary><pre>{
+  &quot;id&quot;: 31529699271,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz888AAAABFlEpMc8AAAAHV1EHxw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/31529699271&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;r-ml&quot;,
+    &quot;id&quot;: 23126780,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjIzMTI2Nzgw&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/23126780?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/r-ml&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/r-ml&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/r-ml/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/r-ml/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/r-ml/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/r-ml/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/r-ml/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/r-ml/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/r-ml/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/r-ml/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/r-ml/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-21T13:03:41Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><p>No timestamped commit pointer occurs in this cached timeline.</p></body></html>

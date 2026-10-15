@@ -1,0 +1,171 @@
+{
+  "retrieved_at_utc": "2026-10-14T18:31:26.687756+00:00",
+  "purpose": "Same-project and thematic overlap assessment",
+  "approach": "Targeted public-web scoping search followed by primary-source inspection",
+  "submitted_queries": [
+    {
+      "query": "\"headscale\" \"paper\" \"software engineering\"",
+      "domain_filters": []
+    },
+    {
+      "query": "\"headscale\" \"empirical\" study",
+      "domain_filters": []
+    },
+    {
+      "query": "\"headscale\" tailscale research publication",
+      "domain_filters": []
+    },
+    {
+      "query": "\"headscale\" \"case study\" maintenance",
+      "domain_filters": []
+    },
+    {
+      "query": "\"headscale\"",
+      "domain_filters": [
+        "arxiv.org",
+        "dl.acm.org",
+        "ieeexplore.ieee.org",
+        "link.springer.com"
+      ]
+    },
+    {
+      "query": "\"headscale\"",
+      "domain_filters": [
+        "onlinelibrary.wiley.com",
+        "sciencedirect.com",
+        "zenodo.org"
+      ]
+    },
+    {
+      "query": "\"headscale\" \"commit\" study",
+      "domain_filters": []
+    },
+    {
+      "query": "\"headscale\" \"contributor\" research",
+      "domain_filters": []
+    },
+    {
+      "query": "\"Headscale\" thesis dissertation",
+      "domain_filters": []
+    },
+    {
+      "query": "\"headscale\" \"technical debt\"",
+      "domain_filters": []
+    },
+    {
+      "query": "\"headscale\" \"bus factor\" paper",
+      "domain_filters": []
+    },
+    {
+      "query": "\"headscale\" \"software maintenance\" research",
+      "domain_filters": []
+    },
+    {
+      "query": "\"headscale\" \"mining software repositories\"",
+      "domain_filters": []
+    },
+    {
+      "query": "\"headscale\" \"ownership\" study",
+      "domain_filters": []
+    },
+    {
+      "query": "\"headscale\" \"HHI\"",
+      "domain_filters": []
+    },
+    {
+      "query": "\"headscale\" \"\u6280\u672f\u503a\" \u5206\u6790",
+      "domain_filters": []
+    },
+    {
+      "query": "\"headscale\" \"\u53ef\u7ef4\u62a4\u6027\"",
+      "domain_filters": []
+    },
+    {
+      "query": "\"headscale\" tailscale",
+      "domain_filters": [
+        "arxiv.org",
+        "dl.acm.org",
+        "ieeexplore.ieee.org"
+      ]
+    },
+    {
+      "query": "\"MachairasPanagiotisMsc2025\" \"Abstract\"",
+      "domain_filters": []
+    },
+    {
+      "query": "\"2159/33341\" thesis",
+      "domain_filters": []
+    },
+    {
+      "query": "\"bus factor\" \"code review\" study",
+      "domain_filters": [
+        "dl.acm.org",
+        "arxiv.org",
+        "ieeexplore.ieee.org"
+      ]
+    },
+    {
+      "query": "\"bus factor\" \"code reviews\"",
+      "domain_filters": []
+    },
+    {
+      "query": "\"Communication in a world of pervasive surveillance\" thesis",
+      "domain_filters": [
+        "tue.nl",
+        "research.tue.nl",
+        "pure.tue.nl"
+      ]
+    }
+  ],
+  "results_screening": "Returned ranked results were screened for the Tailscale control-server project; attention-head scaling homonyms, deployment tutorials and unrelated numeric-identifier matches were excluded.",
+  "primary_records_and_leads": [
+    {
+      "url": "https://doi.org/10.1002/spe.3329",
+      "status": "Verified publisher article and institutional PDF; research subject includes Headscale",
+      "relevance": "VPN deployment performance, not the proposed longitudinal maintenance question"
+    },
+    {
+      "url": "https://dspace.lib.uom.gr/handle/2159/33341",
+      "status": "Verified institutional title, year and abstract",
+      "relevance": "Developer-skill mining; indexed PDF illustration includes juanfont/headscale"
+    },
+    {
+      "url": "https://dspace.lib.uom.gr/bitstream/2159/33341/1/MachairasPanagiotisMsc2025.pdf",
+      "status": "Direct full-text request returned an access challenge",
+      "relevance": "Extent of Headscale-specific analysis unresolved; do not classify from a screenshot alone"
+    },
+    {
+      "url": "https://doi.org/10.1145/3510457.3513082",
+      "status": "Verified author/institutional full text and DOI",
+      "relevance": "Multimodal bus-factor work directly precedes the author-only omission concern"
+    },
+    {
+      "url": "https://arxiv.org/abs/2202.01523",
+      "status": "Verified author preprint record",
+      "relevance": "Companion record of ICSE-SEIP 2022 study"
+    },
+    {
+      "url": "https://zenodo.org/records/19654425",
+      "status": "Primary record not retrieved; discovery lead only",
+      "relevance": "Claimed cluster deployment preprint; peer review unverified"
+    },
+    {
+      "url": "https://research.tue.nl/en/publications/communication-in-a-world-of-pervasive-surveillance-sources-and-me/",
+      "status": "Verified institutional thesis metadata; separate discovery described a protocol comparison",
+      "relevance": "Network-security/architecture context; not established as maintenance-process analysis"
+    },
+    {
+      "url": "https://ossinsight.io/analyze/juanfont/headscale",
+      "status": "Repository dashboard discovered",
+      "relevance": "Ordinary activity analytics are already available; no numeric values adopted"
+    },
+    {
+      "url": "https://insights.linuxfoundation.org/project/juanfont-headscale",
+      "status": "Repository dashboard discovered",
+      "relevance": "Context only; scoring claims not validated or adopted"
+    }
+  ],
+  "limitation": "Not a complete systematic review or exhaustive scholarly-database export. Combined-query ranking and inaccessible full text restrict negative findings.",
+  "negative_finding": "No inspected result established a peer-reviewed study centered on the specific Headscale maintenance-role, PR-episode and responsibility-boundary question. This does not prove absence.",
+  "next_action": "Retain explicit prior-precedent citations and resolve the thesis lead before any exhaustive first-study claim."
+}

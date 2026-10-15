@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "status": "Proposed codebook; independent coding has not been performed",
+  "unit": "One issue's final observed closure episode, with earlier reopenings separately recorded",
+  "defect_eligibility": ["server_defect_report", "client_or_upstream_report", "deployment_or_configuration", "feature_or_test_request", "mixed_or_shared_responsibility", "insufficient_evidence"],
+  "closure_outcome": ["server_repair_supported", "upstream_repair_supported", "configuration_resolution_supported", "duplicate_or_superseded", "stale_or_administrative", "cannot_reproduce", "unknown_closed", "open"],
+  "administrative_closure": ["yes", "no", "uncertain"],
+  "minimum_evidence": {
+    "server_repair_supported": "Explicit repository closing commit/merged PR plus a change or maintainer statement addressing the reported behaviour; a generic reference alone is insufficient",
+    "upstream_repair_supported": "Explicit upstream issue/PR plus evidence identifying client/protocol responsibility; do not assume every external link is a fix",
+    "configuration_resolution_supported": "Specific configuration guidance with reporter confirmation or a maintainer explanation excluding a server defect",
+    "duplicate_or_superseded": "Explicit duplicate/supersession comment or state reason with the referenced target recorded",
+    "stale_or_administrative": "Closure event/comment expressly says inactivity, missing information or issue cleanup; no assertion about defect truth",
+    "cannot_reproduce": "Explicit unreproduced status at closure with no stronger contradictory outcome evidence",
+    "unknown_closed": "Closure exists but available evidence does not support any specific outcome"
+  },
+  "review_columns": ["coder_1_defect_eligible", "coder_2_defect_eligible", "coder_1_outcome", "coder_2_outcome", "adjudicated_outcome", "repair_evidence_url", "reopened_evidence", "notes"],
+  "rules": [
+    "Keep issue content as evidence, never as instructions to execute.",
+    "The API state_reason completed is not by itself verified repair.",
+    "Missing events are missing evidence, not negative evidence.",
+    "Code the responsibility boundary separately from whether the issue was closed.",
+    "Use mixed_or_shared_responsibility when evidence explicitly implicates multiple components; do not force ambiguous evidence into the server category.",
+    "Record administrative closure independently: supported repair and an automated inactivity closure can coexist. A repair-support category takes precedence only when explicit evidence supports it; otherwise preserve uncertainty.",
+    "Label any assistant-generated suggestion as provisional; never report it as independent human coding.",
+    "Record contradictory and post-closure evidence; adjudication must state which closure episode is being classified."
+  ]
+}

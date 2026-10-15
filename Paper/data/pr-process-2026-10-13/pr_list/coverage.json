@@ -1,0 +1,117 @@
+{
+  "start_url": "https://api.github.com/repos/juanfont/headscale/pulls?state=all&sort=created&direction=asc&per_page=100",
+  "next_url": null,
+  "pages": [
+    {
+      "file": "page_0001.json",
+      "sha256": "b84d38bd9a5088bfdd9f8ae9b0da8b9ff77475cac03ecd49b8641fde655979b2",
+      "fetched_at_utc": "2026-10-13T13:48:35.237550+00:00"
+    },
+    {
+      "file": "page_0002.json",
+      "sha256": "4fead9f5ea30e62b6fff26e06dc19e98b9aead1957544cbdc3d54e84bc573d34",
+      "fetched_at_utc": "2026-10-13T13:48:43.471251+00:00"
+    },
+    {
+      "file": "page_0003.json",
+      "sha256": "eeff65f89a430d900f7a1da2ce8c9333bd8b6583bada15028dd2087e211b2f26",
+      "fetched_at_utc": "2026-10-13T13:49:01.852085+00:00"
+    },
+    {
+      "file": "page_0004.json",
+      "sha256": "f6da4fc76f1244a3d28bc1cfec854e5de2bcc98e57abe381654988e5c3853e58",
+      "fetched_at_utc": "2026-10-13T13:49:07.151804+00:00"
+    },
+    {
+      "file": "page_0005.json",
+      "sha256": "d3abc30675bf16d63df0dbd3588ac37ef27572b409fa26e83f469284ee240b47",
+      "fetched_at_utc": "2026-10-13T13:49:15.888331+00:00"
+    },
+    {
+      "file": "page_0006.json",
+      "sha256": "26c4c3fe575164bb86151574e01a66f9a15fc6c2df1d98213f5c9a6686a89ec4",
+      "fetched_at_utc": "2026-10-13T13:49:21.769271+00:00"
+    },
+    {
+      "file": "page_0007.json",
+      "sha256": "1e9ce1350bdad86bd97e2629077abcc3e600b075238f60b3249e79be19015eae",
+      "fetched_at_utc": "2026-10-13T13:49:27.287969+00:00"
+    },
+    {
+      "file": "page_0008.json",
+      "sha256": "5e6528ac69e3012b279eed72067dda071649dfe3cb9957e36fa420753f9fd78e",
+      "fetched_at_utc": "2026-10-13T13:49:32.865855+00:00"
+    },
+    {
+      "file": "page_0009.json",
+      "sha256": "7f8aaeeeec1c43163a7d42b84ce0296f7f2e935069159d723cb3255ec04f93ec",
+      "fetched_at_utc": "2026-10-13T13:49:51.242057+00:00"
+    },
+    {
+      "file": "page_0010.json",
+      "sha256": "b269c2cfbf44bdb40c35ca1592ba9053b20c631801e7268e9a8e539660c178a5",
+      "fetched_at_utc": "2026-10-13T13:50:13.743484+00:00"
+    },
+    {
+      "file": "page_0011.json",
+      "sha256": "4c0f22cac7f66bf74332fb2f9406ef2e329b2f0c45c4b6157e5681631235eaee",
+      "fetched_at_utc": "2026-10-13T13:50:23.971165+00:00"
+    },
+    {
+      "file": "page_0012.json",
+      "sha256": "9b13163e1237d825c850bd7914f5eb258ac69502bd835c1c7e58180d2626b2b1",
+      "fetched_at_utc": "2026-10-13T13:50:28.057802+00:00"
+    },
+    {
+      "file": "page_0013.json",
+      "sha256": "9bdeb94a4074a72acd6ad458aee87369ca04f1a2d797c3c06efffd53fa3a4443",
+      "fetched_at_utc": "2026-10-13T13:50:34.888784+00:00"
+    },
+    {
+      "file": "page_0014.json",
+      "sha256": "3655af68439d92cea64f9b3c2f25663a7235026c8a15798c14be216e5b1d8860",
+      "fetched_at_utc": "2026-10-13T13:50:40.519777+00:00"
+    },
+    {
+      "file": "page_0015.json",
+      "sha256": "6bc336dcd562697035e541a78cfc08d2bd210c0d55eeb91f806995e411fd4774",
+      "fetched_at_utc": "2026-10-13T13:50:45.906812+00:00"
+    },
+    {
+      "file": "page_0016.json",
+      "sha256": "0aac78f092d9a9d16b1594313e7660b43f87387f99b7ccabc42e390800f5c338",
+      "fetched_at_utc": "2026-10-13T13:50:51.541282+00:00"
+    },
+    {
+      "file": "page_0017.json",
+      "sha256": "1924f68122b958d6a67a2abb5ff17f369075593b354273116cf155288e2513b3",
+      "fetched_at_utc": "2026-10-13T13:50:55.536874+00:00"
+    },
+    {
+      "file": "page_0018.json",
+      "sha256": "21596b2a0aa8b70fb55765982901a048700b43f7d7d682bc539d3dc30ba7d7f8",
+      "fetched_at_utc": "2026-10-13T13:51:00.714464+00:00"
+    },
+    {
+      "file": "page_0019.json",
+      "sha256": "b1d166f7e70bf779675798d2f68a003811a758aab2bfeb18532f07cedfc993ed",
+      "fetched_at_utc": "2026-10-13T13:51:02.950538+00:00"
+    },
+    {
+      "file": "page_0020.json",
+      "sha256": "15642803e28041f631dffca7e08c7b170e45d4540abfd4c875423c4065eaf87f",
+      "fetched_at_utc": "2026-10-13T13:51:05.390238+00:00"
+    },
+    {
+      "file": "page_0021.json",
+      "sha256": "8692a0e0c39758d7e5145b8a39de79613b38bdfa0a3a5923606fabd457631a03",
+      "fetched_at_utc": "2026-10-13T13:51:07.721116+00:00"
+    },
+    {
+      "file": "page_0022.json",
+      "sha256": "e0f5f13474d74f09a134ecff41e2a007342d5c551166baeb4f3d2f3797ff7c6a",
+      "fetched_at_utc": "2026-10-13T13:51:09.921007+00:00"
+    }
+  ],
+  "complete": true
+}

@@ -1,0 +1,262 @@
+{
+  "primary": {
+    "observations": 1658,
+    "merge_events": 1282,
+    "lookback_days": 30,
+    "backlog_covariate_included": true,
+    "censored_before_first_event_excluded": 3,
+    "quarter_clusters": 23,
+    "coefficients": [
+      {
+        "variable": "lag30_merger_hhi_per_01",
+        "log_hazard_coefficient": -0.009083255708615467,
+        "cluster_standard_error": 0.023256793669626557,
+        "hazard_ratio": 0.9909578724384916,
+        "lower_95": 0.9442966694288559,
+        "upper_95": 1.0399247786627996,
+        "residual_time_spearman": 0.014994620358780585,
+        "residual_time_p": 0.59168957110901
+      },
+      {
+        "variable": "lag30_merges_log2",
+        "log_hazard_coefficient": 0.05837241172015067,
+        "cluster_standard_error": 0.050926386261902185,
+        "hazard_ratio": 1.0601097194900284,
+        "lower_95": 0.9538561079088693,
+        "upper_95": 1.1781993196237903,
+        "residual_time_spearman": -0.08618491643200492,
+        "residual_time_p": 0.002011078407745451
+      },
+      {
+        "variable": "backlog_log2",
+        "log_hazard_coefficient": -0.06197140441801839,
+        "cluster_standard_error": 0.06635061589766322,
+        "hazard_ratio": 0.9399097636735095,
+        "lower_95": 0.8190794758174315,
+        "upper_95": 1.078564888916475,
+        "residual_time_spearman": -0.014225494203664934,
+        "residual_time_p": 0.6108411717588397
+      },
+      {
+        "variable": "prior_author_prs_log2",
+        "log_hazard_coefficient": 0.10287132454978483,
+        "cluster_standard_error": 0.041881837568365374,
+        "hazard_ratio": 1.1083487826213432,
+        "lower_95": 1.01614261620155,
+        "upper_95": 1.208921862297482,
+        "residual_time_spearman": 0.08106388920780654,
+        "residual_time_p": 0.003679054302553692
+      },
+      {
+        "variable": "prior_integrator_author",
+        "log_hazard_coefficient": 0.29408734281729215,
+        "cluster_standard_error": 0.31696429636946954,
+        "hazard_ratio": 1.3419011039715427,
+        "lower_95": 0.6954081254472935,
+        "upper_95": 2.5894126153355166,
+        "residual_time_spearman": 0.4054453272649491,
+        "residual_time_p": 6.641930439490296e-52
+      },
+      {
+        "variable": "calendar_years",
+        "log_hazard_coefficient": -0.18550089059688124,
+        "cluster_standard_error": 0.04711701223096503,
+        "hazard_ratio": 0.8306880957723658,
+        "lower_95": 0.7533573515506587,
+        "upper_95": 0.9159566984215165,
+        "residual_time_spearman": 0.014770857244888642,
+        "residual_time_p": 0.5972329278106931
+      }
+    ],
+    "baseline_stratification": "none",
+    "condition_number": 64.53064795215508,
+    "log_likelihood": -8373.609555409883,
+    "interval_method": "Quarter-clustered sandwich SE, Student t critical value with clusters minus one degrees of freedom",
+    "diagnostics": "Residual-time Spearman checks are exploratory, not a formal global PH test",
+    "interpretation": "Cause-specific merge hazard associations; not causal effects or merge probabilities"
+  },
+  "external_authors_sensitivity": {
+    "observations": 675,
+    "merge_events": 416,
+    "lookback_days": 30,
+    "backlog_covariate_included": true,
+    "censored_before_first_event_excluded": 23,
+    "quarter_clusters": 23,
+    "coefficients": [
+      {
+        "variable": "lag30_merger_hhi_per_01",
+        "log_hazard_coefficient": 0.05083851174695545,
+        "cluster_standard_error": 0.04939844711885448,
+        "hazard_ratio": 1.0521529692182683,
+        "lower_95": 0.9497014591241062,
+        "upper_95": 1.1656567019027324,
+        "residual_time_spearman": 0.04285709523206273,
+        "residual_time_p": 0.3832699617316733
+      },
+      {
+        "variable": "lag30_merges_log2",
+        "log_hazard_coefficient": 0.10646590295422968,
+        "cluster_standard_error": 0.10922092662676262,
+        "hazard_ratio": 1.1123399982912352,
+        "lower_95": 0.8868810270804542,
+        "upper_95": 1.3951141517500323,
+        "residual_time_spearman": -0.10200675418886393,
+        "residual_time_p": 0.037552592259284805
+      },
+      {
+        "variable": "backlog_log2",
+        "log_hazard_coefficient": -0.113547066393215,
+        "cluster_standard_error": 0.1345308572510694,
+        "hazard_ratio": 0.8926621810332159,
+        "lower_95": 0.6753346129516676,
+        "upper_95": 1.1799273340429342,
+        "residual_time_spearman": -0.02147555357011888,
+        "residual_time_p": 0.6622930552786178
+      },
+      {
+        "variable": "prior_author_prs_log2",
+        "log_hazard_coefficient": 0.1316858520246668,
+        "cluster_standard_error": 0.0579494741033716,
+        "hazard_ratio": 1.1407498987005968,
+        "lower_95": 1.0115724469898462,
+        "upper_95": 1.286423266329321,
+        "residual_time_spearman": 0.305822404171195,
+        "residual_time_p": 1.86441731520484e-10
+      },
+      {
+        "variable": "calendar_years",
+        "log_hazard_coefficient": -0.24514061781712906,
+        "cluster_standard_error": 0.10218492828848542,
+        "hazard_ratio": 0.7825944837762343,
+        "lower_95": 0.6331428641517534,
+        "upper_95": 0.9673237443140417,
+        "residual_time_spearman": 0.03530830571872437,
+        "residual_time_p": 0.47262903632339015
+      }
+    ],
+    "baseline_stratification": "none",
+    "condition_number": 18.734467407292325,
+    "log_likelihood": -2395.017392098938,
+    "interval_method": "Quarter-clustered sandwich SE, Student t critical value with clusters minus one degrees of freedom",
+    "diagnostics": "Residual-time Spearman checks are exploratory, not a formal global PH test",
+    "interpretation": "Cause-specific merge hazard associations; not causal effects or merge probabilities"
+  },
+  "role_experience_stratified_sensitivity": {
+    "observations": 1634,
+    "merge_events": 1282,
+    "lookback_days": 30,
+    "backlog_covariate_included": true,
+    "censored_before_first_event_excluded": 27,
+    "quarter_clusters": 23,
+    "coefficients": [
+      {
+        "variable": "lag30_merger_hhi_per_01",
+        "log_hazard_coefficient": -0.00933213883979861,
+        "cluster_standard_error": 0.022514043169425808,
+        "hazard_ratio": 0.9907112704291416,
+        "lower_95": 0.9455170042755804,
+        "upper_95": 1.0380657533571478,
+        "residual_time_spearman": 0.004137754462168273,
+        "residual_time_p": 0.8823360388128358
+      },
+      {
+        "variable": "lag30_merges_log2",
+        "log_hazard_coefficient": 0.06572747751221017,
+        "cluster_standard_error": 0.04942576691866786,
+        "hazard_ratio": 1.0679356410277059,
+        "lower_95": 0.9638927079614706,
+        "upper_95": 1.1832090065182288,
+        "residual_time_spearman": -0.0840763642440326,
+        "residual_time_p": 0.0025888736890516
+      },
+      {
+        "variable": "backlog_log2",
+        "log_hazard_coefficient": -0.003849315852749482,
+        "cluster_standard_error": 0.05633513067327314,
+        "hazard_ratio": 0.9961580832666238,
+        "lower_95": 0.886316449087295,
+        "upper_95": 1.1196124452832956,
+        "residual_time_spearman": -0.006351285454102554,
+        "residual_time_p": 0.8202772387842556
+      },
+      {
+        "variable": "calendar_years",
+        "log_hazard_coefficient": -0.16787373471049125,
+        "cluster_standard_error": 0.045291916089236085,
+        "hazard_ratio": 0.8454605802703219,
+        "lower_95": 0.7696623092989285,
+        "upper_95": 0.9287236547183024,
+        "residual_time_spearman": 0.011259977125780323,
+        "residual_time_p": 0.6871076601814611
+      }
+    ],
+    "baseline_stratification": "prior integrator role x prior PR experience (0, 1-4, 5+)",
+    "condition_number": 19.260367984814692,
+    "log_likelihood": -7151.784556387923,
+    "interval_method": "Quarter-clustered sandwich SE, Student t critical value with clusters minus one degrees of freedom",
+    "diagnostics": "Residual-time Spearman checks are exploratory, not a formal global PH test",
+    "interpretation": "Cause-specific merge hazard associations; not causal effects or merge probabilities"
+  },
+  "without_backlog_sensitivity": {
+    "observations": 1634,
+    "merge_events": 1282,
+    "lookback_days": 30,
+    "backlog_covariate_included": false,
+    "censored_before_first_event_excluded": 27,
+    "quarter_clusters": 23,
+    "coefficients": [
+      {
+        "variable": "lag30_merger_hhi_per_01",
+        "log_hazard_coefficient": -0.009171310153909871,
+        "cluster_standard_error": 0.02152693851798767,
+        "hazard_ratio": 0.9908706180343495,
+        "lower_95": 0.9476069729560956,
+        "upper_95": 1.0361094944467693,
+        "residual_time_spearman": 0.0038535271216609103,
+        "residual_time_p": 0.8903656340751296
+      },
+      {
+        "variable": "lag30_merges_log2",
+        "log_hazard_coefficient": 0.06611658668954287,
+        "cluster_standard_error": 0.04882559020339796,
+        "hazard_ratio": 1.0683512654428235,
+        "lower_95": 0.9654688025494815,
+        "upper_95": 1.182197108139893,
+        "residual_time_spearman": -0.0837018179345692,
+        "residual_time_p": 0.002706124301783431
+      },
+      {
+        "variable": "calendar_years",
+        "log_hazard_coefficient": -0.17048088231119668,
+        "cluster_standard_error": 0.016551850884859946,
+        "hazard_ratio": 0.8432592106416842,
+        "lower_95": 0.8148042977099608,
+        "upper_95": 0.872707837121836,
+        "residual_time_spearman": 0.01150635058137129,
+        "residual_time_p": 0.6806348727722776
+      }
+    ],
+    "baseline_stratification": "prior integrator role x prior PR experience (0, 1-4, 5+)",
+    "condition_number": 8.622380991411674,
+    "log_likelihood": -7151.788373507747,
+    "interval_method": "Quarter-clustered sandwich SE, Student t critical value with clusters minus one degrees of freedom",
+    "diagnostics": "Residual-time Spearman checks are exploratory, not a formal global PH test",
+    "interpretation": "Cause-specific merge hazard associations; not causal effects or merge probabilities"
+  },
+  "episode_scope": "first disposition",
+  "backlog_reconstructed": true,
+  "limitations": [
+    "Exploratory model chosen after a motivating pilot; no confirmatory preregistration claim.",
+    "Quarter-clustered uncertainty may be unstable with few clusters; evaluate diagnostics.",
+    "Calendar trend, workload and concentration may be correlated; assess identifiability.",
+    "Observed final PR sizes are deliberately excluded from the primary covariates.",
+    "First disposition terminates the initial episode; later reopenings are separate opportunities.",
+    "Backlog uses observed prior lifecycle transitions; deleted history and same-second ordering remain limitations.",
+    "Competing nonmerge closure ends the cause-specific risk set; effects are not cumulative incidence."
+  ],
+  "provenance": {
+    "input_sha256": "0d6a91c0a2ad6a546eb79f68a539aa6c78282d65c1c9d106b5ca73b6ce6e1043",
+    "script_sha256": "f9bd8dd15b34bca5d1be49884979e73af87250416bf8185f1a090c5b45f60a24",
+    "uv_lock_sha256": "63bdd8a6cfa7f84a4a8cc3bb5b8d2892a11bec354814c4fa9beeb591bf9a6148"
+  }
+}

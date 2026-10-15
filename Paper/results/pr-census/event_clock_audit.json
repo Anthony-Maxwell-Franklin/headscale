@@ -1,0 +1,20 @@
+{
+  "clock_disagreement_prs": 160,
+  "maximum_difference_seconds": 2.0,
+  "disagreements_over_one_second": [
+    {
+      "number": 1844,
+      "human_authored_account": false,
+      "lifecycle_close_events": 1,
+      "detail_closed_at": "2024-03-22T18:50:53Z",
+      "timeline_last_close_utc": "2024-03-22T18:50:55Z",
+      "clock_difference_seconds": 2.0,
+      "submissions_in_clock_interval": [],
+      "same_pr_review_submissions_in_clock_interval": [],
+      "primary_human_outcome_affected": false,
+      "pending_queue_at_submission_affected": false
+    }
+  ],
+  "interpretation": "Closure uses the observed timeline clock; merge uses immutable detail.merged_at. Differences remain recorded rather than silently repaired.",
+  "script_sha256": "d8ba1682ef2879133038fde2746768b16675e98bdaac8be55c85f897de3c0c11"
+}

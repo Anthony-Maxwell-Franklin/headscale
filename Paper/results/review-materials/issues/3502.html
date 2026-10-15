@@ -1,0 +1,1289 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Issue #3502: [Bug] A node never receives its own approved exit routes (Self.ExitNodeOption stays false after approve-routes); 0.29.4 also broke the re-advertise workaround</title><style>body{max-width:1000px;margin:2em auto;padding:0 1em;font:16px/1.5 system-ui}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f6;padding:1em}table{border-collapse:collapse;width:100%}td,th{padding:.4em;border:1px solid #ddd;text-align:left}article{border-top:1px solid #ddd;margin-top:1em}a{color:#164b92}.notice{padding:1em;background:#fff3d4}details{margin:.6em 0}</style><body><h1>Issue #3502: [Bug] A node never receives its own approved exit routes (Self.ExitNodeOption stays false after approve-routes); 0.29.4 also broke the re-advertise workaround</h1><p class="notice">Cached observations for independent human review. No assistant classifications or either reviewer's labels are included. A reference or exact PR merge-commit match is not proof of repair. A missing local commit is not evidence that no repair occurred.</p><p>Observation cutoff: 2026-10-13T13:45:25.174735+00:00. Bodies are retrieved text, not historical revisions; edited/deleted content may be incomplete. Opening an online link may show newer data.</p><p><a href="../instructions.txt">Coding instructions</a> · <a href="../codebook.json">Codebook</a></p><p><a href="https://github.com/juanfont/headscale/issues/3502">Original issue #3502</a></p><p>Created: 2026-09-27T15:59:23Z; updated: 2026-10-07T21:36:18Z; observed state: closed; reason: completed</p><h2>Report body</h2><pre>### Is this a support request?
+
+- [x] This is not a support request
+
+### Is there an existing issue for this?
+
+- [x] I have searched the existing issues
+
+### Current Behavior
+
+A node that advertises exit routes never receives its own updated self node after the routes are approved with `headscale nodes approve-routes`. On the node, `tailscale status --json` keeps `.Self.ExitNodeOption = false` and `.Self.AllowedIPs` without `0.0.0.0/0` and `::/0`, `tailscale status` does not print &quot;offers exit node&quot;, and `tailscale debug netmap` shows `SelfNode.Hostinfo.RoutableIPs = [&quot;0.0.0.0/0&quot;, &quot;::/0&quot;]` next to `SelfNode.AllowedIPs = [&quot;100.64.0.1/32&quot;, &quot;fd7a:115c:a1e0::1/128&quot;]`. Nothing changes over time: the node only learns its approved routes when it opens a new map session (`systemctl restart tailscaled`, `tailscale down &amp;&amp; tailscale up`).
+
+Up to v0.29.3, withdrawing and re-advertising the routes on the node (`tailscale set --advertise-exit-node=false &amp;&amp; tailscale set --advertise-exit-node`) made headscale send the node its self node, which was a usable workaround. Since v0.29.4 that no longer has any effect: `Self.ExitNodeOption` stays `false` after the toggle too.
+
+With headscale logging at `trace`, both the gRPC approval and each half of the toggle end in `node change processing started node.id=1 reason=&quot;policy change&quot;` followed by `update sent` on the node&#x27;s stream, and the node&#x27;s self stays unchanged (full log below).
+
+### Expected Behavior
+
+After `headscale nodes approve-routes`, the approved node receives a map response carrying its updated self node, so `Self.AllowedIPs` contains the approved exit routes and `Self.ExitNodeOption` is `true` on its live map session, without restarting tailscaled. Re-advertising the routes should keep refreshing the node&#x27;s self as it did on v0.29.3.
+
+### Steps To Reproduce
+
+1. headscale v0.29.4, one user, no policy.
+2. On a node (tailscale 1.102.4): `tailscale up --login-server https://&lt;headscale&gt; --auth-key &lt;key&gt; --advertise-exit-node`.
+3. `headscale nodes approve-routes --identifier &lt;id&gt; --routes 0.0.0.0/0,::/0`.
+4. On the node, wait a minute, then `tailscale status --json | jq .Self.ExitNodeOption` → `false`; `tailscale debug netmap | jq &#x27;.SelfNode | {AllowedIPs, Hostinfo: {RoutableIPs: .Hostinfo.RoutableIPs}}&#x27;` shows the routes announced but absent from `AllowedIPs`.
+5. `tailscale set --advertise-exit-node=false &amp;&amp; tailscale set --advertise-exit-node`, wait → still `false` (on v0.29.3 this step flips it to `true`).
+6. `systemctl restart tailscaled` → `true`.
+
+### Environment
+
+- OS: Debian 13 (headscale container and the tailscale node)
+- Headscale version: 0.29.4 (image `headscale/headscale:v0.29.4`); the first part also reproduces on 0.29.3
+- Tailscale version: 1.102.4
+- Number of nodes: 1 (the exit node itself; no other node needed to observe it)
+- Policy: none
+
+### Runtime environment
+
+- [x] Headscale is behind a (reverse) proxy
+- [x] Headscale runs in a container
+
+### Where it comes from (from the v0.29.4 source)
+
+The mapper only adds the self node to a response when the change&#x27;s `OriginNode` is the receiving node: `isSelfUpdate := r.OriginNode != 0 &amp;&amp; r.OriginNode == nodeID` ([`batcher.go:106`](https://github.com/juanfont/headscale/blob/v0.29.4/hscontrol/mapper/batcher.go#L106)), passed as `includeSelf` to `policyChangeResponse` ([`batcher.go:128`](https://github.com/juanfont/headscale/blob/v0.29.4/hscontrol/mapper/batcher.go#L128), [`mapper.go:353-355`](https://github.com/juanfont/headscale/blob/v0.29.4/hscontrol/mapper/mapper.go#L353-L355)).
+
+1. `State.SetApprovedRoutes` always ends with `if routeChange || !c.IsFull() { c = change.PolicyChange() }` ([`state.go:1053-1055`](https://github.com/juanfont/headscale/blob/v0.29.4/hscontrol/state/state.go#L1053-L1055)). `c` is never `IsFull()` there, so the gRPC/CLI approval always fans out a bare `PolicyChange()` with `OriginNode == 0`, and the approved node never gets its self. This part is the same on v0.29.3 and on `main`.
+2. Since v0.29.4, `NodeView.HasPolicyChange` also compares `ExitRoutes()` ([`node.go:1233`](https://github.com/juanfont/headscale/blob/v0.29.4/hscontrol/types/node.go#L1233), commit 4411264e, cherry-pick of 905ab92f from #3450, backported in #3467). A node re-advertising its already-approved exit routes therefore makes `PolicyManager.SetNodes` return `true` even when the filter hashes match ([`policy.go:900`](https://github.com/juanfont/headscale/blob/v0.29.4/hscontrol/policy/v2/policy.go#L900), the &quot;all hashes match&quot; line in the trace), `updatePolicyManagerNodes` returns `change.PolicyChange()` ([`state.go:2899`](https://github.com/juanfont/headscale/blob/v0.29.4/hscontrol/state/state.go#L2899)), and `UpdateNodeFromMapRequest` returns it before `buildMapRequestChangeResponse` could produce `change.NodeAdded(id)` with its `OriginNode` ([`state.go:3265-3276`](https://github.com/juanfont/headscale/blob/v0.29.4/hscontrol/state/state.go#L3265-L3276)). On v0.29.3 the same request ended in `NodeAdded(id)` and `selfMapResponse`, which is why the toggle used to work.
+
+From the code, peers are not affected: the policy response still sends them the node with its routes. Only the node&#x27;s own view is stale, and nothing refreshes it while its map session stays up.
+
+#2978 / #2996 fixed the same omission for tags by setting `c.OriginNode = nodeID` in `SetNodeTags` ([`state.go:1018`](https://github.com/juanfont/headscale/blob/v0.29.4/hscontrol/state/state.go#L1018)). Doing the same for the change returned by `SetApprovedRoutes`, and for the policy change returned from a node&#x27;s own map request in `UpdateNodeFromMapRequest`, makes the node receive its self node in both cases; I will open a PR. The open draft #3501 rewrites these lines but still returns a bare `PolicyChange()` for an announced route, so it does not change this behaviour.
+
+### Debug information
+
+`tailscale debug netmap` on the node after the approval and the toggle (self still without the exit routes):
+
+&lt;details&gt;&lt;summary&gt;netmap.json&lt;/summary&gt;
+
+```json
+{
+	&quot;AllCaps&quot;: [
+		&quot;default-auto-update&quot;,
+		&quot;https://tailscale.com/cap/file-sharing&quot;,
+		&quot;https://tailscale.com/cap/is-admin&quot;,
+		&quot;https://tailscale.com/cap/ssh&quot;
+	],
+	&quot;Cached&quot;: false,
+	&quot;CollectServices&quot;: false,
+	&quot;DERPMap&quot;: {
+		&quot;Regions&quot;: {
+			&quot;999&quot;: {
+				&quot;Nodes&quot;: [
+					{
+						&quot;DERPPort&quot;: 443,
+						&quot;HostName&quot;: &quot;hs.ci.test&quot;,
+						&quot;Name&quot;: &quot;999&quot;,
+						&quot;RegionID&quot;: 999,
+						&quot;STUNPort&quot;: 3478
+					}
+				],
+				&quot;RegionCode&quot;: &quot;headscale&quot;,
+				&quot;RegionID&quot;: 999,
+				&quot;RegionName&quot;: &quot;Headscale embedded DERP&quot;
+			}
+		}
+	},
+	&quot;DNS&quot;: {
+		&quot;Domains&quot;: [
+			&quot;ts.ci.test&quot;
+		],
+		&quot;ExtraRecords&quot;: [
+			{
+				&quot;Name&quot;: &quot;mdm.ci.test&quot;,
+				&quot;Type&quot;: &quot;A&quot;,
+				&quot;Value&quot;: &quot;100.64.0.1&quot;
+			}
+		],
+		&quot;Proxied&quot;: true,
+		&quot;Resolvers&quot;: [
+			{
+				&quot;Addr&quot;: &quot;100.64.0.1&quot;
+			}
+		],
+		&quot;Routes&quot;: {
+			&quot;0.e.1.a.c.5.1.1.a.7.d.f.ip6.arpa&quot;: [],
+			&quot;100.100.in-addr.arpa&quot;: [],
+			&quot;101.100.in-addr.arpa&quot;: [],
+			&quot;102.100.in-addr.arpa&quot;: [],
+			&quot;103.100.in-addr.arpa&quot;: [],
+			&quot;104.100.in-addr.arpa&quot;: [],
+			&quot;105.100.in-addr.arpa&quot;: [],
+			&quot;106.100.in-addr.arpa&quot;: [],
+			&quot;107.100.in-addr.arpa&quot;: [],
+			&quot;108.100.in-addr.arpa&quot;: [],
+			&quot;109.100.in-addr.arpa&quot;: [],
+			&quot;110.100.in-addr.arpa&quot;: [],
+			&quot;111.100.in-addr.arpa&quot;: [],
+			&quot;112.100.in-addr.arpa&quot;: [],
+			&quot;113.100.in-addr.arpa&quot;: [],
+			&quot;114.100.in-addr.arpa&quot;: [],
+			&quot;115.100.in-addr.arpa&quot;: [],
+			&quot;116.100.in-addr.arpa&quot;: [],
+			&quot;117.100.in-addr.arpa&quot;: [],
+			&quot;118.100.in-addr.arpa&quot;: [],
+			&quot;119.100.in-addr.arpa&quot;: [],
+			&quot;120.100.in-addr.arpa&quot;: [],
+			&quot;121.100.in-addr.arpa&quot;: [],
+			&quot;122.100.in-addr.arpa&quot;: [],
+			&quot;123.100.in-addr.arpa&quot;: [],
+			&quot;124.100.in-addr.arpa&quot;: [],
+			&quot;125.100.in-addr.arpa&quot;: [],
+			&quot;126.100.in-addr.arpa&quot;: [],
+			&quot;127.100.in-addr.arpa&quot;: [],
+			&quot;64.100.in-addr.arpa&quot;: [],
+			&quot;65.100.in-addr.arpa&quot;: [],
+			&quot;66.100.in-addr.arpa&quot;: [],
+			&quot;67.100.in-addr.arpa&quot;: [],
+			&quot;68.100.in-addr.arpa&quot;: [],
+			&quot;69.100.in-addr.arpa&quot;: [],
+			&quot;70.100.in-addr.arpa&quot;: [],
+			&quot;71.100.in-addr.arpa&quot;: [],
+			&quot;72.100.in-addr.arpa&quot;: [],
+			&quot;73.100.in-addr.arpa&quot;: [],
+			&quot;74.100.in-addr.arpa&quot;: [],
+			&quot;75.100.in-addr.arpa&quot;: [],
+			&quot;76.100.in-addr.arpa&quot;: [],
+			&quot;77.100.in-addr.arpa&quot;: [],
+			&quot;78.100.in-addr.arpa&quot;: [],
+			&quot;79.100.in-addr.arpa&quot;: [],
+			&quot;80.100.in-addr.arpa&quot;: [],
+			&quot;81.100.in-addr.arpa&quot;: [],
+			&quot;82.100.in-addr.arpa&quot;: [],
+			&quot;83.100.in-addr.arpa&quot;: [],
+			&quot;84.100.in-addr.arpa&quot;: [],
+			&quot;85.100.in-addr.arpa&quot;: [],
+			&quot;86.100.in-addr.arpa&quot;: [],
+			&quot;87.100.in-addr.arpa&quot;: [],
+			&quot;88.100.in-addr.arpa&quot;: [],
+			&quot;89.100.in-addr.arpa&quot;: [],
+			&quot;90.100.in-addr.arpa&quot;: [],
+			&quot;91.100.in-addr.arpa&quot;: [],
+			&quot;92.100.in-addr.arpa&quot;: [],
+			&quot;93.100.in-addr.arpa&quot;: [],
+			&quot;94.100.in-addr.arpa&quot;: [],
+			&quot;95.100.in-addr.arpa&quot;: [],
+			&quot;96.100.in-addr.arpa&quot;: [],
+			&quot;97.100.in-addr.arpa&quot;: [],
+			&quot;98.100.in-addr.arpa&quot;: [],
+			&quot;99.100.in-addr.arpa&quot;: []
+		}
+	},
+	&quot;DisplayMessages&quot;: null,
+	&quot;Domain&quot;: &quot;hs.ci.test&quot;,
+	&quot;DomainAuditLogID&quot;: &quot;&quot;,
+	&quot;MachineKey&quot;: &quot;mkey:b46f3a67c71c75c9d95ac5408a45476a05d70bcfec30bf844ed3e4b5441f9d24&quot;,
+	&quot;NodeKey&quot;: &quot;nodekey:7adfd2c87640630e55bd12c319fb44fdd5d15759cc8e6261c4865557c5bfa669&quot;,
+	&quot;PacketFilter&quot;: [
+		{
+			&quot;Caps&quot;: [],
+			&quot;Dsts&quot;: [
+				{
+					&quot;Net&quot;: &quot;0.0.0.0/0&quot;,
+					&quot;Ports&quot;: {
+						&quot;First&quot;: 0,
+						&quot;Last&quot;: 65535
+					}
+				},
+				{
+					&quot;Net&quot;: &quot;::/0&quot;,
+					&quot;Ports&quot;: {
+						&quot;First&quot;: 0,
+						&quot;Last&quot;: 65535
+					}
+				}
+			],
+			&quot;IPProto&quot;: [
+				6,
+				17,
+				1,
+				58
+			],
+			&quot;SrcCaps&quot;: null,
+			&quot;Srcs&quot;: [
+				&quot;0.0.0.0/0&quot;,
+				&quot;::/0&quot;
+			]
+		}
+	],
+	&quot;PacketFilterRules&quot;: [
+		{
+			&quot;DstPorts&quot;: [
+				{
+					&quot;IP&quot;: &quot;*&quot;,
+					&quot;Ports&quot;: {
+						&quot;First&quot;: 0,
+						&quot;Last&quot;: 65535
+					}
+				}
+			],
+			&quot;SrcIPs&quot;: [
+				&quot;*&quot;
+			]
+		}
+	],
+	&quot;Peers&quot;: [],
+	&quot;SSHPolicy&quot;: null,
+	&quot;SelfNode&quot;: {
+		&quot;Addresses&quot;: [
+			&quot;100.64.0.1/32&quot;,
+			&quot;fd7a:115c:a1e0::1/128&quot;
+		],
+		&quot;AllowedIPs&quot;: [
+			&quot;100.64.0.1/32&quot;,
+			&quot;fd7a:115c:a1e0::1/128&quot;
+		],
+		&quot;Cap&quot;: 142,
+		&quot;CapMap&quot;: {
+			&quot;default-auto-update&quot;: [
+				false
+			],
+			&quot;https://tailscale.com/cap/file-sharing&quot;: [],
+			&quot;https://tailscale.com/cap/is-admin&quot;: [],
+			&quot;https://tailscale.com/cap/ssh&quot;: []
+		},
+		&quot;ComputedName&quot;: &quot;exit-node&quot;,
+		&quot;ComputedNameWithHost&quot;: &quot;exit-node&quot;,
+		&quot;Created&quot;: &quot;2026-09-27T14:24:39.446940661Z&quot;,
+		&quot;DiscoKey&quot;: &quot;discokey:42b8fa6d9f0cbb4a41190f26d7334887762181b12333f6682800921176e00c09&quot;,
+		&quot;Endpoints&quot;: [
+			&quot;172.30.0.1:40190&quot;,
+			&quot;10.0.2.15:41641&quot;,
+			&quot;10.2.0.2:41641&quot;,
+			&quot;172.17.0.1:41641&quot;,
+			&quot;172.30.0.1:41641&quot;,
+			&quot;192.0.2.1:41641&quot;,
+			&quot;[fec0::5054:ff:fe12:3456]:41641&quot;
+		],
+		&quot;HomeDERP&quot;: 999,
+		&quot;Hostinfo&quot;: {
+			&quot;AppConnector&quot;: false,
+			&quot;BackendLogID&quot;: &quot;231aae722b39118432f2636b3fb10c6af5c8a9b534f3cd4a05db89fbba55c67c&quot;,
+			&quot;Container&quot;: false,
+			&quot;Desktop&quot;: false,
+			&quot;Distro&quot;: &quot;debian&quot;,
+			&quot;DistroCodeName&quot;: &quot;trixie&quot;,
+			&quot;DistroVersion&quot;: &quot;13.7&quot;,
+			&quot;GoArch&quot;: &quot;amd64&quot;,
+			&quot;GoArchVar&quot;: &quot;v1&quot;,
+			&quot;GoVersion&quot;: &quot;go1.26.6&quot;,
+			&quot;Hostname&quot;: &quot;exit-node&quot;,
+			&quot;IPNVersion&quot;: &quot;1.102.4-t3caf7d9e7-g084ee3b64&quot;,
+			&quot;Machine&quot;: &quot;x86_64&quot;,
+			&quot;NetInfo&quot;: {
+				&quot;DERPLatency&quot;: {
+					&quot;999-v4&quot;: 0.00095692
+				},
+				&quot;FirewallMode&quot;: &quot;ipt-default&quot;,
+				&quot;OSHasIPv6&quot;: true,
+				&quot;PCP&quot;: false,
+				&quot;PMP&quot;: false,
+				&quot;PreferredDERP&quot;: 999,
+				&quot;UPnP&quot;: false,
+				&quot;WorkingICMPv4&quot;: false,
+				&quot;WorkingIPv6&quot;: false,
+				&quot;WorkingUDP&quot;: true
+			},
+			&quot;OS&quot;: &quot;linux&quot;,
+			&quot;OSVersion&quot;: &quot;6.12.107+deb13-cloud-amd64&quot;,
+			&quot;RoutableIPs&quot;: [
+				&quot;0.0.0.0/0&quot;,
+				&quot;::/0&quot;
+			],
+			&quot;Services&quot;: [
+				{
+					&quot;Port&quot;: 58436,
+					&quot;Proto&quot;: &quot;peerapi4&quot;
+				},
+				{
+					&quot;Port&quot;: 59780,
+					&quot;Proto&quot;: &quot;peerapi6&quot;
+				},
+				{
+					&quot;Port&quot;: 1,
+					&quot;Proto&quot;: &quot;peerapi-dns-proxy&quot;
+				}
+			],
+			&quot;StateEncrypted&quot;: false,
+			&quot;Userspace&quot;: false,
+			&quot;UserspaceRouter&quot;: false
+		},
+		&quot;ID&quot;: 1,
+		&quot;Key&quot;: &quot;nodekey:7adfd2c87640630e55bd12c319fb44fdd5d15759cc8e6261c4865557c5bfa669&quot;,
+		&quot;Machine&quot;: &quot;mkey:b46f3a67c71c75c9d95ac5408a45476a05d70bcfec30bf844ed3e4b5441f9d24&quot;,
+		&quot;MachineAuthorized&quot;: true,
+		&quot;Name&quot;: &quot;exit-node.ts.ci.test.&quot;,
+		&quot;Online&quot;: true,
+		&quot;StableID&quot;: &quot;1&quot;,
+		&quot;User&quot;: 1
+	},
+	&quot;TKAEnabled&quot;: false,
+	&quot;TKAHead&quot;: &quot;AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&quot;,
+	&quot;UserProfiles&quot;: {
+		&quot;1&quot;: {
+			&quot;DisplayName&quot;: &quot;family&quot;,
+			&quot;ID&quot;: 1,
+			&quot;LoginName&quot;: &quot;family&quot;
+		}
+	}
+}
+```
+
+&lt;/details&gt;
+
+`tailscale status --json` at the same moment:
+
+&lt;details&gt;&lt;summary&gt;status.json&lt;/summary&gt;
+
+```json
+{
+  &quot;Version&quot;: &quot;1.102.4-t3caf7d9e7-g084ee3b64&quot;,
+  &quot;TUN&quot;: true,
+  &quot;BackendState&quot;: &quot;Running&quot;,
+  &quot;HaveNodeKey&quot;: true,
+  &quot;AuthURL&quot;: &quot;&quot;,
+  &quot;TailscaleIPs&quot;: [
+    &quot;100.64.0.1&quot;,
+    &quot;fd7a:115c:a1e0::1&quot;
+  ],
+  &quot;Self&quot;: {
+    &quot;ID&quot;: &quot;1&quot;,
+    &quot;NodeID&quot;: 1,
+    &quot;PublicKey&quot;: &quot;nodekey:7adfd2c87640630e55bd12c319fb44fdd5d15759cc8e6261c4865557c5bfa669&quot;,
+    &quot;HostName&quot;: &quot;exit-node&quot;,
+    &quot;DNSName&quot;: &quot;exit-node.ts.ci.test.&quot;,
+    &quot;OS&quot;: &quot;linux&quot;,
+    &quot;UserID&quot;: 1,
+    &quot;TailscaleIPs&quot;: [
+      &quot;100.64.0.1&quot;,
+      &quot;fd7a:115c:a1e0::1&quot;
+    ],
+    &quot;AllowedIPs&quot;: [
+      &quot;100.64.0.1/32&quot;,
+      &quot;fd7a:115c:a1e0::1/128&quot;
+    ],
+    &quot;Addrs&quot;: [
+      &quot;172.30.0.1:40190&quot;,
+      &quot;10.0.2.15:41641&quot;,
+      &quot;10.2.0.2:41641&quot;,
+      &quot;172.17.0.1:41641&quot;,
+      &quot;172.30.0.1:41641&quot;,
+      &quot;192.0.2.1:41641&quot;,
+      &quot;[fec0::5054:ff:fe12:3456]:41641&quot;
+    ],
+    &quot;CurAddr&quot;: &quot;&quot;,
+    &quot;Relay&quot;: &quot;headscale&quot;,
+    &quot;PeerRelay&quot;: &quot;&quot;,
+    &quot;RxBytes&quot;: 0,
+    &quot;TxBytes&quot;: 0,
+    &quot;Created&quot;: &quot;2026-09-27T14:24:39.446940661Z&quot;,
+    &quot;LastWrite&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;LastSeen&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;LastHandshake&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;Online&quot;: true,
+    &quot;ExitNode&quot;: false,
+    &quot;ExitNodeOption&quot;: false,
+    &quot;Active&quot;: false,
+    &quot;PeerAPIURL&quot;: [
+      &quot;http://100.64.0.1:58436&quot;,
+      &quot;http://[fd7a:115c:a1e0::1]:59780&quot;
+    ],
+    &quot;TaildropTarget&quot;: 0,
+    &quot;NoFileSharingReason&quot;: &quot;&quot;,
+    &quot;Capabilities&quot;: [
+      &quot;HTTPS://TAILSCALE.COM/s/DEPRECATED-NODE-CAPS#see-https://github.com/tailscale/tailscale/issues/11508&quot;,
+      &quot;default-auto-update&quot;,
+      &quot;https://tailscale.com/cap/file-sharing&quot;,
+      &quot;https://tailscale.com/cap/is-admin&quot;,
+      &quot;https://tailscale.com/cap/ssh&quot;
+    ],
+    &quot;CapMap&quot;: {
+      &quot;default-auto-update&quot;: [
+        false
+      ],
+      &quot;https://tailscale.com/cap/file-sharing&quot;: [],
+      &quot;https://tailscale.com/cap/is-admin&quot;: [],
+      &quot;https://tailscale.com/cap/ssh&quot;: []
+    },
+    &quot;InNetworkMap&quot;: true,
+    &quot;InMagicSock&quot;: false,
+    &quot;InEngine&quot;: false
+  },
+  &quot;Health&quot;: [],
+  &quot;MagicDNSSuffix&quot;: &quot;ts.ci.test&quot;,
+  &quot;CurrentTailnet&quot;: {
+    &quot;Name&quot;: &quot;hs.ci.test&quot;,
+    &quot;MagicDNSSuffix&quot;: &quot;ts.ci.test&quot;,
+    &quot;MagicDNSEnabled&quot;: true
+  },
+  &quot;CertDomains&quot;: null,
+  &quot;ExtraRecords&quot;: [
+    {
+      &quot;Name&quot;: &quot;mdm.ci.test&quot;,
+      &quot;Type&quot;: &quot;A&quot;,
+      &quot;Value&quot;: &quot;100.64.0.1&quot;
+    }
+  ],
+  &quot;Peer&quot;: null,
+  &quot;User&quot;: {
+    &quot;1&quot;: {
+      &quot;ID&quot;: 1,
+      &quot;LoginName&quot;: &quot;family&quot;,
+      &quot;DisplayName&quot;: &quot;family&quot;
+    }
+  },
+  &quot;ClientVersion&quot;: null
+}
+```
+
+&lt;/details&gt;
+
+Headscale log at `trace` level: the approval at 14:56:18, then the two halves of the toggle at 14:56:39 and 14:56:42 (`http request` lines of the keepalives removed):
+
+&lt;details&gt;&lt;summary&gt;headscale trace&lt;/summary&gt;
+
+```
+2026-09-27T14:56:18Z DBG hscontrol/grpcv1.go:371 &gt; gRPC SetApprovedRoutes called node.id=1 requestedRoutes=[&quot;0.0.0.0/0&quot;,&quot;::/0&quot;]
+2026-09-27T14:56:19Z TRC Policy evaluation detected no changes - all hashes match
+2026-09-27T14:56:19Z DBG hscontrol/grpcv1.go:409 &gt; gRPC SetApprovedRoutes completed approvedRoutes=[&quot;0.0.0.0/0&quot;,&quot;::/0&quot;] finalSubnetRoutes=[] node.id=1 node.key=[et/Sy] node.name=exit-node node.online=true primaryRoutes=[] 
+2026-09-27T14:56:20Z DBG hscontrol/mapper/batcher.go:177 &gt; node change processing started node.id=1 reason=&quot;policy change&quot;
+2026-09-27T14:56:20Z TRC send: broadcasting node.id=1 total_connections=1
+2026-09-27T14:56:20Z TRC send: broadcast complete failed_connections=0 node.id=1 successful_sends=1
+2026-09-27T14:56:20Z TRC hscontrol/poll.go:313 &gt; received update from channel component=poll node.id=1 node.key=[et/Sy] node.name=exit-node node.online=true ok=true omit_peers=false stream=true 
+2026-09-27T14:56:20Z TRC hscontrol/poll.go:359 &gt; finished writing mapresp to node chan=0x12bac2bf29a0 component=poll keepalive=false node.id=1 node.key=[et/Sy] node.name=exit-node node.online=true omit_peers=false stream=true timeSpent=0.160561 
+2026-09-27T14:56:20Z TRC hscontrol/poll.go:326 &gt; update sent component=poll node.id=1 node.key=[et/Sy] node.name=exit-node node.online=true omit_peers=false stream=true 
+2026-09-27T14:56:39Z TRC hscontrol/noise.go:760 &gt; a node sending a MapRequest with Noise protocol component=poll node.id=1 node.key=[et/Sy] node.name=exit-node node.online=true omit_peers=true stream=false 
+2026-09-27T14:56:39Z TRC hscontrol/state/state.go:3020 &gt; Processing MapRequest for node endpoints_count=7 node.id=1 node.key=[et/Sy] omit_peers=true stream=false version=142
+2026-09-27T14:56:40Z DBG hscontrol/state/state.go:3138 &gt; announced routes changed but approved routes did not approvedRoutes=[&quot;0.0.0.0/0&quot;,&quot;::/0&quot;] newAnnouncedRoutes=[] node.id=1 oldAnnouncedRoutes=[&quot;0.0.0.0/0&quot;,&quot;::/0&quot;] routeChanged=false
+2026-09-27T14:56:40Z TRC Policy evaluation detected no changes - all hashes match
+2026-09-27T14:56:40Z INF http request bytes=0 elapsed=876.089766 method=POST path=/machine/map proto=HTTP/2.0 remote=172.30.0.5:32866 status=200
+2026-09-27T14:56:41Z DBG hscontrol/mapper/batcher.go:177 &gt; node change processing started node.id=1 reason=&quot;policy change&quot;
+2026-09-27T14:56:41Z TRC send: broadcasting node.id=1 total_connections=1
+2026-09-27T14:56:41Z TRC send: broadcast complete failed_connections=0 node.id=1 successful_sends=1
+2026-09-27T14:56:41Z TRC hscontrol/poll.go:313 &gt; received update from channel component=poll node.id=1 node.key=[et/Sy] node.name=exit-node node.online=true ok=true omit_peers=false stream=true 
+2026-09-27T14:56:41Z TRC hscontrol/poll.go:359 &gt; finished writing mapresp to node chan=0x12bac2bf29a0 component=poll keepalive=false node.id=1 node.key=[et/Sy] node.name=exit-node node.online=true omit_peers=false stream=true timeSpent=0.310003 
+2026-09-27T14:56:41Z TRC hscontrol/poll.go:326 &gt; update sent component=poll node.id=1 node.key=[et/Sy] node.name=exit-node node.online=true omit_peers=false stream=true 
+2026-09-27T14:56:42Z TRC hscontrol/noise.go:760 &gt; a node sending a MapRequest with Noise protocol component=poll node.id=1 node.key=[et/Sy] node.name=exit-node node.online=true omit_peers=true stream=false 
+2026-09-27T14:56:42Z TRC hscontrol/state/state.go:3020 &gt; Processing MapRequest for node endpoints_count=7 node.id=1 node.key=[et/Sy] omit_peers=true stream=false version=142
+2026-09-27T14:56:43Z DBG hscontrol/state/state.go:3138 &gt; announced routes changed but approved routes did not approvedRoutes=[&quot;0.0.0.0/0&quot;,&quot;::/0&quot;] newAnnouncedRoutes=[&quot;0.0.0.0/0&quot;,&quot;::/0&quot;] node.id=1 oldAnnouncedRoutes=[] routeChanged=false
+2026-09-27T14:56:43Z TRC Policy evaluation detected no changes - all hashes match
+2026-09-27T14:56:43Z INF http request bytes=0 elapsed=854.718172 method=POST path=/machine/map proto=HTTP/2.0 remote=172.30.0.5:32866 status=200
+2026-09-27T14:56:44Z DBG hscontrol/mapper/batcher.go:177 &gt; node change processing started node.id=1 reason=&quot;policy change&quot;
+2026-09-27T14:56:44Z TRC send: broadcasting node.id=1 total_connections=1
+2026-09-27T14:56:44Z TRC send: broadcast complete failed_connections=0 node.id=1 successful_sends=1
+2026-09-27T14:56:44Z TRC hscontrol/poll.go:313 &gt; received update from channel component=poll node.id=1 node.key=[et/Sy] node.name=exit-node node.online=true ok=true omit_peers=false stream=true 
+2026-09-27T14:56:44Z TRC hscontrol/poll.go:359 &gt; finished writing mapresp to node chan=0x12bac2bf29a0 component=poll keepalive=false node.id=1 node.key=[et/Sy] node.name=exit-node node.online=true omit_peers=false stream=true timeSpent=0.212257 
+2026-09-27T14:56:44Z TRC hscontrol/poll.go:326 &gt; update sent component=poll node.id=1 node.key=[et/Sy] node.name=exit-node node.online=true omit_peers=false stream=true 
+```
+
+&lt;/details&gt;
+
+Headscale configuration:
+
+&lt;details&gt;&lt;summary&gt;config.yaml&lt;/summary&gt;
+
+```yaml
+---
+server_url: https://hs.ci.test
+listen_addr: 0.0.0.0:8080
+metrics_listen_addr: 127.0.0.1:9090
+grpc_listen_addr: 127.0.0.1:50443
+grpc_allow_insecure: false
+noise:
+  private_key_path: /var/lib/headscale/noise_private.key
+prefixes:
+  v4: 100.64.0.0/10
+  v6: fd7a:115c:a1e0::/48
+derp:
+  server:
+    enabled: true
+    region_id: 999
+    region_code: headscale
+    region_name: Headscale embedded DERP
+    stun_listen_addr: 0.0.0.0:3478
+    private_key_path: /var/lib/headscale/derp_server_private.key
+    automatically_add_embedded_derp_region: true
+  urls: []
+  auto_update_enabled: true
+  update_frequency: 24h
+disable_check_updates: true
+database:
+  type: sqlite
+  sqlite:
+    path: /var/lib/headscale/db.sqlite
+dns:
+  magic_dns: true
+  base_domain: ts.ci.test
+  override_local_dns: true
+  search_domains: []
+  extra_records:
+    - name: &quot;mdm.ci.test&quot;
+      type: A
+      value: &quot;100.64.0.1&quot;
+  nameservers:
+    split: {}
+    global:
+      - 100.64.0.1
+unix_socket: /var/run/headscale/headscale.sock
+log:
+  level: trace
+```
+
+&lt;/details&gt;
+
+Policy: none (`policy.path` unset).
+</pre><h2>Comments, in creation order</h2><article><h3><a href="https://github.com/juanfont/headscale/issues/3502#issuecomment-5858384708">Sarcouy</a></h3><p>Created: 2026-09-27T18:04:15Z; updated: 2026-09-27T18:08:50Z</p><pre>I have (Claude might have) a fix ready in #3503 (three `OriginNode` assignments in `hscontrol/state/state.go`, mirroring `SetNodeTags`, plus a unit test, a servertest and an integration assertion). The PR was auto-closed by the vouch gate; happy to reopen it, or to adjust the approach first, once a maintainer has had a look.</pre></article><h2>All cached timeline observations</h2><p>Events retain the cached API order. Use recorded timestamps where present; missing timestamps are not inferred.</p><details><summary>2026-09-27T17:55:47Z · referenced · Sarcouy</summary><pre>{
+  &quot;id&quot;: 31941190740,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABTgf7rM8AAAAHb9fkVA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/31941190740&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;Sarcouy&quot;,
+    &quot;id&quot;: 25173195,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI1MTczMTk1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/25173195?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/Sarcouy&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/Sarcouy&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/Sarcouy/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/Sarcouy/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/Sarcouy/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/Sarcouy/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/Sarcouy/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/Sarcouy/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/Sarcouy/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/Sarcouy/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/Sarcouy/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;68c11f579cf78388d168bf64f0383b659f253221&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/Sarcouy/headscale/commits/68c11f579cf78388d168bf64f0383b659f253221&quot;,
+  &quot;created_at&quot;: &quot;2026-09-27T17:55:47Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-27T18:04:15Z · commented · Sarcouy</summary><pre>{
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/5858384708&quot;,
+  &quot;html_url&quot;: &quot;https://github.com/juanfont/headscale/issues/3502#issuecomment-5858384708&quot;,
+  &quot;issue_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/3502&quot;,
+  &quot;id&quot;: 5858384708,
+  &quot;node_id&quot;: &quot;IC_kwDOEFLz888AAAABXS_bRA&quot;,
+  &quot;user&quot;: {
+    &quot;login&quot;: &quot;Sarcouy&quot;,
+    &quot;id&quot;: 25173195,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI1MTczMTk1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/25173195?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/Sarcouy&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/Sarcouy&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/Sarcouy/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/Sarcouy/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/Sarcouy/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/Sarcouy/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/Sarcouy/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/Sarcouy/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/Sarcouy/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/Sarcouy/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/Sarcouy/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;created_at&quot;: &quot;2026-09-27T18:04:15Z&quot;,
+  &quot;updated_at&quot;: &quot;2026-09-27T18:08:50Z&quot;,
+  &quot;body&quot;: &quot;I have (Claude might have) a fix ready in #3503 (three `OriginNode` assignments in `hscontrol/state/state.go`, mirroring `SetNodeTags`, plus a unit test, a servertest and an integration assertion). The PR was auto-closed by the vouch gate; happy to reopen it, or to adjust the approach first, once a maintainer has had a look.&quot;,
+  &quot;author_association&quot;: &quot;NONE&quot;,
+  &quot;pin&quot;: null,
+  &quot;reactions&quot;: {
+    &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/comments/5858384708/reactions&quot;,
+    &quot;total_count&quot;: 0,
+    &quot;+1&quot;: 0,
+    &quot;-1&quot;: 0,
+    &quot;laugh&quot;: 0,
+    &quot;hooray&quot;: 0,
+    &quot;confused&quot;: 0,
+    &quot;heart&quot;: 0,
+    &quot;rocket&quot;: 0,
+    &quot;eyes&quot;: 0
+  },
+  &quot;performed_via_github_app&quot;: null,
+  &quot;minimized&quot;: null,
+  &quot;event&quot;: &quot;commented&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;Sarcouy&quot;,
+    &quot;id&quot;: 25173195,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjI1MTczMTk1&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/25173195?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/Sarcouy&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/Sarcouy&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/Sarcouy/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/Sarcouy/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/Sarcouy/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/Sarcouy/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/Sarcouy/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/Sarcouy/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/Sarcouy/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/Sarcouy/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/Sarcouy/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  }
+}</pre></details><details><summary>2026-09-30T13:49:12Z · labeled · kradalby</summary><pre>{
+  &quot;id&quot;: 32170548955,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABTgf7rM8AAAAHfYOe2w&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32170548955&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-30T13:49:12Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;bug&quot;,
+    &quot;color&quot;: &quot;d73a4a&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-30T13:49:12Z · labeled · kradalby</summary><pre>{
+  &quot;id&quot;: 32170549064,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABTgf7rM8AAAAHfYOfSA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32170549064&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-30T13:49:12Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;routes&quot;,
+    &quot;color&quot;: &quot;e46439&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-30T13:49:12Z · labeled · kradalby</summary><pre>{
+  &quot;id&quot;: 32170549159,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABTgf7rM8AAAAHfYOfpw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32170549159&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-30T13:49:12Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;regression&quot;,
+    &quot;color&quot;: &quot;ea1173&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-30T13:49:12Z · milestoned · kradalby</summary><pre>{
+  &quot;id&quot;: 32170549221,
+  &quot;node_id&quot;: &quot;MIE_lADOEFLz888AAAABTgf7rM8AAAAHfYOf5Q&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32170549221&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;milestoned&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-30T13:49:12Z&quot;,
+  &quot;milestone&quot;: {
+    &quot;title&quot;: &quot;v0.29&quot;
+  },
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-09-30T13:49:12Z · labeled · kradalby</summary><pre>{
+  &quot;id&quot;: 32170549244,
+  &quot;node_id&quot;: &quot;LE_lADOEFLz888AAAABTgf7rM8AAAAHfYOf_A&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32170549244&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;labeled&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-09-30T13:49:12Z&quot;,
+  &quot;label&quot;: {
+    &quot;name&quot;: &quot;well described ❤️&quot;,
+    &quot;color&quot;: &quot;C2E0C6&quot;
+  },
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-02T07:33:31Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 32316863023,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABTgf7rM8AAAAHhjwyLw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32316863023&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;c55ffbd3a8baed35d8b0bfd224a227d87fcb7111&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/kradalby/headscale/commits/c55ffbd3a8baed35d8b0bfd224a227d87fcb7111&quot;,
+  &quot;created_at&quot;: &quot;2026-10-02T07:33:31Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-02T08:31:18Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 32319976829,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABTgf7rM8AAAAHhmu1fQ&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32319976829&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;8b0d97daf254d37c5ea19288a6a9bd9fd52c9006&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/kradalby/headscale/commits/8b0d97daf254d37c5ea19288a6a9bd9fd52c9006&quot;,
+  &quot;created_at&quot;: &quot;2026-10-02T08:31:18Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-02T13:03:27Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 32335480056,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABTgf7rM8AAAAHh1hE-A&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32335480056&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;06263b47415b108c320540f899cd1ff4f2e836b4&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/kradalby/headscale/commits/06263b47415b108c320540f899cd1ff4f2e836b4&quot;,
+  &quot;created_at&quot;: &quot;2026-10-02T13:03:27Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-02T13:03:27Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 32335480103,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABTgf7rM8AAAAHh1hFJw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32335480103&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;72e658b85e3fc29398bd176592505cabee67be57&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/kradalby/headscale/commits/72e658b85e3fc29398bd176592505cabee67be57&quot;,
+  &quot;created_at&quot;: &quot;2026-10-02T13:03:27Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-02T13:03:27Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 32335480139,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABTgf7rM8AAAAHh1hFSw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32335480139&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;2ba9d78aede7abd2a76729c67ad86d3256762374&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/kradalby/headscale/commits/2ba9d78aede7abd2a76729c67ad86d3256762374&quot;,
+  &quot;created_at&quot;: &quot;2026-10-02T13:03:27Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-06T07:42:04Z · subscribed · pejakm</summary><pre>{
+  &quot;id&quot;: 32577757614,
+  &quot;node_id&quot;: &quot;SE_lADOEFLz888AAAABTgf7rM8AAAAHlckhrg&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32577757614&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;pejakm&quot;,
+    &quot;id&quot;: 913292,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjkxMzI5Mg==&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/913292?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/pejakm&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/pejakm&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/pejakm/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/pejakm/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/pejakm/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/pejakm/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/pejakm/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/pejakm/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/pejakm/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/pejakm/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/pejakm/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;subscribed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-10-06T07:42:04Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-07T20:55:51Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 32725865979,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABTgf7rM8AAAAHnp0V-w&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32725865979&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;1059f8d1dae1eec8e27f5cd9097359019af89202&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/kradalby/headscale/commits/1059f8d1dae1eec8e27f5cd9097359019af89202&quot;,
+  &quot;created_at&quot;: &quot;2026-10-07T20:55:51Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-07T20:55:51Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 32725866031,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABTgf7rM8AAAAHnp0WLw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32725866031&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;b19e29b40732738d4b067771d0e149c1ba8d8865&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/kradalby/headscale/commits/b19e29b40732738d4b067771d0e149c1ba8d8865&quot;,
+  &quot;created_at&quot;: &quot;2026-10-07T20:55:51Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-07T20:55:52Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 32725866080,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABTgf7rM8AAAAHnp0WYA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32725866080&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;74d287d7bf50dbcf20e2b6bc11fd8a8cf6201400&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/kradalby/headscale/commits/74d287d7bf50dbcf20e2b6bc11fd8a8cf6201400&quot;,
+  &quot;created_at&quot;: &quot;2026-10-07T20:55:52Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-07T21:36:18Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 32728412176,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABTgf7rM8AAAAHnsPwEA&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32728412176&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;ba413fca3d8756efcceb24f1f567d51cba443a54&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/commits/ba413fca3d8756efcceb24f1f567d51cba443a54&quot;,
+  &quot;created_at&quot;: &quot;2026-10-07T21:36:18Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-07T21:36:18Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 32728412422,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABTgf7rM8AAAAHnsPxBg&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32728412422&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;2cd82ceb0c5f8fd9ba8f380bd789767ab7477461&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/commits/2cd82ceb0c5f8fd9ba8f380bd789767ab7477461&quot;,
+  &quot;created_at&quot;: &quot;2026-10-07T21:36:18Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-07T21:36:18Z · closed · kradalby</summary><pre>{
+  &quot;id&quot;: 32728412490,
+  &quot;node_id&quot;: &quot;CE_lADOEFLz888AAAABTgf7rM8AAAAHnsPxSg&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32728412490&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;closed&quot;,
+  &quot;commit_id&quot;: null,
+  &quot;commit_url&quot;: null,
+  &quot;created_at&quot;: &quot;2026-10-07T21:36:18Z&quot;,
+  &quot;state_reason&quot;: null,
+  &quot;intent&quot;: null,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-07T21:37:24Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 32728475043,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABTgf7rM8AAAAHnsTlow&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32728475043&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;ea6b0bf0b7122ddab67b1c09b372d7f1255bd85b&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/kradalby/headscale/commits/ea6b0bf0b7122ddab67b1c09b372d7f1255bd85b&quot;,
+  &quot;created_at&quot;: &quot;2026-10-07T21:37:24Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-09T12:50:57Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 32875845893,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABTgf7rM8AAAAHp42ZBQ&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/32875845893&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;cc91f651f0dac3e24dfe61a454d81c5f8a044045&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/kradalby/headscale/commits/cc91f651f0dac3e24dfe61a454d81c5f8a044045&quot;,
+  &quot;created_at&quot;: &quot;2026-10-09T12:50:57Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-13T09:54:04Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 33121207162,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABTgf7rM8AAAAHti2Deg&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/33121207162&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;319de0a9e18a6b80b347eea3870f50ae8cb331b3&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/kradalby/headscale/commits/319de0a9e18a6b80b347eea3870f50ae8cb331b3&quot;,
+  &quot;created_at&quot;: &quot;2026-10-13T09:54:04Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><details><summary>2026-10-13T12:35:57Z · referenced · kradalby</summary><pre>{
+  &quot;id&quot;: 33132698263,
+  &quot;node_id&quot;: &quot;REFE_lADOEFLz888AAAABTgf7rM8AAAAHttzalw&quot;,
+  &quot;url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/issues/events/33132698263&quot;,
+  &quot;actor&quot;: {
+    &quot;login&quot;: &quot;kradalby&quot;,
+    &quot;id&quot;: 98431,
+    &quot;node_id&quot;: &quot;MDQ6VXNlcjk4NDMx&quot;,
+    &quot;avatar_url&quot;: &quot;https://avatars.githubusercontent.com/u/98431?v=4&quot;,
+    &quot;gravatar_id&quot;: &quot;&quot;,
+    &quot;url&quot;: &quot;https://api.github.com/users/kradalby&quot;,
+    &quot;html_url&quot;: &quot;https://github.com/kradalby&quot;,
+    &quot;followers_url&quot;: &quot;https://api.github.com/users/kradalby/followers&quot;,
+    &quot;following_url&quot;: &quot;https://api.github.com/users/kradalby/following{/other_user}&quot;,
+    &quot;gists_url&quot;: &quot;https://api.github.com/users/kradalby/gists{/gist_id}&quot;,
+    &quot;starred_url&quot;: &quot;https://api.github.com/users/kradalby/starred{/owner}{/repo}&quot;,
+    &quot;subscriptions_url&quot;: &quot;https://api.github.com/users/kradalby/subscriptions&quot;,
+    &quot;organizations_url&quot;: &quot;https://api.github.com/users/kradalby/orgs&quot;,
+    &quot;repos_url&quot;: &quot;https://api.github.com/users/kradalby/repos&quot;,
+    &quot;events_url&quot;: &quot;https://api.github.com/users/kradalby/events{/privacy}&quot;,
+    &quot;received_events_url&quot;: &quot;https://api.github.com/users/kradalby/received_events&quot;,
+    &quot;type&quot;: &quot;User&quot;,
+    &quot;user_view_type&quot;: &quot;public&quot;,
+    &quot;site_admin&quot;: false
+  },
+  &quot;event&quot;: &quot;referenced&quot;,
+  &quot;commit_id&quot;: &quot;929e3337f4a7ca9689eeb430a43863f8519250f5&quot;,
+  &quot;commit_url&quot;: &quot;https://api.github.com/repos/juanfont/headscale/commits/929e3337f4a7ca9689eeb430a43863f8519250f5&quot;,
+  &quot;created_at&quot;: &quot;2026-10-13T12:35:57Z&quot;,
+  &quot;performed_via_github_app&quot;: null
+}</pre></details><h2>Commit and PR evidence pointers</h2><article><h3><a href="https://api.github.com/repos/Sarcouy/headscale/commits/68c11f579cf78388d168bf64f0383b659f253221">68c11f579cf78388d168bf64f0383b659f253221</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/31941190740">referenced</a> · 2026-09-27T17:55:47Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/kradalby/headscale/commits/c55ffbd3a8baed35d8b0bfd224a227d87fcb7111">c55ffbd3a8baed35d8b0bfd224a227d87fcb7111</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/32316863023">referenced</a> · 2026-10-02T07:33:31Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/kradalby/headscale/commits/8b0d97daf254d37c5ea19288a6a9bd9fd52c9006">8b0d97daf254d37c5ea19288a6a9bd9fd52c9006</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/32319976829">referenced</a> · 2026-10-02T08:31:18Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/kradalby/headscale/commits/06263b47415b108c320540f899cd1ff4f2e836b4">06263b47415b108c320540f899cd1ff4f2e836b4</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/32335480056">referenced</a> · 2026-10-02T13:03:27Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/kradalby/headscale/commits/72e658b85e3fc29398bd176592505cabee67be57">72e658b85e3fc29398bd176592505cabee67be57</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/32335480103">referenced</a> · 2026-10-02T13:03:27Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/kradalby/headscale/commits/2ba9d78aede7abd2a76729c67ad86d3256762374">2ba9d78aede7abd2a76729c67ad86d3256762374</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/32335480139">referenced</a> · 2026-10-02T13:03:27Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/kradalby/headscale/commits/1059f8d1dae1eec8e27f5cd9097359019af89202">1059f8d1dae1eec8e27f5cd9097359019af89202</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/32725865979">referenced</a> · 2026-10-07T20:55:51Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/kradalby/headscale/commits/b19e29b40732738d4b067771d0e149c1ba8d8865">b19e29b40732738d4b067771d0e149c1ba8d8865</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/32725866031">referenced</a> · 2026-10-07T20:55:51Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/kradalby/headscale/commits/74d287d7bf50dbcf20e2b6bc11fd8a8cf6201400">74d287d7bf50dbcf20e2b6bc11fd8a8cf6201400</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/32725866080">referenced</a> · 2026-10-07T20:55:52Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/juanfont/headscale/commits/ba413fca3d8756efcceb24f1f567d51cba443a54">ba413fca3d8756efcceb24f1f567d51cba443a54</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/32728412176">referenced</a> · 2026-10-07T21:36:18Z</p><p><a href="../commits/ba413fca3d8756efcceb24f1f567d51cba443a54.patch">Full local Git patch</a>; state: return a node&#x27;s primary routes in stable order; in release ancestry: False.</p></article><article><h3><a href="https://api.github.com/repos/juanfont/headscale/commits/2cd82ceb0c5f8fd9ba8f380bd789767ab7477461">2cd82ceb0c5f8fd9ba8f380bd789767ab7477461</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/32728412422">referenced</a> · 2026-10-07T21:36:18Z</p><p><a href="../commits/2cd82ceb0c5f8fd9ba8f380bd789767ab7477461.patch">Full local Git patch</a>; CHANGELOG: note the own approved routes fix; in release ancestry: False.</p></article><article><h3><a href="https://api.github.com/repos/kradalby/headscale/commits/ea6b0bf0b7122ddab67b1c09b372d7f1255bd85b">ea6b0bf0b7122ddab67b1c09b372d7f1255bd85b</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/32728475043">referenced</a> · 2026-10-07T21:37:24Z</p><p><a href="../commits/ea6b0bf0b7122ddab67b1c09b372d7f1255bd85b.patch">Full local Git patch</a>; mapper: reconcile self on policy recomputes; in release ancestry: False.</p></article><article><h3><a href="https://api.github.com/repos/kradalby/headscale/commits/cc91f651f0dac3e24dfe61a454d81c5f8a044045">cc91f651f0dac3e24dfe61a454d81c5f8a044045</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/32875845893">referenced</a> · 2026-10-09T12:50:57Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/kradalby/headscale/commits/319de0a9e18a6b80b347eea3870f50ae8cb331b3">319de0a9e18a6b80b347eea3870f50ae8cb331b3</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/33121207162">referenced</a> · 2026-10-13T09:54:04Z</p><p>Commit object unavailable in the pinned local Git repository.</p></article><article><h3><a href="https://api.github.com/repos/juanfont/headscale/commits/929e3337f4a7ca9689eeb430a43863f8519250f5">929e3337f4a7ca9689eeb430a43863f8519250f5</a></h3><p><a href="https://api.github.com/repos/juanfont/headscale/issues/events/33132698263">referenced</a> · 2026-10-13T12:35:57Z</p><p><a href="../commits/929e3337f4a7ca9689eeb430a43863f8519250f5.patch">Full local Git patch</a>; mapper: refresh self when approved routes change; in release ancestry: True.</p></article></body></html>

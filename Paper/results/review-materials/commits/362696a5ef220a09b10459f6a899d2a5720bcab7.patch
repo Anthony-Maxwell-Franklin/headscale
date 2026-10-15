@@ -1,0 +1,38 @@
+commit 362696a5ef220a09b10459f6a899d2a5720bcab7
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Mon Feb 2 14:32:52 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Tue Feb 3 16:53:15 2026 +0100
+
+    policy/v2: keep partial IPSet on SSH destination resolution errors
+    
+    In compileSSHPolicy, when resolving other (non-autogroup:self)
+    destinations, the code discards the entire result on error via
+    `continue`. If a destination alias (e.g., a tag owned by a group
+    with a non-existent user) returns a partial IPSet alongside an
+    error, valid IPs are lost.
+    
+    Both ACL compilation paths (compileFilterRules and
+    compileACLWithAutogroupSelf) already handle this correctly by
+    logging the error and using the IPSet if non-nil.
+    
+    Remove the `continue` so the SSH path is consistent with the
+    ACL paths.
+    
+    Fixes #2990
+---
+ hscontrol/policy/v2/filter.go | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/hscontrol/policy/v2/filter.go b/hscontrol/policy/v2/filter.go
+index 7ed675ad..e7d58fdf 100644
+--- a/hscontrol/policy/v2/filter.go
++++ b/hscontrol/policy/v2/filter.go
+@@ -409,7 +409,6 @@ func (pol *Policy) compileSSHPolicy(
+ 				ips, err := dst.Resolve(pol, users, nodes)
+ 				if err != nil {
+ 					log.Trace().Caller().Err(err).Msgf("resolving destination ips")
+-					continue
+ 				}
+ 				if ips != nil {
+ 					dest.AddSet(ips)

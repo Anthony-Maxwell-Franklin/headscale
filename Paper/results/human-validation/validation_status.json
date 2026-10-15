@@ -1,0 +1,32 @@
+{
+  "mode": "two-rater",
+  "cases": 100,
+  "rater_1_complete_cases": 0,
+  "rater_2_complete_cases": 0,
+  "errors": [
+    "Rater 1: Reviewer identifier is missing",
+    "Rater 1: Human review completion is not declared",
+    "Rater 1: Independence from the other rater is not declared",
+    "Rater 1: Use of assistant suggestions is not declared",
+    "Rater 1: Completion timestamp is missing or invalid",
+    "Rater 1: Only 0/100 cases have complete labels and evidence",
+    "Rater 2: Reviewer identifier is missing",
+    "Rater 2: Human review completion is not declared",
+    "Rater 2: Independence from the other rater is not declared",
+    "Rater 2: Use of assistant suggestions is not declared",
+    "Rater 2: Completion timestamp is missing or invalid",
+    "Rater 2: Only 0/100 cases have complete labels and evidence"
+  ],
+  "origin": "Human review and independence are self-reported declarations",
+  "source_sha256": {
+    "Paper/validation/rater_1.csv": "2ea7fb3364ab705655672a8e88f78cca290dd281c5f851fa387015243bb84fdf",
+    "Paper/validation/rater_1_metadata.json": "b71e9784fb0c656ed6a47e2e4217158ac9139780bd6c8270fd5eef9825415cf0",
+    "Paper/validation/rater_2.csv": "865c0a81c1bcbb36aa642b72674b1360f8dd277aa9ccff3f85bedc7f0aa9f6df",
+    "Paper/validation/rater_2_metadata.json": "b71e9784fb0c656ed6a47e2e4217158ac9139780bd6c8270fd5eef9825415cf0",
+    "Paper/results/research-v0.29.5/issue_validation_sample.csv": "2fe3ae4317163c89c75e609d3b712f614433baf8f3a9e6dd66093c7f0c540541",
+    "Paper/data/issue_coding_codebook.json": "fd6be23a49e6b3ddaefb3210fe6373e76c4950385f134af9a07d93a123d3e607"
+  },
+  "codebook_sha256": "fd6be23a49e6b3ddaefb3210fe6373e76c4950385f134af9a07d93a123d3e607",
+  "status": "awaiting_complete_declared_human_coding",
+  "script_sha256": "1ebe595fe4943fab82e9950b48d2fe3bd4114e1b4cfe86a88cbec10f29c6f984"
+}

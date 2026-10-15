@@ -1,0 +1,171 @@
+commit 7865430419a07454e484a5e53a973c4e018a122f
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Thu Apr 30 08:23:41 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Wed Sep 23 15:18:34 2026 +0200
+
+    types: move sub-builder log.Fatal sites into validators
+    
+    derpConfig, databaseConfig, and dnsToTailcfgDNS used log.Fatal to
+    reject invalid combinations the moment they were observed. Lift those
+    checks into modular validators (validateDERPConfig,
+    validateDatabaseConfig, validateMagicDNSConfig) called from
+    validateServerConfig so each violation lands in the same configValidator
+    collector and renders as a structured ConfigError next to all other
+    config feedback. The sub-builder functions trust validation has run
+    and no longer crash the process.
+    
+    Updates #3227
+---
+ hscontrol/types/config.go      | 91 ++++++++++++++++++++++++++++++++++--------
+ hscontrol/types/config_test.go |  3 ++
+ 2 files changed, 77 insertions(+), 17 deletions(-)
+
+diff --git a/hscontrol/types/config.go b/hscontrol/types/config.go
+index ee6c5e80..d8388555 100644
+--- a/hscontrol/types/config.go
++++ b/hscontrol/types/config.go
+@@ -749,9 +749,83 @@ func validateServerConfig() error {
+ 		})
+ 	}
+ 
++	validateDERPConfig(v)
++	validateDatabaseConfig(v)
++	validateMagicDNSConfig(v)
++
+ 	return v.Err()
+ }
+ 
++// validateDERPConfig records ConfigErrors when the embedded DERP server
++// is enabled without the addresses or paths it needs.
++func validateDERPConfig(v *configValidator) {
++	if !viper.GetBool("derp.server.enabled") {
++		return
++	}
++
++	if viper.GetString("derp.server.stun_listen_addr") == "" {
++		v.Add(&ConfigError{
++			Reason: "derp.server.stun_listen_addr is required when the embedded DERP server is enabled",
++			Current: []KV{
++				{"derp.server.enabled", true},
++				{"derp.server.stun_listen_addr", ""},
++			},
++			Hint: `set derp.server.stun_listen_addr (e.g. "0.0.0.0:3478"), or set derp.server.enabled: false`,
++			See:  "https://headscale.net/stable/ref/integration/derp/",
++		})
++	}
++
++	if !viper.GetBool("derp.server.automatically_add_embedded_derp_region") &&
++		len(viper.GetStringSlice("derp.paths")) == 0 {
++		v.Add(&ConfigError{
++			Reason: "derp.paths is required when derp.server.automatically_add_embedded_derp_region is false",
++			Current: []KV{
++				{"derp.server.automatically_add_embedded_derp_region", false},
++				{"derp.paths", "[]"},
++			},
++			Hint: "list at least one DERP map JSON file in derp.paths, or set automatically_add_embedded_derp_region: true",
++		})
++	}
++}
++
++// validateDatabaseConfig records a ConfigError when database.type is not
++// one of the supported backends.
++func validateDatabaseConfig(v *configValidator) {
++	t := viper.GetString("database.type")
++	switch t {
++	case DatabaseSqlite, DatabasePostgres, "sqlite":
++		return
++	}
++
++	v.Add(&ConfigError{
++		Reason:  "database.type has an unsupported value",
++		Current: []KV{{"database.type", t}},
++		Allowed: []string{"sqlite", "sqlite3", "postgres"},
++		Hint:    "pick one of the allowed values; sqlite is the default for single-host deployments",
++		See:     "https://headscale.net/stable/ref/database/",
++	})
++}
++
++// validateMagicDNSConfig records a ConfigError when MagicDNS is enabled
++// without a base_domain.
++func validateMagicDNSConfig(v *configValidator) {
++	if !viper.GetBool("dns.magic_dns") {
++		return
++	}
++
++	if viper.GetString("dns.base_domain") == "" {
++		v.Add(&ConfigError{
++			Reason: "dns.base_domain is required when dns.magic_dns is true",
++			Current: []KV{
++				{"dns.magic_dns", true},
++				{"dns.base_domain", ""},
++			},
++			Hint: `set dns.base_domain to a domain you control (e.g. "ts.example.net"), or set dns.magic_dns: false`,
++			See:  "https://headscale.net/stable/ref/dns/",
++		})
++	}
++}
++
+ func tlsConfig() TLSConfig {
+ 	return TLSConfig{
+ 		LetsEncrypt: LetsEncryptConfig{
+@@ -787,11 +861,6 @@ func derpConfig() DERPConfig {
+ 		"derp.server.automatically_add_embedded_derp_region",
+ 	)
+ 
+-	if serverEnabled && stunAddr == "" {
+-		log.Fatal().
+-			Msg("derp.server.stun_listen_addr must be set if derp.server.enabled is true")
+-	}
+-
+ 	urlStrs := viper.GetStringSlice("derp.urls")
+ 
+ 	urls := make([]url.URL, 0, len(urlStrs))
+@@ -812,11 +881,6 @@ func derpConfig() DERPConfig {
+ 
+ 	paths := viper.GetStringSlice("derp.paths")
+ 
+-	if serverEnabled && !automaticallyAddEmbeddedDerpRegion && len(paths) == 0 {
+-		log.Fatal().
+-			Msg("Disabling derp.server.automatically_add_embedded_derp_region requires to configure the derp server in derp.paths")
+-	}
+-
+ 	autoUpdate := viper.GetBool("derp.auto_update_enabled")
+ 	updateFrequency := viper.GetDuration("derp.update_frequency")
+ 
+@@ -903,9 +967,6 @@ func databaseConfig() DatabaseConfig {
+ 		break
+ 	case "sqlite":
+ 		type_ = "sqlite3"
+-	default:
+-		log.Fatal().
+-			Msgf("invalid database type %q, must be sqlite, sqlite3 or postgres", type_)
+ 	}
+ 
+ 	return DatabaseConfig{
+@@ -1029,10 +1090,6 @@ func (d *DNSConfig) splitResolvers() map[string][]*dnstype.Resolver {
+ func dnsToTailcfgDNS(dns DNSConfig) *tailcfg.DNSConfig {
+ 	cfg := tailcfg.DNSConfig{}
+ 
+-	if dns.BaseDomain == "" && dns.MagicDNS {
+-		log.Fatal().Msg("dns.base_domain must be set when using MagicDNS (dns.magic_dns)")
+-	}
+-
+ 	cfg.Proxied = dns.MagicDNS
+ 
+ 	cfg.ExtraRecords = lowercaseRecordNames(dns.ExtraRecords)
+diff --git a/hscontrol/types/config_test.go b/hscontrol/types/config_test.go
+index 503661a7..9bfdfd71 100644
+--- a/hscontrol/types/config_test.go
++++ b/hscontrol/types/config_test.go
+@@ -542,7 +542,10 @@ tls_letsencrypt_challenge_type: %q
+ tls_letsencrypt_listen: %q
+ noise:
+   private_key_path: noise_private.key
++database:
++  type: sqlite3
+ dns:
++  magic_dns: false
+   override_local_dns: false
+ `, tt.listenAddr, tt.hostname, tt.challengeType, tt.leListen)
+ 			require.NoError(t, os.WriteFile(

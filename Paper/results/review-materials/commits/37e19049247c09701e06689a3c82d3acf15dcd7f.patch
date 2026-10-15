@@ -1,0 +1,53 @@
+commit 37e19049247c09701e06689a3c82d3acf15dcd7f
+Author:     Kristoffer Dalby <kristoffer@dalby.cc>
+AuthorDate: Thu Apr 30 08:25:57 2026 +0000
+Commit:     Kristoffer Dalby <kristoffer@dalby.cc>
+CommitDate: Wed Sep 23 15:18:34 2026 +0200
+
+    hscontrol: name listener bind failures via ListenerBindError
+    
+    Replace the three "binding to TCP address" wraps with typed
+    ListenerBindError values that carry the listener role, the YAML key
+    that drove the address, and the resolved address. The wrapped error
+    chain still walks to syscall.EADDRINUSE / EACCES so existing callers
+    that match those sentinels keep working; the difference is that the
+    operator now sees which listener failed instead of an unattributed
+    "binding to TCP address" line.
+    
+    Updates #3227
+---
+ hscontrol/app.go | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/hscontrol/app.go b/hscontrol/app.go
+index 26cd1bba..6d6a93e2 100644
+--- a/hscontrol/app.go
++++ b/hscontrol/app.go
+@@ -711,7 +711,12 @@ func (h *Headscale) Serve() error {
+ 	}
+ 
+ 	if err != nil {
+-		return fmt.Errorf("binding to TCP address: %w", err)
++		return &types.ListenerBindError{
++			Listener: "main HTTP",
++			YAMLKey:  "listen_addr",
++			Addr:     h.cfg.Addr,
++			Err:      err,
++		}
+ 	}
+ 
+ 	errorGroup.Go(func() error { return httpServer.Serve(httpListener) })
+@@ -727,7 +732,12 @@ func (h *Headscale) Serve() error {
+ 	if h.cfg.MetricsAddr != "" {
+ 		debugHTTPListener, err = (&net.ListenConfig{}).Listen(ctx, "tcp", h.cfg.MetricsAddr)
+ 		if err != nil {
+-			return fmt.Errorf("binding to TCP address: %w", err)
++			return &types.ListenerBindError{
++				Listener: "metrics",
++				YAMLKey:  "metrics_listen_addr",
++				Addr:     h.cfg.MetricsAddr,
++				Err:      err,
++			}
+ 		}
+ 
+ 		debugHTTPServer = h.debugHTTPServer()

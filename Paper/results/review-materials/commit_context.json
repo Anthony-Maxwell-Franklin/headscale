@@ -1,0 +1,1217 @@
+{
+  "c8378e8b7dd66009ef3e36729875190c35fdc0df": {
+    "local_object_available": true,
+    "subject": "Quick fix to segfault on CLI when Headscale is not running (fix #652)",
+    "in_release_ancestry": true
+  },
+  "2ca61719b70e597bc1e6c10e74d129d85038504a": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "4ac93c3b7b616dbd2c264caf2a4c91fc940ecbef": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "fe1141b37c21d9059124490d44823f67ae2ea716": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "26282b7a5434f9550606cbdea01e15e040b1b223": {
+    "local_object_available": true,
+    "subject": "Fix SIGSEGV crash related to map of state changes",
+    "in_release_ancestry": true
+  },
+  "fbd3049e89dd9ad8edf24e737854ffd1767c66a7": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "d810597414df46826671eef3d0605eba9a5a0a5f": {
+    "local_object_available": true,
+    "subject": "policy/matcher: fix bug using contains instead of overlap (#2556)",
+    "in_release_ancestry": true
+  },
+  "225f8d45b6492e2c670880bbda449fd9b276b95a": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "064c46f2a5889a328627673f153a01c26812c945": {
+    "local_object_available": true,
+    "subject": "move logic for validating node names (#2127)",
+    "in_release_ancestry": true
+  },
+  "88d4fde09dc23e3dd689cd80c1c4c3ca7a0b40d1": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "ea8167cf5fa322e25fa96a01f2fd2aaf0415d6db": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "0f103b394cd23859a045e6a9dc35958a3766ef72": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "9b48f082ac4fc43807f7c2e99be5ab3ff5ec27bb": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "8796eb748f23cd6e45667ddae0bd3a84297c810d": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "0a317a32facec2fb08bd80c917532a4d3c50c706": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "94313fc9d5066acf2da8c2ca0f49a43ff9913868": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "d6dfdc100cf3f9d4bd9378b61284516478b437f8": {
+    "local_object_available": true,
+    "subject": "hscontrol: route hostname handling through dnsname and NodeStore",
+    "in_release_ancestry": true
+  },
+  "107532675c1b2d655c054d638316921079a03080": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "c9196fa87e747f371a7a389270f70e0b3bd58258": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "a3994913adabe8d109966439871d836b2f2ecf6e": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "9673ccdf0a249fc112772dc2ba8d42ed0fc12b3e": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "30cec3aa2b422a9d8184e47a747598fbe2f9f569": {
+    "local_object_available": true,
+    "subject": "Document ports in use",
+    "in_release_ancestry": true
+  },
+  "8c5b6372789388faf0bbbb28b0ae5b2a5d42fb0e": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "4b71fa1ae88b53b520209608d75cf677cbda4af0": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "2c740432cedc54b3691299bd6b386e8691a4c4d0": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "a28d9bed6d42c486201949d6eee140ab9af876d5": {
+    "local_object_available": true,
+    "subject": "policy: reproduce 2863 in test",
+    "in_release_ancestry": true
+  },
+  "21e3f2598de6d0fc4d79230ca1e0e1f9e2d6a2b2": {
+    "local_object_available": true,
+    "subject": "policy: fix issue where non existent user results in empty ssh pol",
+    "in_release_ancestry": true
+  },
+  "c48dfb47f6397267cde41ef472ac456fb7347d3a": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "1fbaab4ffa015ff6410dc6379cbf235405eb2f1a": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "97e536a0a559fac90b9b9be0f710febd884b6eee": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "508a8f0204aa1688edc1619dbd6e742e49597c64": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "6f670cdf786d6132d20366084a55cadf52069d15": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "882daca967bac8c9ea4c8a2d1ef5d3330468cadb": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "bc9fb6d403f182e4441398371454edba27b088d0": {
+    "local_object_available": true,
+    "subject": "hscontrol/policy/v2: reject ambiguous user references at load time",
+    "in_release_ancestry": true
+  },
+  "1c1b94d3618e542c844d56bff3ddeb45e9343585": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "c6ec3d1e83a4eda3d19a0cbc2aab7907c83c226b": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "8b93e86bec7c705d7192d34011b31db7251ec837": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "4d87e85a2804fab1887641fe1537467e4bf62974": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "76aed0e9579c57fdda63a8010d0bbae80b7e75c6": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "59e4bf14744ac439e67a8a8e0dbb6df1eec53774": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "6e4f9a9d57bd5d7e16b1c671c7eaae9c075e24cd": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "05298512b2a8b82636eab78282324e3b72672a00": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "78a905cc3a42941a51d0224f27aa0e40c634466d": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "a2c3ac095e6569c66d32fd7e1ebd5d4b8ea134b5": {
+    "local_object_available": true,
+    "subject": "state: auto-bump GivenName on collision and add SetGivenName",
+    "in_release_ancestry": true
+  },
+  "0ba0d81475ec0b4e9f108f43ff940fd7190fd66a": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "061051d2b4ab4c5e97c530bc5ecf26b4470391bb": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "bcdcb3fe6b2b73acaa7530b68cd44c352d67e53f": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "0aa2c52718534345caec722cee76a9edea9eb512": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "d41fb4d5407944ed2c984c76b08e76efd1d06bbe": {
+    "local_object_available": true,
+    "subject": "app: fix sigint hanging",
+    "in_release_ancestry": true
+  },
+  "4d3b44630dfeb0945d27280b45c4ab2cebd9f9ea": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "2d754815ee8defbea834f6ecedbc06d361db01ae": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "4c46cd7a950ae4ed7ac5e98bf6e4c28caaef57db": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "5a871d001c49bb256510a563d966d3c9159999d5": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "4922e817c56a987140762977cb52602e8eca3bb0": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "9016105e91df07eee61de8fbd8366dcde0ca5f12": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "edcad88a38671912b2ae7cd31710a7f07efe72a3": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "a0f46d493a20f375f5ed71d99b0a69e9e27d50bf": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "95fb9481522d1eb2df3ebb59a2a249cca32525ce": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "d48d7c6b1a35366b56fbbf57c5fde6ffa70de579": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "a3d1af59f2d84ba9f0aaf5c7b911638e76bc26fc": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "65af2bbbb71befb33b048a6df333d794555b961a": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "42f1cb79f27515e5fd0d5578a5e7fcfcf77fdcd7": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "b7d05afb9c8447332192eb907f3c63bd3c593b92": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "34f7b4492ab484097253321b577461387307b8ab": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "e266f4f321fb967e39c0cbfbf532b516932572ba": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "5018878fb6b135ac9866f314267eddf8def2b1a7": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "27244056c4fa4a00045939b56f30fd610c3901f6": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "109bfc404c3cf13116958c4dcb0eb8c7393a0f73": {
+    "local_object_available": true,
+    "subject": "Refresh docs for Grants",
+    "in_release_ancestry": true
+  },
+  "63b572062db6d3a588a77c59efdd337067fb7686": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "f8018f177aa870b7b4163c4b5ff2ed8e8de6a0fd": {
+    "local_object_available": true,
+    "subject": "policy/v2: skip via resolution when the policy has no via grants",
+    "in_release_ancestry": false
+  },
+  "b03cf9daf6c539bad3fc81e3664e74fb7d1bdba9": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "1978b73c637564654ec31ec2063ec63afc563abc": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "a4e56d7bf1d73a8738a1d390f0d864fa59e299d9": {
+    "local_object_available": true,
+    "subject": "policy/v2: skip route resolution without via grants",
+    "in_release_ancestry": true
+  },
+  "fd56b983498526abf91bb89eac7a81cf3c724572": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "68c11f579cf78388d168bf64f0383b659f253221": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "c55ffbd3a8baed35d8b0bfd224a227d87fcb7111": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "8b0d97daf254d37c5ea19288a6a9bd9fd52c9006": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "06263b47415b108c320540f899cd1ff4f2e836b4": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "72e658b85e3fc29398bd176592505cabee67be57": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "2ba9d78aede7abd2a76729c67ad86d3256762374": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "1059f8d1dae1eec8e27f5cd9097359019af89202": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "b19e29b40732738d4b067771d0e149c1ba8d8865": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "74d287d7bf50dbcf20e2b6bc11fd8a8cf6201400": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "ba413fca3d8756efcceb24f1f567d51cba443a54": {
+    "local_object_available": true,
+    "subject": "state: return a node's primary routes in stable order",
+    "in_release_ancestry": false
+  },
+  "2cd82ceb0c5f8fd9ba8f380bd789767ab7477461": {
+    "local_object_available": true,
+    "subject": "CHANGELOG: note the own approved routes fix",
+    "in_release_ancestry": false
+  },
+  "ea6b0bf0b7122ddab67b1c09b372d7f1255bd85b": {
+    "local_object_available": true,
+    "subject": "mapper: reconcile self on policy recomputes",
+    "in_release_ancestry": false
+  },
+  "cc91f651f0dac3e24dfe61a454d81c5f8a044045": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "319de0a9e18a6b80b347eea3870f50ae8cb331b3": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "929e3337f4a7ca9689eeb430a43863f8519250f5": {
+    "local_object_available": true,
+    "subject": "mapper: refresh self when approved routes change",
+    "in_release_ancestry": true
+  },
+  "4e943f075fb7b8004f4e06c9b1a3d1d3008114be": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "c40d547f93e5c46feb0be19c8d000c6bb71b7b66": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "22afb2c61b3fb6c24e409ac4d9d1f541e9de2885": {
+    "local_object_available": true,
+    "subject": "policy: fix asymmetric peer visibility with autogroup:self",
+    "in_release_ancestry": true
+  },
+  "e19fed882ed00843a97caf3b24b97ddccf1ee354": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "677de50b9fb514f3e330f2eb47641e4f4c117e9a": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "8fa7f55849b0cbca9fb50da9050ca96e25dab79b": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "7d47289ffc82342ac3937be990082fe4ddfacc1a": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "2ba39745f795c79d2ba06cd03cb6fd34d88a7665": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "59cce49a326e00c05a1ccbb25fe098ff80369fcc": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "35606ee8440d3743760443337831d70c7d2911a7": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "54c85ddfd9e02d0dc4452a460168110c2b2be056": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "11f0d4cfdd935b3cc7612eab48a75a29c9c910b4": {
+    "local_object_available": true,
+    "subject": "policy/v2: include nodes with empty filters in BuildPeerMap",
+    "in_release_ancestry": true
+  },
+  "c2f28efbd710c129b1c62dcffa9041e99860b0b3": {
+    "local_object_available": true,
+    "subject": "policy/v2: add test for issue #2990 same-user tagged device",
+    "in_release_ancestry": true
+  },
+  "fb137a8fe3bfc7e4c739bceb30a5297ebe8b11eb": {
+    "local_object_available": true,
+    "subject": "policy/v2: use partial IPSet on group resolution errors in autogroup:self path",
+    "in_release_ancestry": true
+  },
+  "1f32c8bf615ce97b21bdb29dc920c1227f058df1": {
+    "local_object_available": true,
+    "subject": "policy/v2: add IsTagged() guards to prevent panics on tagged nodes",
+    "in_release_ancestry": true
+  },
+  "362696a5ef220a09b10459f6a899d2a5720bcab7": {
+    "local_object_available": true,
+    "subject": "policy/v2: keep partial IPSet on SSH destination resolution errors",
+    "in_release_ancestry": true
+  },
+  "a09b0d1d6919058de6ed58557032bcd7a671bb22": {
+    "local_object_available": true,
+    "subject": "policy/v2: add Caller() to log statements in compileACLWithAutogroupSelf",
+    "in_release_ancestry": true
+  },
+  "776b9f0e947489d828b101803acba5ac297d9f3f": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "c278418b94d7ae0b1aad761272e5afd35840c542": {
+    "local_object_available": true,
+    "subject": "policy/v2: add exit node auto-approval compat tests",
+    "in_release_ancestry": false
+  },
+  "5a1f8f08b893f1e12a17e8c66b507c87d719f37d": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "174e409da6f275904c34875c64ca3440117ce61b": {
+    "local_object_available": true,
+    "subject": "github: drop nu flatten in needs-more-info timer",
+    "in_release_ancestry": true
+  },
+  "e3e1f455abf23580c23ae373e7d429f692d9bb0c": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "4af062e774bce3ad71b28a3ed12407ae4f4528cc": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "f9d63c4d28a804bee1615b0433a8b099beb8ce2e": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "e68142e54e99837170856a8ba15b4f8376430cf2": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "c91d33e3a317211527459185a096760aa1b7c073": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "d9c0f851154e11be091ffd37a1ab23e38c8190d6": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "1a429fd8e65ea2ce0fbfa23c24b77f06d5c58a68": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "a22e4b75414faca0aecb3fc8944738b0f4e4efa7": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "71b67e238aa020485fd559c634a7ce390a10eab1": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "3b95bb513a59068a6e7b5759157e1cc18e579030": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "6dd6ca18c84812b0b83f9bf51b7a6e1a691c7f1d": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "6a21b7aec5b1b8090eadd99149a7dda78bef79ef": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "6ae74301a00904cd287544c60ecb64f2d950a23b": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "2fb92b553ef77155ca8641147063a0a6d0019de6": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "7b60d57428cd372dd74e75db94290ea2ddbd1e92": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "adeee64abfee92b8455b65ece15848a5fa484f5c": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "6846e55dd0ee1df6bcbf5783fa40becf18fc3706": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "e483d9985d3d24c11a088c34dc0c4417d74b62bd": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "47954d3ee97fefc4324edaf7df1a619459f56ece": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "6c39ffec06cc19444a436a2913cad35898069063": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "8e39300db81f6706e71b783936de9a49b795fa2c": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "df4d276950a77835d1d46e142dd15aa43a0feb0f": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "a0ba8f8dc8b6ac7c329a705165c49220adbf8878": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "af6bed90e593e2f2d9c7b49daedb23b2a8e6150b": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "5066c8fdf0b0b5fb8df2c1d606cb974abbc52ce0": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "274339e312bef514e0e46b047ca0cd93ecbd0286": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "8bb07fc2f5e7f723769703d56cb3c8e7ad4fc21d": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "e3126f7c06f9edea2c99051f14fdde7d7be65e49": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "b3007aaa56c44ac0ebc6a76c5449577ade7a65e9": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "89ee8aa87dd4b210358ede9c26422195531469a7": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "52b1d114bdeb73e3b3a61e17f38c196f2cdb28c0": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "f004aa1f94dd32134d581045d62c106de7221473": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "7ede80c88e0fbf5f9e31012b4621fa3b2bacd59f": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "484e215bde54e4ce7d5ce2f68199a59df94150d8": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "d5c8108642305c2ccd68e6b14ba219d9004c3233": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "70f4670369a0743576a4dd05ab8ca00d88802178": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "6b258ee374414fc1e47b770cc4efe2e92d39e813": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "74a544830ff88ff990ad9c9ca943964e14a5df21": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "dd8ac8ac40354c775a81c47443e31b5492ea5e5c": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "c2890189a6b2a3df4e97dff83b243b53242e7930": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "77a4e523f5b40fe62ac6108248eb00c87d5ee646": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "efd2412acda2c9b55ec55385cd3315a3366760dc": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "8c125c174674c1fcbfabe931621d86a1e6282030": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "dfa4e61e53544e14505ccd089cd476ce81e04800": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "c28c61abae2c487a9af4769cc8d4c9f7bfe7bc69": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "4168fdb93fa25ad32f57af03f1e5095b97c10f12": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "4a1a52a7eaa4e09650a34da1b75c837d06cd822a": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "d54b9152172e789d726838629994608e27e14c00": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "823e4968cc7ae3cf7c95fb7ddce1f49d8736c3d7": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "9aedc4f2933949d5d3495c696f3df43ce1b9dc92": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "ea44f2e7c89a2f57ce628012c0b0957398fec134": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "458b0fa22723a374fc5e78177817e7392dfdf83c": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "2840530cbeb8e1fe03662b8bda6ac968312f7ee5": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "4fbedc3ab56c252bbc63c3b2c8d3e52dcdd98303": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "3716657cdf44928d8caed2e29dd5ef14fc4a5d86": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "aa01b2d70770feab060824fd34e532d54c660306": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "0864d853fdd9c31b63acf1760c9d862351142567": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "6cd1aaac158f4416626f630a112063a1217c71c5": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "9f9fd0d88536c086a9716a031db974dcb66039bd": {
+    "local_object_available": true,
+    "subject": "types: add structured ConfigError and validator",
+    "in_release_ancestry": false
+  },
+  "6031194c36019b12fa64ef016951742c62597d36": {
+    "local_object_available": true,
+    "subject": "types: add listener address helpers",
+    "in_release_ancestry": false
+  },
+  "284a4891d7be814bd0e43ac5c311bb8f750d2198": {
+    "local_object_available": true,
+    "subject": "types: validate listener address collisions",
+    "in_release_ancestry": false
+  },
+  "1b4b79901a558d5354ad1ed8492c05a4132421a8": {
+    "local_object_available": true,
+    "subject": "types: rework validateServerConfig to use ConfigError",
+    "in_release_ancestry": false
+  },
+  "7865430419a07454e484a5e53a973c4e018a122f": {
+    "local_object_available": true,
+    "subject": "types: move sub-builder log.Fatal sites into validators",
+    "in_release_ancestry": false
+  },
+  "43ad10da52328ba7fa18576e8249f03551db017f": {
+    "local_object_available": true,
+    "subject": "types: add ListenerBindError for typed bind failures",
+    "in_release_ancestry": false
+  },
+  "37e19049247c09701e06689a3c82d3acf15dcd7f": {
+    "local_object_available": true,
+    "subject": "hscontrol: name listener bind failures via ListenerBindError",
+    "in_release_ancestry": false
+  },
+  "61021c739a38a6e56f3dea807355c6ee5671fa92": {
+    "local_object_available": true,
+    "subject": "app: route ACME HTTP-01 listener through errgroup",
+    "in_release_ancestry": false
+  },
+  "2114ced0d544e4287f48e07aa4a8cac6d016db4a": {
+    "local_object_available": true,
+    "subject": "cli: classify Serve errors with operator hints",
+    "in_release_ancestry": false
+  },
+  "616c9b649537fa8b79e11f22198c558b08d6247f": {
+    "local_object_available": true,
+    "subject": "docs: warn about listen_addr / ACME port collision",
+    "in_release_ancestry": false
+  },
+  "435cf74d9e5edd24784c497ffe72ce15c18095b5": {
+    "local_object_available": true,
+    "subject": "changelog: document config validation and listener error rework",
+    "in_release_ancestry": false
+  },
+  "8a12c572eff27a390b6a63d3bbd44cbb286068c8": {
+    "local_object_available": true,
+    "subject": "types: route deprecation fatals through configValidator",
+    "in_release_ancestry": false
+  },
+  "4cad0b564ef015f69b609fcba567364515688182": {
+    "local_object_available": true,
+    "subject": "types: lift configValidator across LoadServerConfig sub-builders",
+    "in_release_ancestry": false
+  },
+  "b86df5e9cc0d0afdcae6f5c050908d57b35c3b1f": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "f20dd9a9c6c57cf5364f44cc21c5ecba27e20bee": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "93bdaa359d1aa289d2eb44724c34e59673fe8952": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "5e63d51560828ca04132a0f4d0ef39d76543601b": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "7ac61295a44996693a064d9901324bc90ca1ee7a": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "3236691ec667176e1c981eea0f63ded82ecdff2b": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "e8ba744d7dd5403fa903dd31683746d8ad0341e5": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "817b23cf47710ec3dcfe8ec1a8206fdf4af36ab9": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "82540d0822cbb1ae4f5a0a3c511913833fd88adb": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "559c2d01a5a60be4d935d709a9eb7273f66de436": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "c56113f8e8cae97d3e66e2403d5a481932cae957": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "0262fa6cfbe7288ea41f7e82b7db042a3a9e5789": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "e45ec7835aee29fe6df114397343cd76bdb528f1": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "e5b6ec6ed7cd8475f9a0ad81d27c3173e0cf6bde": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "a6d6a32ec5261d90c5474fa741fd21c9d709f470": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "09990ee784cfe3b06b4ea40a38b460790fe72928": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "c5dc8e0460d4c1979cd8e4520b7c6af867e33fed": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "13d7855140aadc11d6a22f141df09fa43f8108c9": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "bf0f70830647ae062747fa3edf5f6138c6cb849c": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "5cd4677d5fe56a89172f0b2f671850300bc6be27": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "1f6e0fbddb19e927d54741caaf21e12bf7290add": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "c715145dd61f3eaaf4a7512ba2b3e71332e879dc": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "9f500f607f88a2ab47964c5050a7cbc371456e97": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "daae57111c8c41e347346c0b4fdcce7d2b2fda9e": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "09111fa9cbeb27f806361437c5e6c5453c76a9ee": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "7c5cbe506f5bb875a08f360ba90dbd86a356a8a1": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "980ebcb0d6097da1ec0b1eec2a782072e78a8a6a": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "28b1929ba7860794e76944a43de03048ba44defa": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "8f35638f7ee1761cc498a2f7e4360da5d639938d": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "c58f286dbfde321a512920543d932b6c629063ff": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "d2ac49acd97d6e85f2998d378e7d29c9be959609": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "f60acea97f5f8e4e79b2d24e696fe1a66b23b427": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "fe591b40e0cc427a4b7f6120aaa7b0c3fe9e07db": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "68b737c73a7b4b5ee8a73821c180dba2de3e4c95": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "ca4384ac5c9c1fa23a869e36074a15bab0fecd6e": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "8faf0e572aee3fba0dc23aba01bb0997adcd1d61": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "87d33cfcc177f569ac5bc0105c0746dc484b9a0c": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "85b203610e5b64342fdb63a011c0ed3503ed770c": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "2f8387572330dd26e1d3bbf583af732788545752": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "b4f057f75ed97d072bb9e4347fa525e9fec5c1be": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "1d90d6807c4bcb92b591eaf62c98e34d3e28f3c2": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "9ab794280041f730fba7d6c2c68dcbbb21917b26": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "fd1dd1d5b965ff261598ded17adfbccace89f95f": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "83a230dfcffa20e57ab6d7fe88b0a9de11ffd096": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "ad27db10a77e280eb69087e3986da6f9de83e4f4": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "66141e04985f3cea029e4500af2ac966d98be47a": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "77ed34847a5a8b22cb337858017b2c35ce6b1721": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "3e4c3c7061f57dbf46a71bf1d838a0e7796ada56": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "3318ee7a9f6e2e3846a1932dde0876db6efc068b": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "1d88cff6cdb95a01c23b74693c9f419daa16d4fd": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "c66d655956661c0fb76ca3df82c4b15e0d514240": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "45c06812bb98f4b7ca7a6cf1b1c811a53894fc4d": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "a7edcf3b0f73e0c77f5870319f541b38f780d34e": {
+    "local_object_available": true,
+    "subject": "integration: add CI-scaled timeouts and curl helpers for flaky ACL tests",
+    "in_release_ancestry": true
+  },
+  "a147b0cd87e061883d774f5961cc003ad9ad6b9c": {
+    "local_object_available": true,
+    "subject": "integration/acl: use CurlFailFast for all negative curl assertions",
+    "in_release_ancestry": true
+  },
+  "210f58f62e72db916a823ee4ff22a6630121ac95": {
+    "local_object_available": true,
+    "subject": "integration: use CI-scaled timeouts for all EventuallyWithT assertions",
+    "in_release_ancestry": true
+  },
+  "f1e5f1346d1479cc30e7c65ef7400774712ef02b": {
+    "local_object_available": true,
+    "subject": "integration/acl: add tag verification step to TestACLTagPropagationPortSpecific",
+    "in_release_ancestry": true
+  },
+  "acb8cfc7eed520ed0e98f2e71d7d906bd06aa47b": {
+    "local_object_available": true,
+    "subject": "integration: make docker execute and ping timeouts CI-aware",
+    "in_release_ancestry": true
+  },
+  "a9a2001ae7a716a3a21d6bb1aa6bcce5b932272a": {
+    "local_object_available": true,
+    "subject": "integration: scale remaining hardcoded timeouts and replace pingAllHelper",
+    "in_release_ancestry": true
+  },
+  "a76b4bd46cc193b838bba4b3353ba649e9e7141f": {
+    "local_object_available": true,
+    "subject": "ci: switch integration tests to ARM runners",
+    "in_release_ancestry": true
+  },
+  "ea4fc72993ba20451689843c9a5760cbd64b60a8": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "a2db6be2d6c0049f541020f3dd0f3266c2ffb888": {
+    "local_object_available": false,
+    "subject": "",
+    "in_release_ancestry": null
+  },
+  "6ae182696f33b77bd6cff96efd37f6e63976cea3": {
+    "local_object_available": true,
+    "subject": "state: fix policy change race in UpdateNodeFromMapRequest",
+    "in_release_ancestry": true
+  }
+}

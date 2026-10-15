@@ -1,0 +1,6 @@
+issue_number,issue_url,commit_sha,git_object_available,subject,legacy_subject_keyword_match,interpretation
+652,https://github.com/juanfont/headscale/issues/652,c8378e8b7dd66009ef3e36729875190c35fdc0df,1,Quick fix to segfault on CLI when Headscale is not running (fix #652),1,Explicit closing-commit link; a keyword miss is not counted as a corpus-wide recall estimate
+2181,https://github.com/juanfont/headscale/issues/2181,d810597414df46826671eef3d0605eba9a5a0a5f,1,policy/matcher: fix bug using contains instead of overlap (#2556),1,Explicit closing-commit link; a keyword miss is not counted as a corpus-wide recall estimate
+2121,https://github.com/juanfont/headscale/issues/2121,064c46f2a5889a328627673f153a01c26812c945,1,move logic for validating node names (#2127),0,Explicit closing-commit link; a keyword miss is not counted as a corpus-wide recall estimate
+3087,https://github.com/juanfont/headscale/issues/3087,109bfc404c3cf13116958c4dcb0eb8c7393a0f73,1,Refresh docs for Grants,0,Explicit closing-commit link; a keyword miss is not counted as a corpus-wide recall estimate
+2990,https://github.com/juanfont/headscale/issues/2990,fb137a8fe3bfc7e4c739bceb30a5297ebe8b11eb,1,policy/v2: use partial IPSet on group resolution errors in autogroup:self path,0,Explicit closing-commit link; a keyword miss is not counted as a corpus-wide recall estimate

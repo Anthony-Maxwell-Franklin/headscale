@@ -1,0 +1,25 @@
+commit 26282b7a5434f9550606cbdea01e15e040b1b223
+Author:     Even Holthe <even.holthe@bekk.no>
+AuthorDate: Tue Jan 10 21:43:35 2023 +0100
+Commit:     Juan Font <juanfontalonso@gmail.com>
+CommitDate: Tue Jan 10 22:26:21 2023 +0100
+
+    Fix SIGSEGV crash related to map of state changes
+    
+    See https://github.com/juanfont/headscale/issues/1114#issuecomment-1373698441
+---
+ app.go | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/app.go b/app.go
+index 9eb52d81..3c48b8b2 100644
+--- a/app.go
++++ b/app.go
+@@ -162,6 +162,7 @@ func NewHeadscale(cfg *Config) (*Headscale, error) {
+ 		aclRules:           tailcfg.FilterAllowAll, // default allowall
+ 		registrationCache:  registrationCache,
+ 		pollNetMapStreamWG: sync.WaitGroup{},
++		lastStateChange:    xsync.NewMapOf[time.Time](),
+ 	}
+ 
+ 	err = app.initDB()

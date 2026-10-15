@@ -1,0 +1,12 @@
+{
+  "complete": true,
+  "started_at_utc": "2026-10-13T17:35:27.617035+00:00",
+  "plan_sha256": "f29f5cef1dd3f043f9f286e757a0b5a1dc21175391a7263701502200830aa651",
+  "planned_prs": 1318,
+  "interpretation": "File membership of human-account-authored PRs merged before the pinned cutoff",
+  "last_quota_remaining": "3925",
+  "completed_prs": 1318,
+  "last_run_requests": 1077,
+  "last_run_at_utc": "2026-10-13T18:38:51.844999+00:00",
+  "finished_at_utc": "2026-10-13T18:38:51.803183+00:00"
+}
