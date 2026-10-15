@@ -27,7 +27,7 @@
     "Conditional ESEM/ICSME research-track assessment checked against official CCF directory and conference calls; contribution validation remains unfinished",
     "Missing reviewer identity sensitivity verified on the fixed 1259 reviewed merged PRs; conservative outer bounds and conditional ordering reversals added to the English manuscript, with independent enumeration/optimization checks",
     "Two selected closing-commit cases have executed parent/repair component checks with identical oracles and dependency manifests; three regressions change from fail to pass and two controls pass on both versions, including a cached rerun",
-    "Git research archive and complete recovery bundle prepared; Git-checkout PDF receipt validation fixed and covered by four regression tests"
+    "Git research archive published to the authorized independent fork branch; complete recovery bundle prepared; Git-checkout PDF receipt validation fixed and covered by four regression tests"
   ],
   "in_progress": [],
   "required_remaining": [
@@ -43,7 +43,7 @@
   "timeline_endpoints_completed": 2166,
   "merged_pr_file_endpoints_completed": 1318,
   "previous_goal_turn_classification": "progress",
-  "last_updated_at_utc": "2026-10-15T11:54:54.713474+00:00",
+  "last_updated_at_utc": "2026-10-15T11:59:09.478551+00:00",
   "process_history": [
     {
       "task": "Review census",
@@ -155,7 +155,10 @@
     "repository": "https://github.com/Anthony-Maxwell-Franklin/headscale",
     "branch": "research/headscale-maintenance",
     "first_local_commit": "9618a534c469a920e1b457ad1f325927d13e8e71",
-    "remote_push_status": "Initial authenticated Git push rejected with HTTP 403; existing token write authorization must be updated before retrying",
-    "fresh_clone_verification": "Recorded PDF/input hashes support checkout timestamp changes; tested using a clone restored from the complete Git bundle and the separately retained upstream Git history"
+    "remote_push_status": "Succeeded after the owner updated the existing token Contents permission; GitHub branch head independently checked against the local commit",
+    "fresh_clone_verification": "Recorded PDF/input hashes support checkout timestamp changes; tested using a clone restored from the complete Git bundle and the separately retained upstream Git history",
+    "published_evidence_commit": "ab9ddd53e531137d92428e0295e8298a63ba45fd",
+    "published_branch_url": "https://github.com/Anthony-Maxwell-Franklin/headscale/tree/research/headscale-maintenance",
+    "push_verified_at_utc": "2026-10-15T11:59:09.478551+00:00"
   }
 }
