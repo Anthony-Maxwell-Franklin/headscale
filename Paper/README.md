@@ -190,7 +190,7 @@ before/after that split and uses role/experience baseline strata. This is an
 exploratory check, not a confirmatory or causal claim. All model variants enter
 the generated manuscript tables; numerical source/script/lock hashes and PDF
 freshness are checked by `verify_artifact.py`. The statistical verification suite
-contains 56 tests, including known synthetic hazards, risk-interval boundaries,
+contains 71 tests, including known synthetic hazards, risk-interval boundaries,
 historical pending queues, matched review-credit conservation and human-coding
 input/adjudication checks, plus exact commit linkage and neutral evidence rendering.
 
@@ -331,6 +331,28 @@ review-event completeness. Submission covariates use only earlier events. Final
 change size is exported descriptively but excluded from the primary model.
 Response opportunities end at disposition; disposition without response is a
 competing event rather than continued waiting until the collection date.
+
+## Source-linked decision-chain review
+
+The separate post-pilot plan is `mechanism_validation_plan.json`; instructions
+are in `validation/mechanism_instructions.txt`. This layer supplements the broad
+responsibility/outcome forms. It preserves both existing rater orders and starts
+with empty semantic fields and declarations. Neutral source indexes reference
+the pinned packets, recorded times and text hashes without copying their bodies.
+
+```bash
+bash run-research.sh python Paper/scripts/prepare_mechanism_review.py
+bash run-research.sh python Paper/scripts/validate_mechanism_review.py
+```
+
+The validator currently exits 2 with `awaiting_actual_human_mechanism_review`
+and no input errors. After an actual disclosed single-reviewer review, use
+`--mode single-rater`; prior AI exposure must be declared honestly and does not
+become independent coding. A small pilot can remain explicitly in progress.
+Source/excerpt checks and chronology diagnostics do not verify semantic truth.
+Accurately sourced reversed sequences remain potential counterevidence; they
+cannot support a claim of ordered treatment. No repair prevalence, agreement or
+causal effect is estimated by this layer. Preparation reruns preserve annotations.
 
 ## English manuscript and local review package
 

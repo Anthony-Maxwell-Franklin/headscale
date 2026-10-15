@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "specified_at_utc": "2026-10-15",
+  "pre_review_clarification": "Before any human annotation, clarify that accurately sourced reversed sequences are retained as possible counterevidence rather than excluded",
+  "status": "Post-pilot preparation for actual human review; not a preregistration or completed validation",
+  "question": "Does timestamped evidence support an explicit responsibility decision followed by treatment and a supported outcome, or does contrary or missing evidence defeat that interpretation?",
+  "sample": "The existing fixed 100-issue sample; preserve both existing rater orders and sampling information",
+  "candidate_contrast": "Routing toward upstream/client/deployment versus retaining server investigation is a candidate contrast, not automatic support for a mechanism",
+  "stages": ["evidence", "decision", "treatment", "outcome"],
+  "anchor_rule": "The first witness in each stage is its chronological anchor; additional witnesses corroborate but do not determine its time",
+  "witness_fields": ["source_id", "source_url", "excerpt", "time_field", "recorded_at_utc"],
+  "categories": {
+    "affected_component": ["server", "upstream_client", "deployment", "mixed", "unclear"],
+    "decision_kind": ["server_retained", "upstream_referral", "deployment_guidance", "request_more_evidence", "mixed", "other", "no_explicit_decision", "unclear"],
+    "treatment_kind": ["server_change", "upstream_referral", "configuration_guidance", "diagnostic_request", "administrative_closure", "no_observable_action", "mixed", "other", "unclear"],
+    "supported_outcome": ["server_repair_supported", "upstream_resolution_supported", "configuration_resolution_reported", "administrative_closure_only", "unresolved", "mixed", "unclear"],
+    "chain_assessment": ["supported_in_case", "contradicted_in_case", "incomplete_chain", "no_explicit_decision", "unclear"],
+    "contrary_search": ["counterevidence_recorded", "none_found_in_packet", "unclear"],
+    "historical_basis": ["within_cutoff_evidence", "post_cutoff_or_edited_context", "unclear"],
+    "temporal_order": ["strictly_ordered", "coincident_or_ambiguous", "incomplete_or_unavailable", "observed_order_inconsistent"]
+  },
+  "interpretation_constraints": [
+    "Classifications must be completed by actual humans; declarations disclose assistant exposure rather than infer independence",
+    "No explicit decision and unclear cases remain in the sample; absence of a commit is not absence of repair",
+    "Record contrary evidence and explain the search for it for interpreted chains; do not select only supporting cases",
+    "Equal timestamps do not establish strict temporal precedence; edited text is not a historical revision",
+    "Accurately sourced reversed stage anchors remain eligible negative evidence when disclosed as observed_order_inconsistent and assessed as contradicted, incomplete or unclear; they cannot support the proposed ordered chain",
+    "Text edited after the cutoff cannot establish what was said before the cutoff; later retrieval and missing times remain explicit",
+    "Exact excerpt and chronology checks establish structural consistency, not semantic truth, reviewer identity, expertise or independence",
+    "No population repair prevalence, causal effect or inter-rater agreement is estimated by this layer"
+  ]
+}

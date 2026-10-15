@@ -1,0 +1,142 @@
+{
+  "number": 1643,
+  "observation_cutoff_utc": "2026-10-13T13:45:25.174735+00:00",
+  "sources": [
+    {
+      "source_id": "issue:2034341101",
+      "source_url": "https://github.com/juanfont/headscale/issues/1643",
+      "source_file": "Paper/results/review-materials/packets.json",
+      "source_sha256": "e414b07c4ada876ba7b50e7c4543fede210e736f890e001056ef88f5a40ce0c4",
+      "json_pointer": "/26/issue/body",
+      "representation": "text",
+      "recorded_times": {
+        "created_at": "2023-12-10T12:01:31Z",
+        "updated_at": "2024-03-18T01:43:46Z",
+        "closed_at": "2024-03-18T01:43:45Z"
+      },
+      "retrieved_at_utc": "2026-10-13T13:43:46.957821+00:00",
+      "ambiguity_flags": [
+        "edited_text_not_historical_revision"
+      ],
+      "text_sha256": "c8894f078b12d9aef4ca00ad2625f683a48f2aa5561b26627fbc60cf8568d446"
+    },
+    {
+      "source_id": "issue:1643:comments:1987036864",
+      "source_url": "https://github.com/juanfont/headscale/issues/1643#issuecomment-1987036864",
+      "source_file": "Paper/results/review-materials/packets.json",
+      "source_sha256": "e414b07c4ada876ba7b50e7c4543fede210e736f890e001056ef88f5a40ce0c4",
+      "json_pointer": "/26/comments/0/body",
+      "representation": "text",
+      "recorded_times": {
+        "created_at": "2024-03-10T01:44:31Z",
+        "updated_at": "2024-03-10T01:44:31Z"
+      },
+      "retrieved_at_utc": "2026-10-13T14:11:56.299600+00:00",
+      "ambiguity_flags": [
+        "retrieved_after_cutoff"
+      ],
+      "text_sha256": "e63cdcd21c2152083d73cc69591186c13cdd2ca777ca33cd173a6c774a7e7b20"
+    },
+    {
+      "source_id": "issue:1643:comments:2002730787",
+      "source_url": "https://github.com/juanfont/headscale/issues/1643#issuecomment-2002730787",
+      "source_file": "Paper/results/review-materials/packets.json",
+      "source_sha256": "e414b07c4ada876ba7b50e7c4543fede210e736f890e001056ef88f5a40ce0c4",
+      "json_pointer": "/26/comments/1/body",
+      "representation": "text",
+      "recorded_times": {
+        "created_at": "2024-03-18T01:43:44Z",
+        "updated_at": "2024-03-18T01:43:44Z"
+      },
+      "retrieved_at_utc": "2026-10-13T14:11:56.299600+00:00",
+      "ambiguity_flags": [
+        "retrieved_after_cutoff"
+      ],
+      "text_sha256": "91798db8b9254c0cfdc78af71e0bad048886894908edb829cee7893e96719a64"
+    },
+    {
+      "source_id": "issue:1643:timeline:11202727931",
+      "source_url": "https://api.github.com/repos/juanfont/headscale/issues/events/11202727931",
+      "source_file": "Paper/results/review-materials/packets.json",
+      "source_sha256": "e414b07c4ada876ba7b50e7c4543fede210e736f890e001056ef88f5a40ce0c4",
+      "json_pointer": "/26/timeline/0",
+      "representation": "json",
+      "recorded_times": {
+        "created_at": "2023-12-10T12:01:31Z"
+      },
+      "retrieved_at_utc": "2026-10-13T14:12:00.265116+00:00",
+      "ambiguity_flags": [
+        "retrieved_after_cutoff"
+      ],
+      "text_sha256": "29d82a36f2b13d433e459b735f69f7bfa64fb5e2de7eab0a8756f4641ac7e0a2"
+    },
+    {
+      "source_id": "issue:1643:timeline:1987036864",
+      "source_url": "https://github.com/juanfont/headscale/issues/1643#issuecomment-1987036864",
+      "source_file": "Paper/results/review-materials/packets.json",
+      "source_sha256": "e414b07c4ada876ba7b50e7c4543fede210e736f890e001056ef88f5a40ce0c4",
+      "json_pointer": "/26/timeline/1",
+      "representation": "json",
+      "recorded_times": {
+        "created_at": "2024-03-10T01:44:31Z",
+        "updated_at": "2024-03-10T01:44:31Z"
+      },
+      "retrieved_at_utc": "2026-10-13T14:12:00.265116+00:00",
+      "ambiguity_flags": [
+        "retrieved_after_cutoff"
+      ],
+      "text_sha256": "15e78f79e181d710a3ba384dd3301a6db9ee227f346749165866acc1758458db"
+    },
+    {
+      "source_id": "issue:1643:timeline:12064309388",
+      "source_url": "https://api.github.com/repos/juanfont/headscale/issues/events/12064309388",
+      "source_file": "Paper/results/review-materials/packets.json",
+      "source_sha256": "e414b07c4ada876ba7b50e7c4543fede210e736f890e001056ef88f5a40ce0c4",
+      "json_pointer": "/26/timeline/2",
+      "representation": "json",
+      "recorded_times": {
+        "created_at": "2024-03-10T01:44:31Z"
+      },
+      "retrieved_at_utc": "2026-10-13T14:12:00.265116+00:00",
+      "ambiguity_flags": [
+        "retrieved_after_cutoff"
+      ],
+      "text_sha256": "57860f5ce29802c35bae2b0555bbcecd7f5a1c2c2f26d08cbd747b11d6060b6e"
+    },
+    {
+      "source_id": "issue:1643:timeline:2002730787",
+      "source_url": "https://github.com/juanfont/headscale/issues/1643#issuecomment-2002730787",
+      "source_file": "Paper/results/review-materials/packets.json",
+      "source_sha256": "e414b07c4ada876ba7b50e7c4543fede210e736f890e001056ef88f5a40ce0c4",
+      "json_pointer": "/26/timeline/3",
+      "representation": "json",
+      "recorded_times": {
+        "created_at": "2024-03-18T01:43:44Z",
+        "updated_at": "2024-03-18T01:43:44Z"
+      },
+      "retrieved_at_utc": "2026-10-13T14:12:00.265116+00:00",
+      "ambiguity_flags": [
+        "retrieved_after_cutoff"
+      ],
+      "text_sha256": "6866c47796ff8f5b17caf6f43be5ca74f020232a58a3b579a7f2b45a0f977d61"
+    },
+    {
+      "source_id": "issue:1643:timeline:12144875066",
+      "source_url": "https://api.github.com/repos/juanfont/headscale/issues/events/12144875066",
+      "source_file": "Paper/results/review-materials/packets.json",
+      "source_sha256": "e414b07c4ada876ba7b50e7c4543fede210e736f890e001056ef88f5a40ce0c4",
+      "json_pointer": "/26/timeline/4",
+      "representation": "json",
+      "recorded_times": {
+        "created_at": "2024-03-18T01:43:45Z"
+      },
+      "retrieved_at_utc": "2026-10-13T14:12:00.265116+00:00",
+      "ambiguity_flags": [
+        "retrieved_after_cutoff"
+      ],
+      "text_sha256": "2bdcda55f4109698948cfdcd322fc3892fb3a4d2c97f49a1530a02b7976e3b10"
+    }
+  ],
+  "contains_annotations": false,
+  "warning": "Sources and timestamps are observations, not responsibility decisions or repair labels"
+}

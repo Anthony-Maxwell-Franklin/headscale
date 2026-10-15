@@ -1,0 +1,1446 @@
+{
+  "status": "awaiting_actual_human_mechanism_review",
+  "mode": "two-rater",
+  "cases": 100,
+  "raters": {
+    "1": {
+      "annotated_cases": 0,
+      "structurally_complete_cases": 0,
+      "human_completion_declared": false,
+      "independent_completion_declared": false,
+      "assistant_suggestions_consulted": null,
+      "other_rater_codes_consulted": null,
+      "errors": [],
+      "cases": [
+        {
+          "number": 2168,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1650,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1161,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3412,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 623,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3125,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2355,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 226,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 149,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2141,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3429,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 160,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3047,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3512,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3373,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 339,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3165,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2045,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1228,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 117,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2787,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 515,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3502,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1384,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1643,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1851,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1968,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 275,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3227,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3054,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1313,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1637,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1810,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2863,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1767,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2121,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2753,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2181,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2757,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1413,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2466,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 390,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3302,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2719,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2027,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2520,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2751,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3299,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2631,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2876,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2397,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 309,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 257,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1292,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2502,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3087,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3243,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 806,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1529,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 259,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2142,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2714,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 253,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 652,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2183,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 673,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1636,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3369,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 663,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1259,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2462,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1114,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3491,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2234,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2629,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3178,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2762,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 254,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1654,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2153,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2990,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2352,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1678,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2839,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3316,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3355,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3219,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2973,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1838,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2130,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3546,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2209,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2363,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2899,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2835,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1552,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3407,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1225,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2425,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3471,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        }
+      ]
+    },
+    "2": {
+      "annotated_cases": 0,
+      "structurally_complete_cases": 0,
+      "human_completion_declared": false,
+      "independent_completion_declared": false,
+      "assistant_suggestions_consulted": null,
+      "other_rater_codes_consulted": null,
+      "errors": [],
+      "cases": [
+        {
+          "number": 2839,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1228,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1161,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2502,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2762,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2045,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1767,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2751,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1413,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2027,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3316,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3491,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2466,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1643,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3165,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2234,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2121,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2753,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1114,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 663,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2876,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3299,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 673,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2397,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1313,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2130,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2787,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1838,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 623,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2425,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1851,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2183,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1552,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 117,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2520,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3054,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3369,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 515,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 806,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1968,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 275,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2863,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3125,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3355,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2757,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 390,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2181,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3302,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 149,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3087,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 652,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 160,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2142,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2899,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3227,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1637,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1650,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2209,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1678,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2141,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2363,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2629,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 339,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3219,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3429,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 253,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3373,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3471,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1225,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3502,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2631,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1654,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1810,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 309,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2153,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3047,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1529,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2714,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3546,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 254,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2355,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1384,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3178,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3243,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3407,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3412,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2990,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2719,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2168,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2462,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2973,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1292,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 3512,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 259,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 257,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 226,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2835,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 2352,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1259,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        },
+        {
+          "number": 1636,
+          "annotated": false,
+          "complete": false,
+          "errors": [],
+          "ambiguities": []
+        }
+      ]
+    }
+  },
+  "errors": [],
+  "declaration_scope": "Reviewer identity, actual review and independence are self-reported, not authenticated",
+  "validation_scope": "Source membership, quote matching and recorded chronology only; no semantic adjudication",
+  "semantic_truth_verified": false,
+  "mechanism_validated": false,
+  "agreement_estimated": false,
+  "population_repair_prevalence_estimated": false,
+  "causal_effect_estimated": false,
+  "source_sha256": {
+    "Paper/validation/mechanism_rater_1.csv": "12c071524aa391cd52bb2a80b01e8ac7cafcb6cbf938672919042c19df98d6fd",
+    "Paper/validation/mechanism_rater_1_metadata.json": "2e62e58d653e1dbff548de74f1bc7881b3a2eddf1f3a2fa116967beb45344980",
+    "Paper/validation/mechanism_rater_2.csv": "5043cf06df412ad04fc7e99a894c083aff6006f44263003c891b610e3868ce97",
+    "Paper/validation/mechanism_rater_2_metadata.json": "2e62e58d653e1dbff548de74f1bc7881b3a2eddf1f3a2fa116967beb45344980"
+  },
+  "validator_script_sha256": "385b8d7e9e0921948865262b2a12a234b136787eb2a12561569186be59052c4d",
+  "plan_sha256": "8e7f106a0c9582ac9bf780c0fb28015cc0256aef97466852943fc59effd5c30d",
+  "preparation_manifest_sha256": "a49c5b5cff2931476591500ff0b71bea211957ffc3eb6d6f0ffaa2204be8c8ea"
+}

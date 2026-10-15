@@ -74,6 +74,14 @@
       "configured_credential_matches": 0,
       "unresolved_pattern_findings": [],
       "pdf_text_and_zip_entries_checked": true
+    },
+    {
+      "checked_at_utc": "2026-10-15T13:04:08.403368+00:00",
+      "scope": "Mechanism-review preparation, closest-prior positioning and author-confirmed declarations",
+      "changed_files_scanned": 145,
+      "configured_credential_matches": 0,
+      "unresolved_pattern_findings": [],
+      "pdf_text_and_zip_entries_checked": true
     }
   ]
 }

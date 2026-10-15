@@ -1,0 +1,58 @@
+{
+  "number": 257,
+  "observation_cutoff_utc": "2026-10-13T13:45:25.174735+00:00",
+  "sources": [
+    {
+      "source_id": "issue:1089042510",
+      "source_url": "https://github.com/juanfont/headscale/issues/257",
+      "source_file": "Paper/results/review-materials/packets.json",
+      "source_sha256": "e414b07c4ada876ba7b50e7c4543fede210e736f890e001056ef88f5a40ce0c4",
+      "json_pointer": "/5/issue/body",
+      "representation": "text",
+      "recorded_times": {
+        "created_at": "2021-12-27T07:51:37Z",
+        "updated_at": "2021-12-27T09:51:43Z",
+        "closed_at": "2021-12-27T09:51:43Z"
+      },
+      "retrieved_at_utc": "2026-10-13T13:36:53.862256+00:00",
+      "ambiguity_flags": [
+        "edited_text_not_historical_revision"
+      ],
+      "text_sha256": "3d624062a11770be6567f9d8b829bec37813c4ac48bb7a89d62491e9b1584880"
+    },
+    {
+      "source_id": "issue:257:timeline:5816882179",
+      "source_url": "https://api.github.com/repos/juanfont/headscale/issues/events/5816882179",
+      "source_file": "Paper/results/review-materials/packets.json",
+      "source_sha256": "e414b07c4ada876ba7b50e7c4543fede210e736f890e001056ef88f5a40ce0c4",
+      "json_pointer": "/5/timeline/0",
+      "representation": "json",
+      "recorded_times": {
+        "created_at": "2021-12-27T07:51:37Z"
+      },
+      "retrieved_at_utc": "2026-10-13T14:10:04.818298+00:00",
+      "ambiguity_flags": [
+        "retrieved_after_cutoff"
+      ],
+      "text_sha256": "3bd7c79fb507f5541eac0f44ca24ff1266dfaef8a9041440b7a2c61f4a0ac7b1"
+    },
+    {
+      "source_id": "issue:257:timeline:5817278171",
+      "source_url": "https://api.github.com/repos/juanfont/headscale/issues/events/5817278171",
+      "source_file": "Paper/results/review-materials/packets.json",
+      "source_sha256": "e414b07c4ada876ba7b50e7c4543fede210e736f890e001056ef88f5a40ce0c4",
+      "json_pointer": "/5/timeline/1",
+      "representation": "json",
+      "recorded_times": {
+        "created_at": "2021-12-27T09:51:43Z"
+      },
+      "retrieved_at_utc": "2026-10-13T14:10:04.818298+00:00",
+      "ambiguity_flags": [
+        "retrieved_after_cutoff"
+      ],
+      "text_sha256": "f1b9100d2bc2e85aca7c83283793906343271faa680069fdc148036794d01941"
+    }
+  ],
+  "contains_annotations": false,
+  "warning": "Sources and timestamps are observations, not responsibility decisions or repair labels"
+}

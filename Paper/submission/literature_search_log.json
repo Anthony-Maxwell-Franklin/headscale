@@ -165,10 +165,60 @@
       "url": "https://insights.linuxfoundation.org/project/juanfont-headscale",
       "status": "Repository dashboard discovered",
       "relevance": "Context only; scoring claims not validated or adopted"
+    },
+    {
+      "url": "https://research.tudelft.nl/en/publications/pull-request-decisions-explained-an-empirical-overview/",
+      "status": "Final issue metadata inspected; author accepted PDF also inspected",
+      "relevance": "TSE 2023 49(2):849\u2013871, online 2022; submitter/integrator identity is established PR-decision context"
+    },
+    {
+      "url": "https://www.chaoss.community/kb/metric-self-merge-rates/",
+      "status": "Official metric definition inspected",
+      "relevance": "Review-qualified author-merging already distinguished; raw author/merger equality is a different operationalization"
+    },
+    {
+      "url": "https://www.reviewsaur.com/research/methodology",
+      "status": "Original practitioner methodology inspected; not used as independent scientific validation",
+      "relevance": "Joint self-merging/approval measurement and observational caveats already explicit"
     }
   ],
   "limitation": "Not a complete systematic review or exhaustive scholarly-database export. Combined-query ranking and inaccessible full text restrict negative findings.",
   "negative_finding": "No inspected result established a peer-reviewed study centered on the specific Headscale maintenance-role, PR-episode and responsibility-boundary question. This does not prove absence.",
-  "next_action": "Maintain bounded novelty claims; human mechanism validation and broader bibliographic coverage remain unfinished.",
-  "full_text_followup_at_utc": "2026-10-15T12:26:43.655182+00:00"
+  "next_action": "Prioritize falsification-oriented responsibility decision-chain validation; further descriptive cross-project role counts alone do not establish novelty.",
+  "full_text_followup_at_utc": "2026-10-15T12:26:43.655182+00:00",
+  "role_overlap_followup_at_utc": "2026-10-15T12:45:03.983625+00:00",
+  "role_overlap_followup_queries": [
+    {
+      "query": "\"self-merged\" \"pull requests\" review study",
+      "domain_filters": []
+    },
+    {
+      "query": "\"self merging\" \"code review\" empirical study",
+      "domain_filters": []
+    },
+    {
+      "query": "\"pull requests\" \"same\" \"author\" \"integrator\" self merge study github review",
+      "domain_filters": []
+    },
+    {
+      "query": "\"Herfindahl\" \"missing\" \"reviewer\"",
+      "domain_filters": []
+    },
+    {
+      "query": "\"concentration\" \"unidentified\" \"reviewers\" GitHub",
+      "domain_filters": []
+    },
+    {
+      "query": "\"Herfindahl\" \"unknown identities\"",
+      "domain_filters": []
+    },
+    {
+      "query": "\"10.1109/TSE.2022.3165056\" year volume pages",
+      "domain_filters": [
+        "research.tudelft.nl",
+        "ieeexplore.ieee.org",
+        "doi.org"
+      ]
+    }
+  ]
 }

@@ -1,0 +1,141 @@
+Comparative-design decision — 15 October 2026
+
+Decision: do not collect comparative account-role outcomes at this stage.
+Additional repositories would test the reach of the Headscale description, but
+would not by themselves validate its proposed responsibility-routing mechanism
+or establish a new contribution. Prioritize a falsification-oriented mechanism
+test, with explicit competing explanations and contradictory cases. Human
+responsibility/outcome coding remains deferred; this decision does not replace
+it with automated labels or claim submission readiness.
+
+This feasibility assessment was made after observing Headscale results and
+before inspecting comparator account-role outcomes. It is a prospective design
+decision for a possible extension, not preregistration of the original study.
+Only official documentation, repository metadata and aggregate merged-PR search
+counts were inspected. No comparator PR/review dataset was saved, and no role
+rates, reviewer distributions or author/integrator overlaps were measured.
+
+Candidate relevance and exclusions
+
+NetBird (netbirdio/netbird) is the closest candidate: a self-hostable Go platform
+with a WireGuard overlay and public management, signal and relay components.
+Its repository also includes the client. Whole-repository results therefore
+would not isolate a server-maintenance population comparable to Headscale.
+Its root license identifies BSD-3-Clause parts and separately AGPLv3 server
+directories; the API's NOASSERTION license label is not evidence of no license.
+Primary sources, retrieved 15 October 2026:
+https://raw.githubusercontent.com/netbirdio/netbird/main/README.md
+https://docs.netbird.io/selfhosted/selfhosted-guide
+https://raw.githubusercontent.com/netbirdio/netbird/main/LICENSE
+
+Nebula (slackhq/nebula) is a defensible architectural contrast within self-hosted
+Go overlay networking. Its PKI, peer-local firewall and lighthouse discovery
+model differ from a centrally managed coordination server. It must not be
+presented as an otherwise matched Headscale control. Official documentation:
+https://nebula.defined.net/docs/ (retrieved 15 October 2026).
+
+Netmaker (gravitl/netmaker) supplies an additional, closer self-hosted Go server
+candidate. Its open-source server manages WireGuard networks; its Apache core
+and separately licensed pro/ material require explicit artifact-scope handling.
+It should not be omitted merely because a different candidate gives a more
+interesting role pattern. Official repository and licensing sources:
+https://raw.githubusercontent.com/gravitl/netmaker/develop/README.md
+https://raw.githubusercontent.com/gravitl/netmaker/develop/LICENSE.md
+(retrieved 15 October 2026).
+
+Tailscale (tailscale/tailscale) is contextual upstream evidence rather than a
+matched self-hosted coordination-server control. The public repository contains
+clients and other components, while Tailscale's hosted coordination server is
+proprietary. Its relationship with Headscale also prevents treating the pair as
+independent ecosystem replications. Official sources:
+https://github.com/tailscale/tailscale
+https://tailscale.com/opensource
+(retrieved 15 October 2026).
+
+If an extension is justified later, fix the candidate inventory before outcomes:
+public, non-fork, non-archived repositories with a Go core, an independently
+deployable encrypted overlay/VPN function, and documented public PR workflows.
+Record every inclusion, exclusion and architecture/scope distinction. Use the
+same UTC merge window, 2025-10-01 inclusive to 2026-10-01 exclusive, with four
+complete calendar quarters. Include eligible merges regardless of PR creation
+date. Neither convenient sample sizes nor observed role differences should
+determine project selection. This is a purposive domain comparison, not a
+probability sample of open-source projects.
+
+Feasibility counts and collection budget
+
+Authenticated GitHub metadata/count requests on 15 October 2026 reported:
+  netbirdio/netbird: 1,141 merged PRs in the proposed window;
+  slackhq/nebula:      258;
+  gravitl/netmaker:    373;
+  tailscale/tailscale: 1,769, contextual only.
+Each query used /search/issues with q="repo:OWNER/REPO is:pr is:merged
+merged:2025-10-01..2026-09-30" and per_page=1. Only total_count and the
+incomplete_results flag were retained in the assessment; all flags were false.
+Counts include bot-authored and human-account PRs, are collection-time indexed
+counts rather than independently verified complete frames, and must not be
+compared directly with the 314 human-account merges already available for
+Headscale in that window. Exact human eligibility remains unmeasured elsewhere.
+
+With one page per endpoint, detail + submitted reviews + lifecycle timeline
+would cost approximately 3N requests: 4,197 for NetBird plus Nebula, or 5,316
+including Netmaker, before author exclusions and discovery/pagination overhead.
+File-scope checks add approximately N; both PR-thread and inline-comment
+channels add approximately 2N. Actual pages can exceed these planning figures.
+A probability sample capped at 25 merged PRs per project-quarter would need at
+most 100 PRs/project and approximately 300 baseline requests/project, plus a
+complete frame. Record inclusion probabilities and use design-weighted category
+proportions; sampled account HHI is nonlinear and cannot inherit an unbiasedness
+claim from weighted counts. A sample does not establish census completeness.
+
+GitHub Search caps each query at 1,000 returned results, so NetBird's annual
+query cannot itself supply a complete frame. Partition by disjoint UTC merge
+intervals until every partition fits; reconcile count/pagination coverage and
+validate returned PR details. Alternatively paginate a complete PR list and
+filter by merged_at. Personal-token REST requests ordinarily have a 5,000/hour
+limit and search has a separate 30/minute authenticated limit; secondary limits
+also apply. Official endpoint/rate documentation, checked 15 October 2026:
+https://docs.github.com/en/rest/search/search
+https://docs.github.com/en/rest/pulls/pulls
+https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api
+
+Existing Client, collect_endpoint and load_endpoint helpers support budgets,
+resumption and checksums. The current collector entry points hard-code
+juanfont/headscale and are frozen provenance sources: a future comparison needs
+a new repository-parameterized adapter rather than editing those scripts.
+Reuse role_observation and lifecycle reconstruction after checking machine-merge
+handling. Preserve bot/queue integrators as a separate stratum; do not silently
+change the denominator or count them as additional human participants.
+
+Contribution gate before expansion
+
+CHAOSS already defines Self-Merge Rates around author-merges without a review
+process, including broader review evidence than submitted review records alone.
+Thus finding reviewed self-merges does not refute the published CHAOSS definition.
+https://www.chaoss.community/kb/metric-self-merge-rates/
+(retrieved 15 October 2026).
+
+The TSE study Pull Request Decisions Explained already examines the same-user
+author/integrator relationship and context-dependent PR decisions. The 2026
+Reviewsaur industry report already studies self-merges jointly with approval
+presence across 261 repositories. Its methodology acknowledges incomplete
+PR-thread author/timestamp evidence and historical-comparison limitations. It is
+an industry report, not established peer-reviewed ground truth; its overlap
+nevertheless prevents claiming that our joint-role counting is itself new.
+Primary sources, retrieved 15 October 2026:
+https://yuyue.github.io/res/paper/PRDecision-TSE2022.pdf
+https://www.reviewsaur.com/research
+https://www.reviewsaur.com/research/methodology
+
+A narrowly useful extension could test transportability of an explicitly named
+measurement: per project-quarter, how much does the observed account-participation
+distribution change when review evidence broadens from submitted reviews to
+attributed, time-bounded discussion channels, under fixed PR/file populations?
+These would be measurement differences, not validated review quality or repair
+outcomes. Missing identities, informal review, historical state/head uncertainty,
+monorepository composition, automation and shared ecosystem relationships remain
+limitations. Pooling heterogeneous projects cannot supply independent replications
+or a causal governance comparison. Proceed only if comparison with the closest
+prior methods identifies a consequential unresolved question and a falsifiable
+claim; otherwise it would multiply known descriptive findings. No comparator
+account-role outcome collection has been started.

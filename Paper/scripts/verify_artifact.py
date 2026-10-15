@@ -13,6 +13,7 @@ from analyze_review_identity_bounds import HELPERS, reviewer_hhi_outer_bounds
 from verify_repair_validation import verify_repair_validation
 from verify_extended_analyses import verify_calendar_export
 from analyze_role_overlap import verify_export as verify_role_overlap_export
+from validate_mechanism_review import verify_preparation as verify_mechanism_preparation
 
 
 def digest(path):
@@ -158,6 +159,7 @@ def main():
     repairs=verify_repair_validation(root)
     calendar=verify_calendar_export(root)
     role_overlap=verify_role_overlap_export(root)
+    mechanism_materials=verify_mechanism_preparation(root)
     manifest=json.loads((paper/'generated/data_manifest.json').read_text())
     for name,expected in manifest['source_sha256'].items():
         if digest(paper/name)!=expected:
@@ -263,6 +265,9 @@ def main():
                 calendar_identifiability_audit_verified=calendar['frozen_baselines_reproduced'],
                 joint_role_audit_verified=role_overlap['complete'],
                 joint_role_merged_prs=role_overlap['all_merged']['merged_human_prs'],
+                mechanism_materials_source_catalogs_verified=mechanism_materials['source_catalogs_verified'],
+                mechanism_materials_source_records=mechanism_materials['source_records'],
+                mechanism_semantic_truth_verified=mechanism_materials['semantic_truth_verified'],
                 compiled_input_sha256=compiled_inputs,
                 pdf_freshness_evidence=freshness_evidence,
                 status='Working draft; independent coding, explanatory mechanism validation and contribution assessment remain pending')

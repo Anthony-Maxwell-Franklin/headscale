@@ -12,10 +12,12 @@
   "provisional_contact_email": "George.Zhou@nottingham.edu.cn",
   "provisional_contact_status": "Provided for temporary use; corresponding authorship is unconfirmed.",
   "additional_authorship": "The author will ask whether the supervisor wishes to join; no additional author is currently confirmed.",
-  "funding_declaration": null,
-  "competing_interests_declaration": null,
+  "funding_declaration": "The author reports no funding for this study.",
+  "competing_interests_declaration": "The author declares no competing interests.",
   "ai_assistance": "Code development, analysis support and manuscript drafting used an AI assistant, as disclosed in the manuscript.",
   "semantic_review_schedule": "Deferred at the author's request; no completed human coding or reviewer design is declared.",
-  "submission_authorization": "No submission, external contact or public artifact deposit requested.",
-  "note": "Independent project ownership does not supply the missing funding, competing-interest or corresponding-author declarations."
+  "submission_authorization": "Research-branch publication to the existing fork is authorized. No venue submission, participant contact or permanent archival deposit is authorized.",
+  "note": "Corresponding authorship and any supervisor coauthorship remain unconfirmed. Later coauthors must supply their own declarations before submission.",
+  "funding_and_interests_source": "Author explicitly confirmed no funding and no competing interests in this conversation on 15 October 2026.",
+  "declarations_confirmed_at_utc": "2026-10-15T13:00:52.066786+00:00"
 }

@@ -1,0 +1,87 @@
+INTERNAL METHODOLOGICAL AUDIT: MISSING-REVIEW IDENTITY LOWER ENDPOINT
+Date: 2026-10-15
+
+Purpose and disposition
+This internal audit checks the attainability of an already computed identity
+scenario. It makes no novelty claim and does not change the frozen reported
+bounds, analysis scripts, manuscript, or underlying identity assignments. The
+numerical tightening below changes no role-order conclusion. Mechanism evidence
+therefore takes priority over further refinement of these endpoints.
+
+Existing sources (paths relative to the study root)
+- Paper/scripts/analyze_review_identity_bounds.py: reviewer_hhi_outer_bounds(),
+  especially the credit floors and all_missing_distinct_human_scenario_hhi.
+- Paper/manuscript.tex: Appendix "Missing reviewer identities".
+- Paper/results/review-identity-sensitivity/quarterly_hhi_outer_bounds.csv
+- Paper/results/review-identity-sensitivity/merged_pr_identity_inputs.csv
+- Paper/results/review-identity-sensitivity/unattributed_record_audit.csv
+- Paper/results/review-identity-sensitivity/summary.json
+
+Model and assumptions
+Fix the N merged PRs with at least one attributed eligible review. PR i has a
+fixed known-reviewer set K_i of size k_i > 0 and m_i eligible unattributed
+submitted records. Every PR supplies one unit of credit, divided equally among
+its distinct eligible reviewer accounts. Missing records may be duplicate,
+self, bot, known-account, or additional eligible-account observations. Accounts
+may be shared globally, but the model does not require such sharing and permits
+enough otherwise unknown eligible non-author accounts to assign a fresh account
+to each record. Known account identities and PR membership remain fixed.
+
+The claim is conditional on this unconstrained assignment model. Enforced user-id
+links, known bot types, a finite admissible-account pool, or other identity
+constraints could prevent the proposed completion. In the affected fixed subset,
+all 177 eligible missing records have null account metadata and author_association
+NONE in the cached export. That metadata does not establish actual human status,
+distinctness, or the likelihood of the completion. Known-account aliases, deleted
+and informal reviews, and person-level identity are outside the model.
+
+Constructive lower-endpoint proof
+Let w_a be each account's total fractional credit across the N fixed PRs.
+Replace each missing record in turn by its own globally fresh eligible non-author
+account, never reused by another record.
+
+If its previous account remains represented on that PR, or the old record was
+ineligible, the PR's reviewer count rises from k to k+1. Each existing reviewer
+loses delta = 1/[k(k+1)] and the new account receives 1/(k+1). If S is the sum of
+the current global weights of those k existing reviewers, then S >= 1. The change
+in sum_a w_a^2 is delta*(1-2S) < 0.
+
+If the previous eligible account instead disappears from that PR, its credit
+c = 1/k moves to the fresh account without changing the denominator. The change
+in squared credit is -2*c*(w_old-c) <= 0, since w_old >= c.
+
+Thus every assignment can be transformed without increasing HHI into the
+all-missing-distinct-human completion. This completion is feasible under the
+model, so it attains the sharp lower endpoint:
+
+  L_a = sum_{i: a in K_i} 1/(k_i+m_i)
+  H_min = [sum_a L_a^2 + sum_i m_i/(k_i+m_i)^2] / N^2.
+
+This is exactly the existing all_missing_distinct_human_scenario_hhi, not a new
+scenario or an imputation. The simplex upper endpoint remains conservative; the
+entire interval has not been proved sharp.
+
+Numerical tightening of the lower endpoint only
+Quarter  Frozen outer lower    Attainable sharp lower  Increase
+2022 Q2  0.46564613741545036   0.46564613741545036     0
+2025 Q2  0.07869786529949337   0.07922421041438654     0.00052634511489318
+2025 Q3  0.25453069727891153   0.25465915532879820     0.00012845804988665
+2025 Q4  0.46239449647358080   0.46239449647358080     0
+
+The Q2/Q3 reductions are respectively 0.1012% and 0.1049% of the old interval
+width. Author HHI still lies between the feasible known-only and all-distinct
+scenarios in 2025 Q2/Q3. Reviewer HHI remains above author HHI in 2022 Q2 and
+2025 Q4 under the lower bound, and integrator HHI remains above the unchanged
+outer upper bound in all four affected quarters. No role-order result changes.
+
+Independent enumeration check
+An ephemeral exact-rational check considered 82 small configurations and 37,796
+record-to-identity assignments; no counterexample was found. With Python random
+seed 3, it drew 30 configurations for each N in {1,2,3}, using nonempty known sets
+drawn from {A,B,C}, m_i in {0,1,2}, and retaining configurations with sum_i m_i <= 4.
+For each configuration it enumerated all assignments to an ineligible state,
+the three known accounts, or up to M fresh accounts. Fractions.Fraction arithmetic
+confirmed that the all-distinct completion equalled the minimum. This check
+supports the constructive proof; it is not an additional empirical study or an
+exhaustive verification of arbitrary population sizes. No enumeration script or
+new endpoint is incorporated into the frozen analysis pipeline.

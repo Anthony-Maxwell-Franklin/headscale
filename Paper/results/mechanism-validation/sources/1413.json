@@ -1,0 +1,58 @@
+{
+  "number": 1413,
+  "observation_cutoff_utc": "2026-10-13T13:45:25.174735+00:00",
+  "sources": [
+    {
+      "source_id": "issue:1694318485",
+      "source_url": "https://github.com/juanfont/headscale/issues/1413",
+      "source_file": "Paper/results/review-materials/packets.json",
+      "source_sha256": "e414b07c4ada876ba7b50e7c4543fede210e736f890e001056ef88f5a40ce0c4",
+      "json_pointer": "/18/issue/body",
+      "representation": "text",
+      "recorded_times": {
+        "created_at": "2023-05-03T15:33:16Z",
+        "updated_at": "2023-05-03T18:16:06Z",
+        "closed_at": "2023-05-03T18:16:06Z"
+      },
+      "retrieved_at_utc": "2026-10-13T13:43:34.511294+00:00",
+      "ambiguity_flags": [
+        "edited_text_not_historical_revision"
+      ],
+      "text_sha256": "eb6c4257dbb21d87183df5c52cfe64fcf097ff09bbec2ba5137ea4b8f9ec0589"
+    },
+    {
+      "source_id": "issue:1413:timeline:9156983999",
+      "source_url": "https://api.github.com/repos/juanfont/headscale/issues/events/9156983999",
+      "source_file": "Paper/results/review-materials/packets.json",
+      "source_sha256": "e414b07c4ada876ba7b50e7c4543fede210e736f890e001056ef88f5a40ce0c4",
+      "json_pointer": "/18/timeline/0",
+      "representation": "json",
+      "recorded_times": {
+        "created_at": "2023-05-03T15:33:16Z"
+      },
+      "retrieved_at_utc": "2026-10-13T14:11:13.020420+00:00",
+      "ambiguity_flags": [
+        "retrieved_after_cutoff"
+      ],
+      "text_sha256": "512e834cb9d11c30da4394bdabe81d070482ca06f34fc4d3ccb50b195b811b2d"
+    },
+    {
+      "source_id": "issue:1413:timeline:9158626403",
+      "source_url": "https://api.github.com/repos/juanfont/headscale/issues/events/9158626403",
+      "source_file": "Paper/results/review-materials/packets.json",
+      "source_sha256": "e414b07c4ada876ba7b50e7c4543fede210e736f890e001056ef88f5a40ce0c4",
+      "json_pointer": "/18/timeline/1",
+      "representation": "json",
+      "recorded_times": {
+        "created_at": "2023-05-03T18:16:06Z"
+      },
+      "retrieved_at_utc": "2026-10-13T14:11:13.020420+00:00",
+      "ambiguity_flags": [
+        "retrieved_after_cutoff"
+      ],
+      "text_sha256": "58a1e75bb9c271d5f00e8ba2b122495cb5d6ee2348576d77936c7c016704a8ff"
+    }
+  ],
+  "contains_annotations": false,
+  "warning": "Sources and timestamps are observations, not responsibility decisions or repair labels"
+}

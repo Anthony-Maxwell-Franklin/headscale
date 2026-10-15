@@ -1,0 +1,107 @@
+Decision-chain review instructions — version 1, 15 October 2026
+
+This is post-pilot preparation, not a preregistration or completed validation.
+The author deferred actual human coding. Every semantic field and completion
+declaration is initially blank. This layer supplements the existing broad
+responsibility/outcome forms; it does not modify or replace them.
+
+Work separately in mechanism_rater_1.csv or mechanism_rater_2.csv, preserving
+the existing issue order. Read each complete existing offline packet before
+interpreting it. The source_catalog_file column identifies a neutral JSON index
+of packet-derived source IDs, original URLs, exact text hashes and recorded
+times. It points to existing cached JSON or patches rather than duplicating
+their bodies. Source IDs carry no suggested interpretation. Online links can
+show newer material; use the pinned packet for this exercise.
+
+Before adding any annotations, fill your separate mechanism_rater_N_metadata.json:
+reviewer_id, human_review_performed=true, started_at_utc, and whether you have
+consulted the other rater's codes or assistant suggestions. These are human
+self-reports; software cannot authenticate identity, expertise or independence.
+Do not declare completion until you have actually reviewed the required cases.
+Keep human_review_completed, independent_human_review_completed and
+completed_at_utc blank/null until then. A disclosed single-rater review is valid:
+human_review_completed=true may coexist with
+independent_human_review_completed=false and truthful assistant exposure.
+Only an explicit independence claim requires both consultation fields to be false.
+Do not make false declarations because you have already seen manuscript examples.
+
+For each issue, code affected_component, decision_kind, treatment_kind and
+supported_outcome using the categories in mechanism_validation_plan.json.
+Do not infer a maintenance decision from a component label. Look for an explicit
+decision attributable to a participant and distinguish its subsequent treatment
+from the strongest supported outcome. Administrative closure is not repair.
+Keep no_explicit_decision, no_observable_action, unresolved and unclear where
+appropriate. Do not convert a missing commit link into a negative repair label.
+
+The four stage fields evidence_witnesses, decision_witnesses,
+treatment_witnesses and outcome_witnesses contain JSON arrays. Each witness has
+exactly these keys:
+  {"source_id":"...", "source_url":"...", "excerpt":"...",
+   "time_field":"created_at", "recorded_at_utc":"..."}
+Use source_id/source_url and a time_field/value exactly as listed in the index;
+use an exact, nonempty contiguous excerpt from the resolved cached text. Text
+sources resolve the indicated body; JSON sources use indent=2, ensure_ascii=False
+formatting of the indexed object; patches resolve to the cached patch text.
+For a genuinely untimed source both time fields must be empty. Sources with
+recorded times must cite one of those fields. Do not invent dates or excerpts.
+The first witness in each stage is its chronology anchor. Additional witnesses
+are corroboration, not alternative anchors selected by the validator. Missing
+stages use [] and an explanation in absence_notes. Leave unused contrary_witnesses
+as [] only after a review; empty arrays are annotations, not initial defaults.
+
+Use chain_assessment to record supported_in_case, contradicted_in_case,
+incomplete_chain, no_explicit_decision or unclear. Routing versus server-retained
+classification alone never supplies support. A supported chain requires witnesses
+for all four stages and an explicit decision; explain the evidential links and
+competing explanations in rationale. For supported or contradicted interpretations,
+document the contrary-evidence search in contrary_search_notes and select a
+contrary_search category. Contradicted chains and counterevidence_recorded need
+actual contrary_witnesses. For no_explicit_decision or unclear cases, do not invent
+an exhaustive contrary search: leave contrary_search_notes empty if inapplicable.
+Complete rationale for every reviewed case; explain missing links in absence_notes.
+The classifications and witness choices remain human judgments even when all
+their structural checks pass.
+
+Record historical_basis and temporal_order. Same-second stage times cannot show
+strict order and are reported as coincident_or_ambiguous. Reversed anchor times
+can be important counterevidence: retain them as observed_order_inconsistent,
+with a contradicted_in_case, incomplete_chain or unclear assessment. Explain
+the order conflict in the rationale, and provide contrary witnesses for a
+contradicted assessment. Their exact sources must still match the packet.
+Reversed sequences cannot be called supported or strictly_ordered and cannot
+be hidden under another temporal category. The validator reports their order
+conflict rather than excluding a valid negative case. Missing timestamps
+cannot be silently imputed. Updated text may
+have been changed after its creation: citing creation time alone does not date
+the quoted words. Post-cutoff events or text edited after the cutoff cannot
+support within_cutoff_evidence. Later retrieval is separately flagged even if
+the recorded creation/update times precede the cutoff. The validator retains
+these ambiguities; quote matching cannot reconstruct deleted or earlier revisions.
+
+Set reviewed_at_utc when each case has actually been reviewed. Completion of a
+case requires the category fields, a rationale, all witness arrays (possibly []
+with justified missing links) and its review time. Completion of a rater requires
+every case plus an honest human-completion declaration and its timestamp;
+independence is a separate declaration. Single-rater mode requires only rater 1.
+
+Small declared pilot
+Prepare both blank forms. In rater 1's new metadata declare actual human review,
+your identifier/start time and any exposure truthfully, leaving completion null.
+Review a few cases in the existing order, including unclear/negative cases, and
+fill only those rows. Run the single-rater command below. Expected exit 2 and
+declared_human_review_in_progress mean a documented partial pilot, not failure
+of the research or full validation. Preserve the untouched cases and do not
+report pilot labels as sample-wide prevalence or agreement. Finish the fixed
+sample before declaring full completion; a pilot does not validate the mechanism.
+
+Run:
+  bash run-research.sh python Paper/scripts/prepare_mechanism_review.py
+  bash run-research.sh python Paper/scripts/validate_mechanism_review.py
+  bash run-research.sh python Paper/scripts/validate_mechanism_review.py --mode single-rater
+
+Preparation preserves any existing mechanism annotations and declarations.
+Validation exits 2 for pending/incomplete review or invalid inputs; it exits 0
+only for structurally complete declared reviews in the selected mode. Neither exit code verifies
+semantic truth or establishes the proposed mechanism. No agreement, population
+repair rate or causal estimate is produced. No assistant-generated real-case
+examples are supplied in these forms.

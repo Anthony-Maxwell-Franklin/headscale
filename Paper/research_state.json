@@ -2,8 +2,8 @@
   "objective": "将学生CW升级为可投CCF B或二区期刊的论文",
   "status": "active",
   "manuscript": "Paper/build/manuscript.pdf",
-  "verified_pages": 19,
-  "tests_passed": 56,
+  "verified_pages": 20,
+  "tests_passed": 71,
   "completed": [
     "Workspace-local uv and locked Python research environment",
     "Pinned Git, identity and timestamp sensitivity",
@@ -13,7 +13,7 @@
     "Matched author/reviewer/integrator roles with fractional PR credit and artifact-scope controls",
     "First processing episodes and historical pending queues; metadata-only baseline archived",
     "Exploratory merge models with role, exposure-window, elapsed-time and omitted-backlog sensitivity",
-    "56 tests and raw-page, numerical-source, script and dependency provenance verification",
+    "71 tests and raw-page, numerical-source, script and dependency provenance verification",
     "Compiled an English working draft; independent human coding forms prepared",
     "Five-minute episode coalescing and all 23 leave-quarter-out influence fits completed",
     "All Bash reproduction and documented Python collection entry points use the locked uv environment; baseline metrics reproduced byte-for-byte",
@@ -31,7 +31,11 @@
     "Complete joint author/reviewer/integrator account-participation audit for all 1318 merged PRs and 2631 review records, with raw replay and revision-linkage caveats",
     "Six planned calendar-control fits with exact frozen-baseline reproduction, nonlinear time sensitivity and within-creation-quarter risk sets; all spline previews disclosed",
     "Full 70-page institutional DevSkill thesis inspected; Headscale screenshot location and prior identity-splitting caveat verified",
-    "56 Python tests, 141 generated quantities and an independently compiled 19-page English review package verified"
+    "56 Python tests, 141 generated quantities and an independently compiled 19-page English review package verified",
+    "Closer submitter/integrator and review-qualified self-merge precedents integrated; comparative expansion deferred because more role counts alone do not establish novelty",
+    "Source-linked decision-chain review prepared for all 100 cases and 2271 source records, preserving broad forms and blank human declarations; true reversed-order counterevidence retained",
+    "Author explicitly confirmed no funding and no competing interests; current sole-author declarations integrated",
+    "71 Python tests and the English 20-page working manuscript with independent source-package compilation verified"
   ],
   "in_progress": [],
   "required_remaining": [
@@ -40,14 +44,14 @@
     "Integrate declared human coding, agreement and adjudication evidence when available",
     "Human author review and venue-specific submission preparation"
   ],
-  "note": "Goal remains active and unachieved. Joint role participation and calendar-control diagnostics strengthen case interpretation: 761 of 783 self-merges have attributed other-account submitted reviews; the within-cohort late HR is 1.176 (0.625–2.210), retaining all 56 late merges. Full-text DevSkill comparison is now resolved. The English 19-page working draft, 141 generated quantities and standalone source compilation are verified; 56 Python tests pass. These checks do not establish a novel general method, causal concentration effect, responsibility-routing mechanism or sufficient CCF B contribution. Human coding remains deferred and unperformed. Author review, corresponding authorship and final declarations are unfinished. No venue submission or permanent archival deposit has occurred.",
+  "note": "Goal remains active and unachieved. The quantitative case audit is supported, but closer self-merge and PR-decision precedents reinforce the need for a distinct validated contribution. A structured post-pilot mechanism review now links component evidence, explicit decision, treatment and outcome to 2271 source records across the fixed 100 issues. Actual worksheets contain zero annotations; structural consistency is not semantic validation. Accurately sourced reversed sequences remain possible counterevidence. Funding and competing interests are author-confirmed absent; corresponding authorship, author review and genuine mechanism/outcome coding remain unfinished. The English 20-page draft, 141 generated quantities and 71 tests are verified. No venue submission or permanent archival deposit has occurred.",
   "review_endpoints_completed": 2166,
   "current_working_manuscript_title": "Contribution Concentration and Maintenance Outcomes: A Longitudinal Case Study of Headscale",
   "generated_quantities": 141,
   "timeline_endpoints_completed": 2166,
   "merged_pr_file_endpoints_completed": 1318,
   "previous_goal_turn_classification": "progress",
-  "last_updated_at_utc": "2026-10-15T12:33:24.132785+00:00",
+  "last_updated_at_utc": "2026-10-15T13:01:26.541989+00:00",
   "process_history": [
     {
       "task": "Review census",
@@ -103,9 +107,9 @@
     "conference_contribution_assessment": "Paper/submission/venue_assessment.txt",
     "review_identity_sensitivity": "Paper/results/review-identity-sensitivity/summary.json",
     "full_test_suite": {
-      "tests_passed": 56,
-      "log": "Paper/results/verification/unit-tests-role-calendar-20261015.txt",
-      "log_sha256": "a286c4defcd59c80f8b7b726ac8d42917b5a58692c32d82c7482cc512201b773"
+      "tests_passed": 71,
+      "log": "Paper/results/verification/unit-tests-mechanism-20261015.txt",
+      "log_sha256": "aa36de33468b97a63900b3c56cd74eef2a832b48248b19c7620d66d4ecea93d5"
     },
     "cached_timeline_identity_crosscheck": {
       "records_checked": 212,
@@ -119,7 +123,12 @@
     "component_execution_plan": "Paper/repair_validation_plan.json",
     "joint_role_audit": "Paper/results/role-overlap/summary.json",
     "calendar_control_audit": "Paper/results/calendar-identifiability/summary.json",
-    "literature_full_text_followup": "Paper/submission/literature_search_log.json"
+    "literature_full_text_followup": "Paper/submission/literature_search_log.json",
+    "mechanism_review_plan": "Paper/mechanism_validation_plan.json",
+    "mechanism_preparation": "Paper/validation/mechanism_preparation_manifest.json",
+    "mechanism_validation_status": "Paper/results/mechanism-validation/validation_status.json",
+    "comparative_design_decision": "Paper/submission/comparative_design_decision.txt",
+    "internal_identity_endpoint_audit": "Paper/submission/identity_lower_endpoint_audit.txt"
   },
   "confirmed_author": "Xiaoyu SHEN",
   "affiliation": "University of Nottingham Ningbo China",
@@ -189,5 +198,19 @@
     ],
     "late_merge_events": 56,
     "causal_identification_claimed": false
+  },
+  "funding_declaration": "No funding, explicitly confirmed by the author on 15 October 2026.",
+  "competing_interests_declaration": "No competing interests, explicitly confirmed by the author on 15 October 2026.",
+  "mechanism_review_status": {
+    "prepared_cases": 100,
+    "source_records": 2271,
+    "rater_1_annotated_cases": 0,
+    "rater_2_annotated_cases": 0,
+    "human_completion_declared": false,
+    "semantic_truth_verified": false,
+    "mechanism_validated": false,
+    "mode_selection": "Single-rater or paired review remains for actual human declaration; no actual design/completion inferred",
+    "source_index": "Paper/validation/mechanism_preparation_manifest.json",
+    "validation_status": "Paper/results/mechanism-validation/validation_status.json"
   }
 }

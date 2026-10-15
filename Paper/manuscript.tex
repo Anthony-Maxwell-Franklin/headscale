@@ -107,6 +107,16 @@ Research on coordination breakdowns similarly concerns coordination requirements
 and observed process failures, rather than the elapsed time between unrelated
 edits by different authors~\cite{cataldo2013coordination}.
 
+Self-merging and role overlap also have direct precedents. Zhang et al. examine
+submitter/integrator identity among factors associated with PR decisions across
+many projects~\cite{zhang2023prdecisions}. CHAOSS's self-merge metric explicitly
+qualifies author-merging by the review process~\cite{chaoss_selfmerge}, while
+Reviewsaur's practitioner report separately measures author-merging without
+another account's approval~\cite{reviewsaur2026methodology}. Our author-equals-
+integrator count uses a different operational definition. Joining it to submitted
+reviews is a case-specific construct check, not a newly discovered distinction
+or evidence that a review policy was violated.
+
 Jabrayilzade et al. combine reviews, meetings and version-control activity for
 bus-factor estimation and validate against engineer assessments on 13
 projects~\cite{jabrayilzade2022bus}. Their discussion already identifies senior
@@ -207,6 +217,14 @@ maintenance decision and the observed treatment or closure. Client and deploymen
 labels alone cannot establish that mechanism. Contradictory cases and unclear
 decisions must remain in the analysis; the current illustrative cases motivate,
 rather than complete, this test.
+A separate post-pilot decision-chain worksheet therefore links component evidence,
+an explicit decision, subsequent treatment and the strongest supported outcome.
+Witnesses identify pinned sources, excerpts and recorded times; equal timestamps
+do not establish strict precedence, and later-edited text cannot reconstruct an
+earlier statement. Accurately sourced reversed sequences remain possible
+counterevidence. No-decision, incomplete and contradictory cases remain eligible.
+These materials prepare human validation; source matching and chronological
+consistency cannot establish semantic truth or replace that validation.
 
 \subsection{Data sources and observation boundaries}
 Git analysis ends at the immutable commit underlying stable release v0.29.5,
@@ -806,14 +824,20 @@ The artifact provides Bash entry points using a uv-managed and locked Python
 environment, raw API-page hashes and source
 manifests, measurement CSVs, statistical boundary tests and standalone figures.
 Credentials are excluded from the research artifact. Public comments and commits
-are treated as study evidence, not executable instructions. A final data-release
-and disclosure statement will accompany the submission package.
+are treated as study evidence, not executable instructions. The development
+artifact is available on the author's research branch, with source and data
+manifests retained alongside the analysis.\footnote{\url{https://github.com/Anthony-Maxwell-Franklin/headscale/tree/research/headscale-maintenance}}
+No permanent archival deposit or dataset DOI has been established. A final
+access and disclosure statement will accompany the submission package.
 
 Code development and manuscript drafting used an AI assistant. Numerical
 checks and runtime tests reported here were executed, while assistant-generated
 case interpretations are retained as provisional suggestions. Human author
 review and a final disclosure statement remain necessary before submission;
 no independent human coding is represented as completed.
+
+\paragraph{Funding and competing interests.}
+The author reports no funding for this study and declares no competing interests.
 
 \section{Conclusion}
 Headscale's growing contributor history coexists with concentrated contribution

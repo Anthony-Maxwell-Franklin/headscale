@@ -1,5 +1,5 @@
 Headscale study: draft author and disclosure statements
-Prepared 14 October 2026; not final submission declarations.
+Prepared 15 October 2026; not final submission declarations.
 
 Confirmed author
 Xiaoyu SHEN
@@ -17,14 +17,18 @@ should reflect that author's actual roles and any later confirmed contributions.
 Executed computational checks do not establish completed human semantic coding.
 
 Funding and competing interests
-Both declarations await the author's explicit information. Independent execution
-alone is not a funding or competing-interest declaration.
+The author explicitly confirmed on 15 October 2026 that the study received no
+funding and that the author has no competing interests. These statements apply
+to the current sole confirmed author; any later coauthor must supply their own
+declarations before submission.
 
 Data availability: present draft status
 Release-pinned Git history, raw GitHub API snapshots and integrity manifests,
 analysis scripts, locked Python dependencies, generated figures and neutral review
-packets are retained in the local research artifact. No persistent public deposit
-or dataset DOI has been established. Public source URLs identify the upstream
+packets are retained in the research artifact and published on the author's
+authorized development branch:
+https://github.com/Anthony-Maxwell-Franklin/headscale/tree/research/headscale-maintenance
+No permanent archival deposit or dataset DOI has been established. Public source URLs identify the upstream
 material; they do not replace the retained historical snapshots. A final access
 statement and deposit location must reflect the actual release decision.
 

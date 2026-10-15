@@ -59,6 +59,18 @@ activity; dashboard existence does not validate a new empirical mechanism.
 False positives using HeadScale for transformer attention scaling were excluded
 because they do not concern juanfont/headscale or the Tailscale control server.
 
+Closer role-overlap precedents checked on 15 October
+Zhang et al.'s TSE article (online 2022; final issue 2023) explicitly studies
+submitter/integrator identity in PR decisions. CHAOSS already qualifies
+author-merging by review, and Reviewsaur's practitioner methodology jointly
+operationalizes author-merging and absence of another account's approval.
+Therefore the new account-overlap census applies existing distinctions. Adding
+similar repository counts alone would not establish a novel contribution.
+Primary sources:
+https://doi.org/10.1109/TSE.2022.3165056
+https://www.chaoss.community/kb/metric-self-merge-rates/
+https://www.reviewsaur.com/research/methodology
+
 Implication for the manuscript
 Do not claim the first academic study of Headscale, the first separation of
 authors and reviewers, or a new validated bus-factor measure. The current

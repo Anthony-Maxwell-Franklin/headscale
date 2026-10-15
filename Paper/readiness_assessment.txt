@@ -19,7 +19,7 @@ Verified evidence
   Constant-effect intervals include one. The late association involves a small,
   selected risk set and does not establish a causal maintenance benefit.
 - Raw pages, numerical sources, fit scripts, dependency lock and figure inputs
-  have provenance checks. The 56-test suite covers known hazards, temporal risk
+  have provenance checks. The 71-test suite covers known hazards, temporal risk
   boundaries, review-credit conservation, adjudication and exact commit linkage.
 - All 100 sampled issues have neutral offline review packets in each reviewer's
   existing order. Full SHA matching links 10 issues to 12 merged PRs; only 48 of
@@ -88,10 +88,28 @@ Remaining requirements
    influence checks do not remove selection, confounding or limited clustering,
    and cannot replace semantic validation.
 4. Complete author review, settle corresponding authorship and any additional
-   authors, supply funding/competing-interest declarations, and finalize the
+   authors, and finalize the
    selected venue's format, data-access statement and AI disclosure.
 
+Next scientific action after the closest-prior check
+CHAOSS already distinguishes author-merging without a review process; the
+Reviewsaur practitioner report jointly considers author-merging and approvals,
+and Zhang et al.'s TSE article studies submitter/integrator identity at scale.
+The case's joint counts therefore apply established distinctions. The prospective
+comparison decision in submission/comparative_design_decision.txt concludes that
+more repository role counts alone would not close the contribution gap.
+An internal lower-endpoint audit likewise changes no role-order conclusion and
+does not introduce a new method into the manuscript.
+
+The required mechanism check is now prepared separately from broad outcome labels:
+component evidence, explicit decision, subsequent treatment and supported outcome,
+with contrary evidence, unclear cases and source/time ambiguity retained. The
+source-linked worksheets and validators cannot perform the human interpretation.
+Honest single-reviewer disclosure remains possible; AI exposure must not be hidden
+behind an independent-coding claim. No real decision-chain review is completed.
+
 Author and submission state
+The author confirmed no funding and no competing interests on 15 October 2026.
 Xiaoyu SHEN and University of Nottingham Ningbo China are author-confirmed.
 George.Zhou@nottingham.edu.cn is a provisional contact; corresponding authorship
 and supervisor coauthorship remain unsettled. The author states that the project

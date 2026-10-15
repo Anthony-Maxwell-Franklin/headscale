@@ -398,86 +398,86 @@ File: figures/contribution_concentration.pdf Graphic file (type pdf)
 <use figures/contribution_concentration.pdf>
 File: figures/rename_sensitivity.pdf Graphic file (type pdf)
 <use figures/rename_sensitivity.pdf>
+ [5]
 File: figures/paired_pr_role_concentration.pdf Graphic file (type pdf)
 <use figures/paired_pr_role_concentration.pdf>
- [5] [6] (generated/role_overlap_table.tex) [7]
+ [6] [7] (generated/role_overlap_table.tex)
 (generated/file_scope_table.tex)
 File: figures/paired_author_review_integrator.pdf Graphic file (type pdf)
 <use figures/paired_author_review_integrator.pdf>
  [8]
 File: figures/bug_time_to_closure.pdf Graphic file (type pdf)
 <use figures/bug_time_to_closure.pdf>
- (generated/repair_validation_table.tex)
-[9] [10]
+ [9] (generated/repair_validation_table.tex) [10]
 File: figures/pr_dispositions.pdf Graphic file (type pdf)
 <use figures/pr_dispositions.pdf>
  [11] (generated/model_table.tex) [12] (generated/window_table.tex)
-[13] (generated/calendar_control_table.tex) [14] [15]
+[13] (generated/calendar_control_table.tex) [14] [15] [16]
 (generated/identity_bounds_table.tex) (generated/piecewise_window_table.tex)
-(generated/robustness_table.tex) (manuscript.bbl [16
+(generated/robustness_table.tex) (manuscript.bbl [17
 
 ]
-Underfull \hbox (badness 3354) in paragraph at lines 27--32
+Underfull \hbox (badness 3354) in paragraph at lines 33--38
 \TU/lmr/m/n/10.95 FOSDEM presentation, 2026.  URL [][]$[][][][][] [] [] [] [][]
 [][][][] [] [][][] [] [][][][] [] [][][][][][][][] [] [][][][][] []
  []
 
 
-Underfull \hbox (badness 4242) in paragraph at lines 51--56
+Underfull \hbox (badness 4242) in paragraph at lines 57--62
 []\TU/lmr/m/n/10.95 Headscale contributors.  Move logic for validating node nam
 es: repair com-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 51--56
+Underfull \hbox (badness 10000) in paragraph at lines 57--62
 \TU/lmr/m/n/10.95 mit 064c46f, 2024.  URL [][]$[][][][][] [] [] [] [][][][][][]
  [] [][][] [] [][][][][][][][] [] [][][][][][][][][] [] [][][][][][] []
  []
 
 
-Underfull \hbox (badness 1668) in paragraph at lines 51--56
+Underfull \hbox (badness 1668) in paragraph at lines 57--62
 [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][
 ]$[][]\TU/lmr/m/n/10.95 .  Commit linked to issue 2121 and
  []
 
-
-Underfull \hbox (badness 6893) in paragraph at lines 58--65
+[18]
+Underfull \hbox (badness 6893) in paragraph at lines 64--71
 []\TU/lmr/m/n/10.95 Headscale contributors.  Policy matcher containment versus 
 overlap: repair
  []
 
 
-Underfull \hbox (badness 2556) in paragraph at lines 58--65
+Underfull \hbox (badness 2556) in paragraph at lines 64--71
 \TU/lmr/m/n/10.95 commit d810597, 2025.  URL [][]$[][][][][] [] [] [] [][][][][
 ][] [] [][][] [] [][][][][][][][] [] [][][][][][][][][] [] [][][][][][] []
  []
 
-[17]
-Underfull \hbox (badness 3547) in paragraph at lines 125--132
+
+Underfull \hbox (badness 3547) in paragraph at lines 131--138
 []\TU/lmr/m/n/10.95 Kim Herzig, Sascha Just, and Andreas Zeller.  It’s not a bu
 g, it’s a fea-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 125--132
+Underfull \hbox (badness 10000) in paragraph at lines 131--138
 \TU/lmr/m/n/10.95 ture: How misclassification impacts bug prediction.  In \TU/l
 mr/m/it/10.95 Proceedings of
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 125--132
+Underfull \hbox (badness 10000) in paragraph at lines 131--138
 \TU/lmr/m/it/10.95 the 2013 International Conference on Software Engineering\TU
 /lmr/m/n/10.95 , pages 392–401,
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 125--132
+Underfull \hbox (badness 10000) in paragraph at lines 131--138
 \TU/lmr/m/n/10.95 2013.  URL [][]$[][][][][] [] [] [] [][][] [] [][][][][][][][
 ][] [] [][][] [] [][][][][][] [] [][][][][][][][] [] [][][][][][][][][][][] []
  []
 
-[18]) [19] (manuscript.aux)
+[19]) [20] (manuscript.aux)
 Package rerunfilecheck Info: File `manuscript.out' has not changed.
 (rerunfilecheck)             Checksum: 9CDC58A533B779C12B247500AE08EA43;6209.
  )
-Output written on manuscript.xdv (19 pages, 617612 bytes).
+Output written on manuscript.xdv (20 pages, 645792 bytes).

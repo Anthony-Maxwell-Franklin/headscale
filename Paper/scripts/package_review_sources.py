@@ -31,7 +31,9 @@ def main():
                     PAPER / "submission/author_metadata.json",
                     PAPER / "submission/venue_assessment.txt",
                     PAPER / "submission/literature_overlap_assessment.txt",
-                    PAPER / "submission/literature_search_log.json"]
+                    PAPER / "submission/literature_search_log.json",
+                    PAPER / "mechanism_validation_plan.json",
+                    PAPER / "validation/mechanism_instructions.txt"]
     names = [path.name for path in source_files]
     if len(names) != len(set(names)):
         raise ValueError("Flattened source filenames collide")
@@ -58,7 +60,9 @@ def main():
         "The included manuscript.pdf is the verified working draft.\n\n"
         "This package contains manuscript sources and figures, not the full raw-data\n"
         "reproduction artifact. Data, scripts and locked dependencies remain in the\n"
-        "parent research workspace. No credentials or virtual environment are included.\n"
+        "parent research workspace. The decision-chain plan and instructions are\n"
+        "included; their preparation does not establish completed human review.\n"
+        "No credentials or virtual environment are included.\n"
         "Regenerate this package from the workspace using:\n"
         "  bash run-research.sh python Paper/scripts/verify_artifact.py\n"
         "  bash run-research.sh python Paper/scripts/package_review_sources.py\n"

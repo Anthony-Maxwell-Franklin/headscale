@@ -11,7 +11,9 @@ The included manuscript.pdf is the verified working draft.
 
 This package contains manuscript sources and figures, not the full raw-data
 reproduction artifact. Data, scripts and locked dependencies remain in the
-parent research workspace. No credentials or virtual environment are included.
+parent research workspace. The decision-chain plan and instructions are
+included; their preparation does not establish completed human review.
+No credentials or virtual environment are included.
 Regenerate this package from the workspace using:
   bash run-research.sh python Paper/scripts/verify_artifact.py
   bash run-research.sh python Paper/scripts/package_review_sources.py
