@@ -1,7 +1,7 @@
 Headscale maintenance study: working-manuscript review package
 
 This is a local draft for author/supervisor review. No venue submission
-or public data deposit has taken place. Semantic coding remains deferred
+or permanent archival deposit has taken place. Semantic coding remains deferred
 and unperformed; corresponding authorship and final declarations are pending.
 
 The source files are flattened for standalone LaTeX compilation. With

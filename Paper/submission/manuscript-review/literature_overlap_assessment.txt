@@ -1,4 +1,4 @@
-Literature overlap assessment — 14 October 2026
+Literature overlap assessment — 15 October 2026
 
 Purpose and scope
 Assess prior work on Headscale itself and on the proposed maintenance-analysis
@@ -18,17 +18,16 @@ performance study; it does not supply the proposed longitudinal maintenance-role
 PR-episode and responsibility-boundary analysis.
 Primary source: https://doi.org/10.1002/spe.3329
 
-Same repository appears in a mining-tool thesis: qualified finding
-The University of Macedonia's 2025 master's-thesis record describes DevSkill,
-a tool for developer-skill recognition from repositories. An indexed PDF
-illustration includes juanfont/headscale among repository rows. The institutional
-abstract is readable, but direct PDF retrieval encountered an access challenge.
-Repository appearance is therefore supported by an indexed illustration, while
-the extent of Headscale-specific analysis remains unverified. Do not equate
-dataset/screenshot inclusion with a dedicated maintenance case study.
+Same repository appears in a mining-tool thesis: full text checked
+The institutional PDF became accessible through an ordinary public GET on
+15 October. Headscale appears in Figure 4, printed p.37/PDF p.47, rather than
+Figure 3 as suggested by the earlier indexed snippet. The thesis addresses
+aggregate developer skills and technology trends (pp.2,43–56), with no dedicated
+Headscale maintenance analysis. Its p.58 identity-splitting limitation is relevant
+prior work. This resolves the access lead without establishing exhaustive novelty.
 Primary metadata:
 https://dspace.lib.uom.gr/handle/2159/33341
-Indexed PDF lead:
+Inspected full text:
 https://dspace.lib.uom.gr/bitstream/2159/33341/1/MachairasPanagiotisMsc2025.pdf
 
 Closest direction: strong prior precedent
@@ -72,5 +71,5 @@ Another project name or additional activity charts cannot establish novelty.
 Bounded negative finding
 The inspected results did not establish a peer-reviewed study centered on this
 specific Headscale maintenance-process question. This is not proof that none
-exists. The mining-tool thesis remains an unresolved overlap lead; further
-bibliographic checking is needed before any exhaustive novelty claim.
+exists. Resolving the mining-tool thesis does not establish comprehensive
+bibliographic coverage or justify an exhaustive novelty claim.

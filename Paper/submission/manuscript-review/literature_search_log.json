@@ -127,12 +127,14 @@
     {
       "url": "https://dspace.lib.uom.gr/handle/2159/33341",
       "status": "Verified institutional title, year and abstract",
-      "relevance": "Developer-skill mining; indexed PDF illustration includes juanfont/headscale"
+      "relevance": "Developer-skill mining; Headscale illustrated in Figure 4, p.37"
     },
     {
       "url": "https://dspace.lib.uom.gr/bitstream/2159/33341/1/MachairasPanagiotisMsc2025.pdf",
-      "status": "Direct full-text request returned an access challenge",
-      "relevance": "Extent of Headscale-specific analysis unresolved; do not classify from a screenshot alone"
+      "status": "Full 70-page institutional PDF inspected on 15 October 2026 after ordinary public GET returned HTTP 200",
+      "relevance": "Figure 4 p.37 contains Headscale; p.58 acknowledges email identity splitting; no Headscale maintenance study presented",
+      "pdf_sha256": "a1c32facf108ca0b4745680aa3c8ac24994420a0381c4f0d8fb187e46a1a6aa1",
+      "pdf_bytes": 1802627
     },
     {
       "url": "https://doi.org/10.1145/3510457.3513082",
@@ -167,5 +169,6 @@
   ],
   "limitation": "Not a complete systematic review or exhaustive scholarly-database export. Combined-query ranking and inaccessible full text restrict negative findings.",
   "negative_finding": "No inspected result established a peer-reviewed study centered on the specific Headscale maintenance-role, PR-episode and responsibility-boundary question. This does not prove absence.",
-  "next_action": "Retain explicit prior-precedent citations and resolve the thesis lead before any exhaustive first-study claim."
+  "next_action": "Maintain bounded novelty claims; human mechanism validation and broader bibliographic coverage remain unfinished.",
+  "full_text_followup_at_utc": "2026-10-15T12:26:43.655182+00:00"
 }

@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "complete": true,
+  "started_at_utc": "2026-10-15T12:28:28.691740+00:00",
+  "completed_at_utc": "2026-10-15T12:28:31.501430+00:00",
+  "cutoff_timestamp_utc": "2026-10-13T13:51:09.921007+00:00",
+  "plan_sha256": "29ed04d74c27d58a5f51cde676e9c579cc57b344284bd5fc13383430009727a1",
+  "source_manifest_sha256": "1a393413d762f0f3404d40c09bf6dad1120e941610dbe4f7be0f6527d15dd775",
+  "source_files": 9646,
+  "script_and_helper_sha256": {
+    "Paper/scripts/analyze_role_overlap.py": "26e46d644419c870fc6ff2f96ee72d8e0a3be81ced52d5f76cc4de08195c609c",
+    "Paper/scripts/analyze.py": "0c2e3588e331ee7104bf642509d78b27803e78469a7392a1d2f887b3aa6b65d5",
+    "Paper/scripts/analyze_process.py": "d5664ecac7097863b65470f03124802ce63d20a605f610f984b0736211d9810f",
+    "Paper/scripts/analyze_review_census.py": "349009e57c80a8fab7f4204039b43d756e10d49648947ab17ab2a16fc18724a9",
+    "Paper/scripts/collect_process.py": "b126613ba5f6d482a408c96a3b99cb382b81425580901b2f99070e9e6eb4c649",
+    "Paper/scripts/github_auth.py": "05ac47c84dbdc3f00705e491bbea041faf7b40b81fcdf12ad48b563e1f8fb17a",
+    "Paper/scripts/pr_history.py": "f1cdf433d9114e8bee27eea54f40b866e87d2ee3972f9602cbccba20da82ea0b",
+    "Paper/scripts/research_metrics.py": "e2a7e3b02a6e013f6a0688de80317ba3a0ced20a4ce9cbbc1d920c1341081001",
+    "Paper/scripts/test_role_overlap.py": "a326b11d4b5c299cf0cf3b46d0576b3612d6fecd5810456c14e58f4504b09461"
+  },
+  "output_sha256": {
+    "Paper/results/role-overlap/pr_role_overlap.csv": "c0940d25434e9fea6fede649735e04b869d168e1cb3d0b44a2b3fb4ac1957914",
+    "Paper/results/role-overlap/review_record_audit.csv": "13a33e9c0109bef09f97d6d67b68bfdf4d9bf4869727739470767cd5a7c8b6ba",
+    "Paper/results/role-overlap/quarterly_role_overlap.csv": "f05a9fe3bcb5e5f73d5bd46622069e2dde26b1ff4394cc16234cca5986398add"
+  },
+  "population_membership_verified_against": [
+    "Paper/results/review-census",
+    "Paper/results/pr-census"
+  ],
+  "raw_review_records_audited": 2631,
+  "quarters": 25,
+  "all_merged": {
+    "merged_human_prs": 1318,
+    "attributed_reviewed_prs": 1259,
+    "self_merged_prs": 783,
+    "prs_with_collected_approved_record": 1250,
+    "prs_with_collected_head_matching_approved_record": 1042,
+    "self_merges_with_attributed_review": 761,
+    "self_merges_with_collected_approved_record": 757,
+    "self_merges_with_collected_head_matching_approved_record": 618,
+    "prs_with_review_by_account_other_than_author_and_integrator": 848,
+    "prs_with_approved_record_by_account_other_than_author_and_integrator": 814,
+    "prs_with_at_least_three_visible_accounts": 139,
+    "prs_with_temporally_eligible_unattributed_records": 74,
+    "temporally_eligible_unattributed_records": 177,
+    "self_merge_with_other_account_review": 761,
+    "self_merge_without_attributed_other_account_review": 22,
+    "other_merger_with_merger_only_review": 411,
+    "other_merger_with_third_account_review": 87,
+    "other_merger_without_attributed_other_account_review": 37,
+    "visible_union_account_counts": {
+      "1": 22,
+      "2": 1157,
+      "3": 128,
+      "4": 9,
+      "5": 2
+    }
+  },
+  "limitations": [
+    "Observed accounts are not independently verified people, effort, knowledge holders or bus-factor estimates.",
+    "Submitted-review participation does not establish review quality, gate enforcement or maintenance intent.",
+    "A record labelled APPROVED in the collected snapshot is not proof of historical approval validity at merge; later or dismissed decisions may alter interpretation.",
+    "The collected detail.head.sha is not independently established as the historical merge-time revision.",
+    "A missing exact review-commit/head-SHA match does not establish unreviewed changes or a bypass.",
+    "Unattributed submitted records may change observed account categories or union counts; human status and distinctness are not assigned.",
+    "Deleted or informal reviews, account aliases and non-atomic collection remain outside this audit.",
+    "These exploratory census descriptions do not supply human outcome coding, repair prevalence, causal effects or a novelty/acceptance claim."
+  ]
+}

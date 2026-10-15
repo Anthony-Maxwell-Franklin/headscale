@@ -1,0 +1,340 @@
+{
+  "primary_linear": {
+    "model": "primary_linear",
+    "kind": "primary",
+    "calendar_adjustment": "linear",
+    "baseline_strata": "none",
+    "counts": {
+      "eligible_subjects": 1664,
+      "retained_subjects": 1661,
+      "interval_rows_before_filter": 1664,
+      "retained_interval_rows": 1661,
+      "no_event_risk_intervals_excluded": 3,
+      "merge_events": 1284,
+      "eligible_strata": 1,
+      "informative_strata": 1,
+      "informative_quarter_clusters": 23,
+      "late_merge_events": null,
+      "strata_with_late_merge_events": null
+    },
+    "covariates": [
+      "hhi_per_01",
+      "merges_log2",
+      "backlog_log2",
+      "prior_author_prs_log2",
+      "prior_integrator_author",
+      "calendar_years"
+    ],
+    "warnings": [],
+    "status": "identified_fit",
+    "concentration_effects": [
+      {
+        "period": "constant",
+        "log_hazard_coefficient": -0.0019875092016211054,
+        "cluster_standard_error": 0.03548801620295916,
+        "hazard_ratio": 0.9980144645869347,
+        "lower_95": 0.9272007758055465,
+        "upper_95": 1.0742364518185377
+      }
+    ],
+    "coefficient_vector": {
+      "hhi_per_01": -0.0019875092016211054,
+      "merges_log2": 0.052360090237512896,
+      "backlog_log2": -0.06898116113403086,
+      "prior_author_prs_log2": 0.10277343217250025,
+      "prior_integrator_author": 0.3000223975979662,
+      "calendar_years": -0.18212967207752306
+    },
+    "log_likelihood": -8390.662507137979,
+    "score_infinity_norm": 9.127809619258187e-12,
+    "information_minimum_eigenvalue": 34.90005253095155,
+    "information_condition_number": 441.2071203772447,
+    "interval_method": "Quarter-clustered sandwich covariance; Student t with informative quarters minus one df"
+  },
+  "primary_spline4": {
+    "model": "primary_spline4",
+    "kind": "primary",
+    "calendar_adjustment": "spline4",
+    "baseline_strata": "none",
+    "counts": {
+      "eligible_subjects": 1664,
+      "retained_subjects": 1661,
+      "interval_rows_before_filter": 1664,
+      "retained_interval_rows": 1661,
+      "no_event_risk_intervals_excluded": 3,
+      "merge_events": 1284,
+      "eligible_strata": 1,
+      "informative_strata": 1,
+      "informative_quarter_clusters": 23,
+      "late_merge_events": null,
+      "strata_with_late_merge_events": null
+    },
+    "covariates": [
+      "hhi_per_01",
+      "merges_log2",
+      "backlog_log2",
+      "prior_author_prs_log2",
+      "prior_integrator_author",
+      "calendar_spline_1",
+      "calendar_spline_2",
+      "calendar_spline_3",
+      "calendar_spline_4"
+    ],
+    "warnings": [],
+    "status": "identified_fit",
+    "concentration_effects": [
+      {
+        "period": "constant",
+        "log_hazard_coefficient": 0.004981112837456798,
+        "cluster_standard_error": 0.02984468068661315,
+        "hazard_ratio": 1.004993539203817,
+        "lower_95": 0.9446762841222077,
+        "upper_95": 1.0691620302291343
+      }
+    ],
+    "coefficient_vector": {
+      "hhi_per_01": 0.004981112837456798,
+      "merges_log2": 0.010515758544548576,
+      "backlog_log2": 0.1517056317810537,
+      "prior_author_prs_log2": 0.11128412333663791,
+      "prior_integrator_author": 0.2306084476560161,
+      "calendar_spline_1": -0.434446769685127,
+      "calendar_spline_2": -0.8106621068857016,
+      "calendar_spline_3": -1.0447339587620417,
+      "calendar_spline_4": -1.153270753817917
+    },
+    "log_likelihood": -8383.618863940303,
+    "score_infinity_norm": 4.4995118742008344e-12,
+    "information_minimum_eigenvalue": 8.584660146666582,
+    "information_condition_number": 1722.2011612713652,
+    "interval_method": "Quarter-clustered sandwich covariance; Student t with informative quarters minus one df"
+  },
+  "primary_quarter_baseline": {
+    "model": "primary_quarter_baseline",
+    "kind": "primary",
+    "calendar_adjustment": "quarter_baseline",
+    "baseline_strata": "creation quarter",
+    "counts": {
+      "eligible_subjects": 1664,
+      "retained_subjects": 1635,
+      "interval_rows_before_filter": 1664,
+      "retained_interval_rows": 1635,
+      "no_event_risk_intervals_excluded": 29,
+      "merge_events": 1284,
+      "eligible_strata": 23,
+      "informative_strata": 23,
+      "informative_quarter_clusters": 23,
+      "late_merge_events": null,
+      "strata_with_late_merge_events": null
+    },
+    "covariates": [
+      "hhi_per_01",
+      "merges_log2",
+      "backlog_log2",
+      "prior_author_prs_log2",
+      "prior_integrator_author"
+    ],
+    "warnings": [],
+    "status": "identified_fit",
+    "concentration_effects": [
+      {
+        "period": "constant",
+        "log_hazard_coefficient": 0.06144876005844314,
+        "cluster_standard_error": 0.04107617547943806,
+        "hazard_ratio": 1.063376007808319,
+        "lower_95": 0.9765415164524464,
+        "upper_95": 1.1579318594566093
+      }
+    ],
+    "coefficient_vector": {
+      "hhi_per_01": 0.06144876005844314,
+      "merges_log2": -0.40637703058483926,
+      "backlog_log2": 0.17761206614431205,
+      "prior_author_prs_log2": 0.10048999446044576,
+      "prior_integrator_author": 0.2839954948191407
+    },
+    "log_likelihood": -4488.072394824445,
+    "score_infinity_norm": 3.934630399271555e-13,
+    "information_minimum_eigenvalue": 32.37346480357014,
+    "information_condition_number": 356.89741666203014,
+    "interval_method": "Quarter-clustered sandwich covariance; Student t with informative quarters minus one df"
+  },
+  "piecewise_linear": {
+    "model": "piecewise_linear",
+    "kind": "piecewise",
+    "calendar_adjustment": "linear",
+    "baseline_strata": "prior role/experience",
+    "counts": {
+      "eligible_subjects": 1664,
+      "retained_subjects": 1637,
+      "interval_rows_before_filter": 1894,
+      "retained_interval_rows": 1863,
+      "no_event_risk_intervals_excluded": 31,
+      "merge_events": 1284,
+      "eligible_strata": 6,
+      "informative_strata": 6,
+      "informative_quarter_clusters": 23,
+      "late_merge_events": 56,
+      "strata_with_late_merge_events": 4
+    },
+    "covariates": [
+      "hhi_per_01",
+      "late_hhi_per_01",
+      "merges_log2",
+      "backlog_log2",
+      "calendar_years"
+    ],
+    "warnings": [],
+    "status": "identified_fit",
+    "concentration_effects": [
+      {
+        "period": "through_day_30",
+        "log_hazard_coefficient": -0.016052382913583574,
+        "cluster_standard_error": 0.03671824480333394,
+        "hazard_ratio": 0.9840757699491076,
+        "lower_95": 0.9119215047984507,
+        "upper_95": 1.061939120752462
+      },
+      {
+        "period": "after_day_30",
+        "log_hazard_coefficient": 0.23928778751670798,
+        "cluster_standard_error": 0.08883859551976685,
+        "hazard_ratio": 1.2703440731490598,
+        "lower_95": 1.0565911363568887,
+        "upper_95": 1.5273401495201009
+      }
+    ],
+    "coefficient_vector": {
+      "hhi_per_01": -0.016052382913583574,
+      "late_hhi_per_01": 0.25534017043029156,
+      "merges_log2": 0.06458604674175288,
+      "backlog_log2": -0.019323295308121796,
+      "calendar_years": -0.15925774932629433
+    },
+    "log_likelihood": -7161.959841203192,
+    "score_infinity_norm": 1.3791634501103545e-11,
+    "information_minimum_eigenvalue": 140.4028092422699,
+    "information_condition_number": 35.80973081152188,
+    "interval_method": "Quarter-clustered sandwich covariance; Student t with informative quarters minus one df"
+  },
+  "piecewise_spline4": {
+    "model": "piecewise_spline4",
+    "kind": "piecewise",
+    "calendar_adjustment": "spline4",
+    "baseline_strata": "prior role/experience",
+    "counts": {
+      "eligible_subjects": 1664,
+      "retained_subjects": 1637,
+      "interval_rows_before_filter": 1894,
+      "retained_interval_rows": 1863,
+      "no_event_risk_intervals_excluded": 31,
+      "merge_events": 1284,
+      "eligible_strata": 6,
+      "informative_strata": 6,
+      "informative_quarter_clusters": 23,
+      "late_merge_events": 56,
+      "strata_with_late_merge_events": 4
+    },
+    "covariates": [
+      "hhi_per_01",
+      "late_hhi_per_01",
+      "merges_log2",
+      "backlog_log2",
+      "calendar_spline_1",
+      "calendar_spline_2",
+      "calendar_spline_3",
+      "calendar_spline_4"
+    ],
+    "warnings": [],
+    "status": "identified_fit",
+    "concentration_effects": [
+      {
+        "period": "through_day_30",
+        "log_hazard_coefficient": -0.005514360872720736,
+        "cluster_standard_error": 0.03150763703275734,
+        "hazard_ratio": 0.994500815306739,
+        "lower_95": 0.9315949136862834,
+        "upper_95": 1.0616544349004755
+      },
+      {
+        "period": "after_day_30",
+        "log_hazard_coefficient": 0.2556291428489779,
+        "cluster_standard_error": 0.09468155724302493,
+        "hazard_ratio": 1.291273761022838,
+        "lower_95": 1.0610633983667082,
+        "upper_95": 1.5714310082438718
+      }
+    ],
+    "coefficient_vector": {
+      "hhi_per_01": -0.005514360872720736,
+      "late_hhi_per_01": 0.26114350372169864,
+      "merges_log2": 0.014995348858030073,
+      "backlog_log2": 0.17357426499437936,
+      "calendar_spline_1": -0.32417728606096496,
+      "calendar_spline_2": -0.7155230860762649,
+      "calendar_spline_3": -0.8563875047243888,
+      "calendar_spline_4": -0.9984953478896196
+    },
+    "log_likelihood": -7156.387209766587,
+    "score_infinity_norm": 6.324907809462485e-12,
+    "information_minimum_eigenvalue": 8.968341738610151,
+    "information_condition_number": 363.3360948200998,
+    "interval_method": "Quarter-clustered sandwich covariance; Student t with informative quarters minus one df"
+  },
+  "piecewise_quarter_baseline": {
+    "model": "piecewise_quarter_baseline",
+    "kind": "piecewise",
+    "calendar_adjustment": "quarter_baseline",
+    "baseline_strata": "creation quarter x prior role/experience",
+    "counts": {
+      "eligible_subjects": 1664,
+      "retained_subjects": 1609,
+      "interval_rows_before_filter": 1894,
+      "retained_interval_rows": 1719,
+      "no_event_risk_intervals_excluded": 175,
+      "merge_events": 1284,
+      "eligible_strata": 93,
+      "informative_strata": 89,
+      "informative_quarter_clusters": 23,
+      "late_merge_events": 56,
+      "strata_with_late_merge_events": 37
+    },
+    "covariates": [
+      "hhi_per_01",
+      "late_hhi_per_01",
+      "merges_log2",
+      "backlog_log2"
+    ],
+    "warnings": [],
+    "status": "identified_fit",
+    "concentration_effects": [
+      {
+        "period": "through_day_30",
+        "log_hazard_coefficient": 0.03666203121665569,
+        "cluster_standard_error": 0.06525994042394236,
+        "hazard_ratio": 1.0373423722478958,
+        "lower_95": 0.9060336778215261,
+        "upper_95": 1.1876812348170378
+      },
+      {
+        "period": "after_day_30",
+        "log_hazard_coefficient": 0.16188003210280388,
+        "cluster_standard_error": 0.30440751553792034,
+        "hazard_ratio": 1.175719184301778,
+        "lower_95": 0.6253633013036631,
+        "upper_95": 2.2104200829399407
+      }
+    ],
+    "coefficient_vector": {
+      "hhi_per_01": 0.03666203121665569,
+      "late_hhi_per_01": 0.12521800088614818,
+      "merges_log2": -0.2748170382902893,
+      "backlog_log2": 0.20372898227659586
+    },
+    "log_likelihood": -3412.726178341785,
+    "score_infinity_norm": 2.948752353404416e-13,
+    "information_minimum_eigenvalue": 14.800385139707332,
+    "information_condition_number": 39.19205412231402,
+    "interval_method": "Quarter-clustered sandwich covariance; Student t with informative quarters minus one df"
+  }
+}

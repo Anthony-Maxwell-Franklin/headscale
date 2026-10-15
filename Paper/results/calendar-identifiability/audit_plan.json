@@ -1,0 +1,41 @@
+{
+  "recorded_at_utc": "2026-10-15T12:20:19Z",
+  "status": "Post-pilot diagnostic plan recorded before quarter-stratified fits; not preregistered",
+  "input": "Paper/results/pr-census/human_pr_metadata_features.csv",
+  "population": "Human-authored initial PR episodes with defined prior 90-day integration HHI; fixed existing submission covariates and first-disposition outcomes",
+  "question": "How much concentration variation is between creation quarters, and how sensitive are existing associations to nonlinear calendar adjustment and within-quarter baseline comparisons?",
+  "calendar_spline": {
+    "type": "Centered natural cubic regression spline",
+    "degrees_of_freedom": 4,
+    "knot_quantiles": [0, 0.25, 0.5, 0.75, 1],
+    "selection": "Fixed modest basis declared to parent before preview model outputs were inspected; no selection by significance, likelihood or effect direction"
+  },
+  "models": [
+    "Exact existing primary linear-calendar Cox model",
+    "Primary Cox model replacing linear calendar with four spline columns",
+    "Primary Cox model stratified by creation quarter, removing calendar covariates and retaining prior role/experience covariates",
+    "Exact existing role/experience-stratified 30-day piecewise model",
+    "Piecewise model replacing linear calendar with four spline columns",
+    "Piecewise model with baseline strata crossed by role/experience and creation quarter, removing calendar covariates"
+  ],
+  "uncertainty": "Existing quarter-clustered sandwich covariance and Student t critical value with G-1 degrees of freedom; few clusters and cross-quarter dependence remain limitations",
+  "failure_policy": "Retain planned fits and their errors; reject rank-deficient, nonfinite, non-positive-information or nonconverged fits; do not change basis, strata or covariates to obtain an interval",
+  "outputs": ["summary.json", "quarter_exposure.csv", "model_effects.csv", "model_fits.json"],
+  "preview_disclosure": {
+    "description": "Before recording this plan, exploratory natural-spline df 3/4/5 fits were calculated. Four df were declared before their outputs were inspected. All preview directions are disclosed; the quarter-stratified analyses were not yet executed.",
+    "linear_calendar_exposure_r_squared": 0.0015161260941930488,
+    "quarter_indicator_exposure_r_squared": 0.7723891669744299,
+    "previews": [
+      {"df": 3, "primary_hr": 0.9900956496327635, "primary_lower": 0.9277768498623479, "primary_upper": 1.0566004051159148, "early_hr": 0.9780061395505243, "late_hr": 1.2717562991652556},
+      {"df": 4, "primary_hr": 1.004993539203817, "primary_lower": 0.9446762841222077, "primary_upper": 1.0691620302291343, "early_hr": 0.994500815306739, "late_hr": 1.291273761022838},
+      {"df": 5, "primary_hr": 0.9962657558954654, "primary_lower": 0.9401751794486418, "primary_upper": 1.0557026797410598, "early_hr": 0.9855468197779628, "late_hr": 1.2797128211931095}
+    ]
+  },
+  "limits": [
+    "Within-quarter contrasts reduce between-quarter confounding but cannot control within-quarter confounding or evolving post-submission workload.",
+    "Quarter strata change the risk-set comparisons and hence the conditional association estimand; this is not a causal estimate or an independent replication.",
+    "At most 23 creation-quarter clusters are available, and 90-day exposure windows overlap across quarter boundaries.",
+    "The late piecewise association is based on selected surviving episodes and only 56 observed merges before any information exclusions.",
+    "A four-df spline cannot represent arbitrary workflow changes; no model establishes identification of a concentration effect."
+  ]
+}

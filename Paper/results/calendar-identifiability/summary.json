@@ -1,0 +1,77 @@
+{
+  "created_at_utc": "2026-10-15T12:26:23.305738+00:00",
+  "status": "Post-pilot exploratory diagnostic",
+  "input_prs": 1667,
+  "eligible_prs": 1664,
+  "excluded_missing_covariates": 3,
+  "creation_quarters": 23,
+  "hhi_minimum": 0.365079365079365,
+  "hhi_maximum": 1.0,
+  "quarters_with_zero_hhi_range": 1,
+  "quarters_with_hhi_range_at_least_point_one": 18,
+  "exposure_variation": {
+    "pr_weighting": "One weight per eligible PR, not per independent date or exposure draw",
+    "total_sum_squares": 40.831966242697746,
+    "within_quarter_sum_squares": 9.293797850572389,
+    "between_quarter_sum_squares": 31.53816839212536,
+    "within_quarter_fraction": 0.22761083302557003,
+    "between_quarter_fraction": 0.77238916697443,
+    "linear_calendar_exposure_r_squared": 0.0015161260941930488,
+    "spline4_calendar_exposure_r_squared": 0.33465159082739504
+  },
+  "calendar_spline": {
+    "type": "Centered natural cubic regression spline",
+    "degrees_of_freedom": 4,
+    "knot_quantiles": [
+      0,
+      0.25,
+      0.5,
+      0.75,
+      1
+    ],
+    "knots_calendar_years": [
+      1.3088185413339417,
+      2.8411367943062844,
+      4.531511632697037,
+      5.869836782581691,
+      6.782850755444014
+    ],
+    "formula": "cr(time, knots=interior, lower_bound=lower, upper_bound=upper, constraints='center')",
+    "exposure_only_construction": "Knots and centering use submission times, never outcomes"
+  },
+  "planned_fits": 6,
+  "identified_fits": 6,
+  "failed_fits": [],
+  "frozen_baselines_reproduced": true,
+  "limits": [
+    "Within-quarter contrasts reduce between-quarter confounding but cannot control within-quarter confounding or evolving post-submission workload.",
+    "Quarter strata change the risk-set comparisons and hence the conditional association estimand; this is not a causal estimate or an independent replication.",
+    "At most 23 creation-quarter clusters are available, and 90-day exposure windows overlap across quarter boundaries.",
+    "The late piecewise association is based on selected surviving episodes and only 56 observed merges before any information exclusions.",
+    "A four-df spline cannot represent arbitrary workflow changes; no model establishes identification of a concentration effect."
+  ],
+  "provenance": {
+    "input_sha256": "7c15b04527fc7665a915e322d2e3f96b840e1fa1053033ba3352be25f9897a4d",
+    "plan_sha256": "60202d1c587f4844dd429ebc334b0a286247818ef42c0e0e1112013dd4d0dc47",
+    "preview_sha256": "739ccea18f676a86dbe3ee92e3c801b13daade109334f3fa9ba2a2d99d4ea81c",
+    "helper_sha256": {
+      "audit_calendar_identifiability.py": "7abcd8376ccc520442c090e13df95be355cd206c38a022b92aefab22eb99d6fa",
+      "fit_maintenance_models.py": "f9bd8dd15b34bca5d1be49884979e73af87250416bf8185f1a090c5b45f60a24",
+      "fit_piecewise_models.py": "dfd86c374851ef0a1e5bdcb2ec91283f3e5002c3c6ea5d79ad6b0eec22eaf31b"
+    },
+    "reference_sha256": {
+      "cause_specific_merge_models.json": "f8a49eac45a2fba0eacb381226f48e20f5a5e6eb80a3c4d76e0c6e4dcc71b658",
+      "piecewise_merge_model.json": "52fcbe71bc69102ab0ea94fb66ae6bc2d9525323bf42c8f00d9dd0a8a489fd33"
+    },
+    "census_metadata_sha256": {
+      "coverage.json": "71f15dc4194ee4e4809cf8681f2e11872d8ac86eecfbdcdbcd04949f74118a7b",
+      "summary.json": "bfa3fd45d041ecbfd02475721ae3a697f30733914db1ce804754c58f090a5d39"
+    },
+    "uv_lock_sha256": "63bdd8a6cfa7f84a4a8cc3bb5b8d2892a11bec354814c4fa9beeb591bf9a6148",
+    "output_sha256": {
+      "quarter_exposure.csv": "0e95d6547a702f73955c3ead584ce8d70cb9fa0bf96bf6f45f1c70364b9ea185",
+      "model_effects.csv": "0be4b25046a36f537d4d182968a49aad8523bd5cfaf76d8466dd1e36373e25c9",
+      "model_fits.json": "bccb923a75f164992eebca992486c9563f7d0ddc8a9a46c6549dc4c0b10b4648"
+    }
+  }
+}

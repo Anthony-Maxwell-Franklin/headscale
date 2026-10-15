@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-10-15T12:21:43Z",
+  "status": "Exploratory plan recorded before the full census script was executed; not preregistered",
+  "prior_inspection": "Read-only exploration already inspected aggregate role overlaps and approval/head-SHA diagnostics, including 2026 Q2 and Q3. Analysis choices therefore follow observation of the data.",
+  "question": "How do author, submitted-reviewer and integrator accounts overlap on the identical merged-PR population, and how much does collected-revision linkage limit interpretation of observed approval records?",
+  "population": "All human-account-authored PRs merged by the pinned PR-list collection cutoff, with membership identical to the completed review census and merger metadata census",
+  "input": "Paper/data/pr-census-2026-10-13",
+  "review_census": "Paper/results/review-census",
+  "merger_census": "Paper/results/pr-census",
+  "categories": [
+    "self_merge_with_other_account_review",
+    "self_merge_without_attributed_other_account_review",
+    "other_merger_with_merger_only_review",
+    "other_merger_with_third_account_review",
+    "other_merger_without_attributed_other_account_review"
+  ],
+  "eligibility": "Reuse completed review-census exclusions and observed open intervals; include submitted attributed non-bot, non-author reviews no later than the collected cutoff and eventual merge. Reopened PRs can contribute reviews from any observed open interval before merge, not closed intervals.",
+  "unknown_actors": "Count submitted records without an attributable login only after applying the same temporal/open-interval boundaries; do not classify their human status or allocate an account. Observed account categories and union counts may change if missing identities become known.",
+  "secondary_diagnostics": "Count eligible records labelled APPROVED in the collected snapshot, and their exact commit_id matches to the collected detail.head.sha. These are nested observed-record diagnostics, not historical approval enforcement, approval validity at merge, or proof that unmatched revisions were unreviewed.",
+  "outputs": [
+    "pr_role_overlap.csv",
+    "review_record_audit.csv",
+    "quarterly_role_overlap.csv",
+    "summary.json",
+    "source_manifest.json"
+  ],
+  "coverage_and_integrity": "Require complete checksummed list/detail/review/timeline pages; validate all merged-PR membership, author, integrator, reviewers and merge-quarter fields against existing census outputs; record complete input-page, coverage-file, script/helper, plan and dependency-lock hashes.",
+  "interpretation_limits": [
+    "Accounts are not independently verified people, effort, knowledge holders or bus-factor estimates.",
+    "Submitted-review participation does not establish review quality or policy enforcement.",
+    "Collected approval states can differ from historical states and may coexist with later review decisions.",
+    "Collected head SHA is not independently established as the historical merge-time revision.",
+    "Failure to match a review commit to collected head SHA does not establish unreviewed changes or a bypass.",
+    "Deleted reviews, informal review, account aliases and non-atomic collection remain outside the audit.",
+    "No human responsibility/outcome labels, repair prevalence, causal claim or novelty/acceptance claim follow from this analysis."
+  ]
+}

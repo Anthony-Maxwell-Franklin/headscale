@@ -65,5 +65,15 @@
     "AWS access-key IDs",
     "PEM private-key headers"
   ],
-  "limitations": "Pattern scan and exact configured-credential comparison; not an exhaustive detector of every possible secret format"
+  "limitations": "Pattern scan and exact configured-credential comparison; not an exhaustive detector of every possible secret format",
+  "followup_checks": [
+    {
+      "checked_at_utc": "2026-10-15T12:34:28.583108+00:00",
+      "scope": "Joint-role/calendar audit and manuscript changes since published research branch",
+      "changed_files_scanned": 51,
+      "configured_credential_matches": 0,
+      "unresolved_pattern_findings": [],
+      "pdf_text_and_zip_entries_checked": true
+    }
+  ]
 }

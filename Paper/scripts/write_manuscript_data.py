@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 from verify_artifact import verify_review_identity_bounds
 from verify_repair_validation import verify_repair_validation
+from verify_extended_analyses import verify_calendar_export
+from analyze_role_overlap import verify_export as verify_role_overlap_export
 
 root=Path(__file__).resolve().parents[2]
 paper=root/'Paper'
@@ -33,6 +35,19 @@ def main():
     timing=read('results/timestamp_sensitivity.json')
     census=read('results/pr-census/summary.json')
     reviews=read('results/review-census/summary.json')
+    role_overlap=read('results/role-overlap/summary.json')
+    if role_overlap!=verify_role_overlap_export(root):
+        raise ValueError('Joint role audit failed verification')
+    overlap_file=paper/'results/role-overlap/quarterly_role_overlap.csv'
+    sources[str(overlap_file.relative_to(paper))]=hashlib.sha256(overlap_file.read_bytes()).hexdigest()
+    with overlap_file.open() as handle:overlap_quarters=list(csv.DictReader(handle))
+    overlap_q2=next(r for r in overlap_quarters if r['merge_quarter']=='2026-Q2')
+    calendar=read('results/calendar-identifiability/summary.json')
+    if calendar!=verify_calendar_export(root):
+        raise ValueError('Calendar audit failed verification')
+    calendar_fits=read('results/calendar-identifiability/model_fits.json')
+    calendar_constant=calendar_fits['primary_quarter_baseline']['concentration_effects'][0]
+    calendar_late=calendar_fits['piecewise_quarter_baseline']['concentration_effects'][1]
     review_coverage=read('results/review-census/coverage.json')
     identity_bounds=read('results/review-identity-sensitivity/summary.json')
     if identity_bounds!=verify_review_identity_bounds(root):
@@ -147,6 +162,21 @@ def main():
         'RoleQuarterAuthorHHI':f"{float(role_quarter['author_hhi_on_same_prs']):.3f}",
         'RoleQuarterMergerHHI':f"{float(role_quarter['merger_hhi']):.3f}",
         'SelfMergeCount':census['self_merges'],
+        'SelfMergeReviewedCount':role_overlap['all_merged']['self_merges_with_attributed_review'],
+        'RoleOverlapThreeAccountCount':role_overlap['all_merged']['prs_with_at_least_three_visible_accounts'],
+        'RoleOverlapQTwoSelfCount':overlap_q2['self_merged_prs'],
+        'RoleOverlapQTwoReviewedSelfCount':overlap_q2['self_merges_with_attributed_review'],
+        'RoleOverlapQTwoApprovalCount':overlap_q2['prs_with_collected_approved_record'],
+        'RoleOverlapQTwoHeadApprovalCount':overlap_q2['prs_with_collected_head_matching_approved_record'],
+        'RoleOverlapQTwoSelfHeadApprovalCount':overlap_q2['self_merges_with_collected_head_matching_approved_record'],
+        'CalendarBetweenQuarterPercent':f"{100*calendar['exposure_variation']['between_quarter_fraction']:.2f}",
+        'CalendarQuarterHR':f"{calendar_constant['hazard_ratio']:.3f}",
+        'CalendarQuarterLower':f"{calendar_constant['lower_95']:.3f}",
+        'CalendarQuarterUpper':f"{calendar_constant['upper_95']:.3f}",
+        'CalendarQuarterLateHR':f"{calendar_late['hazard_ratio']:.3f}",
+        'CalendarQuarterLateLower':f"{calendar_late['lower_95']:.3f}",
+        'CalendarQuarterLateUpper':f"{calendar_late['upper_95']:.3f}",
+        'CalendarQuarterLateEvents':calendar_fits['piecewise_quarter_baseline']['counts']['late_merge_events'],
         'ReviewRecordCount':reviews['raw_review_records'],
         'ReviewAccountCount':reviews['observed_reviewer_accounts'],
         'MergedReviewedCount':reviews['human_merged_with_observed_submitted_review'],
@@ -314,6 +344,34 @@ def main():
             controls])+' \\\\')
     repair_table.extend(['\\bottomrule','\\end{tabular}'])
     (output/'repair_validation_table.tex').write_text('\n'.join(repair_table)+'\n')
+    overlap_labels={
+        'self_merge_with_other_account_review':'Self-merge, other-account review',
+        'self_merge_without_attributed_other_account_review':'Self-merge, no attributed review',
+        'other_merger_with_merger_only_review':'Other merger, merger-only reviewer',
+        'other_merger_with_third_account_review':'Other merger, third-account reviewer',
+        'other_merger_without_attributed_other_account_review':'Other merger, no attributed review'}
+    overlap_table=['\\begin{tabular}{lrrr}','\\toprule',
+                   'Observed participation & All PRs & 2026 Q2 & 2026 Q3 \\\\','\\midrule']
+    selected_quarters=[next(r for r in overlap_quarters if r['merge_quarter']==q)
+                       for q in ['2026-Q2','2026-Q3']]
+    for key,label in overlap_labels.items():
+        overlap_table.append(' & '.join([label,str(role_overlap['all_merged'][key]),
+            *[r[key] for r in selected_quarters]])+' \\\\')
+    overlap_table.extend(['\\midrule',' & '.join(['Total',str(role_overlap['all_merged']['merged_human_prs']),
+        *[r['merged_human_prs'] for r in selected_quarters]])+' \\\\',
+        '\\bottomrule','\\end{tabular}'])
+    (output/'role_overlap_table.tex').write_text('\n'.join(overlap_table)+'\n')
+    calendar_table=['\\begin{tabular}{lrrr}','\\toprule',
+                    'Calendar control & Constant HR & Through day 30 & After day 30 \\\\','\\midrule']
+    for method,label in [('linear','Linear time'),('spline4','Four-df time spline'),
+                         ('quarter_baseline','Creation-quarter strata')]:
+        constant=calendar_fits['primary_'+method]['concentration_effects'][0]
+        early,late=calendar_fits['piecewise_'+method]['concentration_effects']
+        def interval(effect):
+            return f"{effect['hazard_ratio']:.3f} ({effect['lower_95']:.3f}--{effect['upper_95']:.3f})"
+        calendar_table.append(' & '.join([label,*[interval(e) for e in [constant,early,late]]])+' \\\\')
+    calendar_table.extend(['\\bottomrule','\\end{tabular}'])
+    (output/'calendar_control_table.tex').write_text('\n'.join(calendar_table)+'\n')
     print('Generated',len(values),'traceable manuscript quantities.')
 
 

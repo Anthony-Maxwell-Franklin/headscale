@@ -1,0 +1,27 @@
+{
+  "description": "Complete numerical output of the exploratory df3/4/5 preview executed before the planned quarter-baseline diagnostic. No significance-driven choice; four df were declared before the preview outputs were inspected.",
+  "input_sha256": "7c15b04527fc7665a915e322d2e3f96b840e1fa1053033ba3352be25f9897a4d",
+  "previews": [
+    {
+      "natural_spline_df": 3,
+      "hhi_r_squared": 0.0695844870286878,
+      "primary": {"hazard_ratio": 0.9900956496327635, "lower_95": 0.9277768498623479, "upper_95": 1.0566004051159148, "log_likelihood": -8384.418251700517},
+      "piecewise_early": {"hazard_ratio": 0.9780061395505243, "lower_95": 0.912019316597009, "upper_95": 1.0487672701576818, "log_likelihood": -7157.691231534472},
+      "piecewise_late": {"hazard_ratio": 1.2717562991652556, "lower_95": 1.050234618041196, "upper_95": 1.540002640060628, "log_likelihood": -7157.691231534472}
+    },
+    {
+      "natural_spline_df": 4,
+      "hhi_r_squared": 0.33465159082739504,
+      "primary": {"hazard_ratio": 1.004993539203817, "lower_95": 0.9446762841222077, "upper_95": 1.0691620302291343, "log_likelihood": -8383.618863940303},
+      "piecewise_early": {"hazard_ratio": 0.994500815306739, "lower_95": 0.9315949136862834, "upper_95": 1.0616544349004755, "log_likelihood": -7156.387209766587},
+      "piecewise_late": {"hazard_ratio": 1.291273761022838, "lower_95": 1.0610633983667082, "upper_95": 1.5714310082438718, "log_likelihood": -7156.387209766587}
+    },
+    {
+      "natural_spline_df": 5,
+      "hhi_r_squared": 0.33352351209161013,
+      "primary": {"hazard_ratio": 0.9962657558954654, "lower_95": 0.9401751794486418, "upper_95": 1.0557026797410598, "log_likelihood": -8380.636608370003},
+      "piecewise_early": {"hazard_ratio": 0.9855468197779628, "lower_95": 0.9273265530459772, "upper_95": 1.0474223247291168, "log_likelihood": -7153.372834864959},
+      "piecewise_late": {"hazard_ratio": 1.2797128211931095, "lower_95": 1.0513603123985178, "upper_95": 1.5576628539362924, "log_likelihood": -7153.372834864959}
+    }
+  ]
+}

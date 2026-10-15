@@ -9,7 +9,7 @@ validation, author review and final publication declarations remain unfinished.
 
 Start here
 ----------
-Paper/build/manuscript.pdf                  Compiled 18-page working draft
+Paper/build/manuscript.pdf                  Compiled 19-page working draft
 Paper/manuscript.tex                        Manuscript source
 Paper/README.md                             Reproduction and measurement details
 Paper/research_protocol.tex                 Research design and limitations

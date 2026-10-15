@@ -11,7 +11,7 @@
 \small University of Nottingham Ningbo China\\
 \small Provisional contact: \href{mailto:George.Zhou@nottingham.edu.cn}{George.Zhou@nottingham.edu.cn}\\
 \small Corresponding author to be confirmed}
-\date{Working draft, 14 October 2026}
+\date{Working draft, 15 October 2026}
 \begin{document}
 \maketitle
 \begin{abstract}
@@ -34,13 +34,13 @@ Closure alone cannot establish repair.
 On the same \RoleQuarterPRs{} merged PRs in 2026 Q2, author, reviewer and
 integrator HHIs are \RoleQuarterAuthorHHI{}, \ReviewQuarterFractionHHI{}
 and \RoleQuarterMergerHHI{}; review credit is shared per PR.
-Observed other-account submitted reviews occur on \MergedReviewedCount{}
-of \HumanPRMerged{} human-authored merged PRs. Reopening matters:
+Of \SelfMergeCount{} self-merges, \SelfMergeReviewedCount{} have an
+eligible other-account submitted review. Reopening matters:
 \FirstClosedEventuallyMerged{} PRs initially close but subsequently merge.
 An exploratory cause-specific model of initial processing episodes estimates a merge hazard ratio
 of \CoxConcentrationHR{} per 0.1 increase in prior integration HHI
 (95\% interval \CoxConcentrationLower{}--\CoxConcentrationUpper{}).
-Elapsed-time diagnostics suggest heterogeneous associations.
+Later-period associations are sensitive to calendar-cohort control.
 These measurements support concentrated activity and heterogeneous closure
 mechanisms, without establishing a causal scaling crisis. Independent defect
 adjudication and explanatory mechanism validation remain pending. The case
@@ -91,6 +91,12 @@ performance study, measuring throughput and Kubernetes API response under
 adverse network conditions~\cite{kjorveziroski2024mesh}. Their question concerns
 deployed-system performance, whereas ours concerns longitudinal repository
 maintenance. Selecting Headscale therefore does not itself supply novelty.
+
+Machairas's DevSkill thesis includes Headscale in a trending-repository
+illustration (p.~37), while its questions concern aggregate developer skills
+and technology trends~\cite{machairas2025devskill}. It also explicitly identifies
+email/noreply identity splitting (p.~58). Our case-specific alias correction
+quantifies an established validity problem; it does not introduce that problem.
 
 Code ownership has long been examined in relation to software quality.
 Bird et al. studied ownership and failures in industrial systems, showing that
@@ -385,6 +391,39 @@ reviewer upper bound in each affected quarter. No eligible unattributed record
 changes the 2026 Q2 comparison under this collected-record sensitivity; deleted
 or informal reviews and known-account aliases remain outside its coverage.
 
+\subsection{Role concentration and account separation are different}
+Marginal role HHIs do not show whether the same accounts perform several roles
+on each PR. We therefore join authors, eligible reviewers and integrators on
+all \HumanPRMerged{} merged human-account PRs, retaining unattributed review
+records separately. Of \SelfMergeCount{} self-merges,
+\SelfMergeReviewedCount{} have an attributed other-account submitted review.
+Table~\ref{tab:roleoverlap} partitions observed participation without changing
+the merged-PR denominator. Only \RoleOverlapThreeAccountCount{} PRs have at
+least three distinct visible accounts across the three roles. These account
+counts do not establish independent people, review effort or governance intent.
+
+In 2026 Q2, all \RoleOverlapQTwoSelfCount{} self-merges have an eligible
+other-account review. Self-merging therefore cannot be treated as absence of
+recorded cross-account review. Revision linkage requires another distinction:
+\RoleOverlapQTwoApprovalCount{} PRs have an eligible record labelled
+\texttt{APPROVED} in the collected snapshot, but only
+\RoleOverlapQTwoHeadApprovalCount{} have one whose commit identifier equals
+the collected PR head SHA; the corresponding self-merge count is
+\RoleOverlapQTwoSelfHeadApprovalCount{}.
+Collected review state and head SHA are not independently established as their
+historical merge-time values. A nonmatching SHA does not establish unreviewed
+changes or a bypass, and neither participation nor approval presence proves
+branch-rule enforcement. This audit supports observed cross-account interaction,
+without validating efficient specialisation as its explanation.
+
+\begin{table}[tb]
+\centering\small\input{role_overlap_table.tex}
+\caption{Joint account participation on matched merged PRs. Categories concern
+attributed submitted reviews. Unattributed, deleted or informal reviews can
+change the visible classification; absence of attribution is not absence of review.}
+\label{tab:roleoverlap}
+\end{table}
+
 \subsection{Artifact scopes preserve the role distinction}
 Complete file lists are available for all \HumanPRMerged{} merged human-authored
 PRs, with returned counts checked against pinned metadata. Within each file scope,
@@ -651,6 +690,41 @@ Omitting reconstructed backlog gives a late-period estimate of
 \PieceNoBacklogLateHR{} (\PieceNoBacklogLateLower{}--\PieceNoBacklogLateUpper{}).
 Table~\ref{tab:agewindows} reports the full exposure-window and backlog comparisons
 for this diagnostic; none is treated as a confirmatory test.
+
+\subsection{Calendar variation limits interpretation}
+Prior concentration is one project-wide trailing-window series rather than an
+independently assigned exposure for every PR. Creation-quarter means account
+for \CalendarBetweenQuarterPercent{}\% of its PR-weighted sum of squares.
+This descriptive partition does not treat repeated exposure values as
+independent observations. A linear calendar term need not absorb such
+nonlinear changes. We therefore compare the frozen models with a four-degree-
+of-freedom natural cubic time spline and with creation-quarter baseline strata
+(Table~\ref{tab:calendar}). The spline uses submission-time quartile knots and
+no outcome values. All executed three-, four- and five-df preview results are
+retained; this is a post-pilot diagnostic, not a preregistered model choice.
+
+The quarter-stratified constant estimate is \CalendarQuarterHR{}
+(\CalendarQuarterLower{}--\CalendarQuarterUpper{}). In the piecewise model,
+quarter strata are crossed with prior role/experience strata. Its later-period
+estimate is \CalendarQuarterLateHR{}
+(\CalendarQuarterLateLower{}--\CalendarQuarterLateUpper{}), retaining all
+\CalendarQuarterLateEvents{} late merge events. The interval includes one
+and is substantially wider. Thus a later-period association under linear or
+smooth calendar adjustment does not persist as comparably precise evidence
+under within-cohort risk-set comparisons. This is not a formal difference
+between coefficients: stratification changes the conditional comparisons and
+the intervals overlap. Creation-quarter strata also cannot control arbitrary
+calendar changes while a PR waits. Overlapping exposure windows and only
+\CoxQuarterClusters{} quarter clusters continue to limit uncertainty estimates.
+
+\begin{table}[tb]
+\centering\small\input{calendar_control_table.tex}
+\caption{Calendar-control diagnostics, HR per 0.1 merger HHI with 95\% intervals.
+Constant models retain role/experience covariates; piecewise models use their
+baseline strata, crossed with quarter in the final row. Comparisons change the
+conditional estimand and do not identify a causal effect.}
+\label{tab:calendar}
+\end{table}
 
 \subsection{Short status transitions and quarter influence}
 Among \CloseReopenTransitions{} observed close/reopen transitions on

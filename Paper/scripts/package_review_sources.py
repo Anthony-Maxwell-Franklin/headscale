@@ -50,7 +50,7 @@ def main():
     (directory / "README.txt").write_text(
         "Headscale maintenance study: working-manuscript review package\n\n"
         "This is a local draft for author/supervisor review. No venue submission\n"
-        "or public data deposit has taken place. Semantic coding remains deferred\n"
+        "or permanent archival deposit has taken place. Semantic coding remains deferred\n"
         "and unperformed; corresponding authorship and final declarations are pending.\n\n"
         "The source files are flattened for standalone LaTeX compilation. With\n"
         "Tectonic installed, run from this folder:\n"

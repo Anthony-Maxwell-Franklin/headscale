@@ -190,7 +190,7 @@ before/after that split and uses role/experience baseline strata. This is an
 exploratory check, not a confirmatory or causal claim. All model variants enter
 the generated manuscript tables; numerical source/script/lock hashes and PDF
 freshness are checked by `verify_artifact.py`. The statistical verification suite
-contains 45 tests, including known synthetic hazards, risk-interval boundaries,
+contains 56 tests, including known synthetic hazards, risk-interval boundaries,
 historical pending queues, matched review-credit conservation and human-coding
 input/adjudication checks, plus exact commit linkage and neutral evidence rendering.
 
@@ -205,6 +205,23 @@ leaving actual historical covariates intact. Near-cutoff closures remain censore
 if the complete grace window cannot be observed. It also omits each informative
 creation quarter from fitting. These related fits are influence checks, not
 predictions or independent replications; every fit and failure is retained.
+
+Calendar and joint-role audits use only the frozen census:
+
+```bash
+bash run-research.sh python Paper/scripts/audit_calendar_identifiability.py
+bash run-research.sh python Paper/scripts/analyze_role_overlap.py
+```
+
+The first retains the exact linear-calendar models, adds a fixed four-df natural
+spline and creation-quarter baseline strata, and records all fits, support counts
+and previously executed spline previews. Within-cohort risk sets change the
+conditional estimand; overlapping exposure windows and few clusters remain.
+The second joins author, submitted-reviewer and integrator accounts on all 1,318
+merged PRs, with per-record timing audits. Collected approval state and matching
+collected head SHA are separate diagnostics, not proof of historical gate
+enforcement or unreviewed changes. Plans, inputs and outputs are hashed; the
+master verifier checks both audits without populating the human coding forms.
 
 Full review-role analysis and the ongoing merged-PR file sensitivity use:
 

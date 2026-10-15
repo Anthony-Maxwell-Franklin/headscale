@@ -2,8 +2,8 @@
   "objective": "将学生CW升级为可投CCF B或二区期刊的论文",
   "status": "active",
   "manuscript": "Paper/build/manuscript.pdf",
-  "verified_pages": 18,
-  "tests_passed": 45,
+  "verified_pages": 19,
+  "tests_passed": 56,
   "completed": [
     "Workspace-local uv and locked Python research environment",
     "Pinned Git, identity and timestamp sensitivity",
@@ -13,7 +13,7 @@
     "Matched author/reviewer/integrator roles with fractional PR credit and artifact-scope controls",
     "First processing episodes and historical pending queues; metadata-only baseline archived",
     "Exploratory merge models with role, exposure-window, elapsed-time and omitted-backlog sensitivity",
-    "45 tests and raw-page, numerical-source, script and dependency provenance verification",
+    "56 tests and raw-page, numerical-source, script and dependency provenance verification",
     "Compiled an English working draft; independent human coding forms prepared",
     "Five-minute episode coalescing and all 23 leave-quarter-out influence fits completed",
     "All Bash reproduction and documented Python collection entry points use the locked uv environment; baseline metrics reproduced byte-for-byte",
@@ -21,13 +21,17 @@
     "Neutral independently ordered offline packets for all 100 sampled issues, with 48 available commit patches and 12 exact-SHA-linked PR contexts; complete rendered bodies and unchanged human inputs verified",
     "Author-confirmed name and affiliation incorporated; unconfirmed correspondence and supervisor coauthorship recorded explicitly",
     "English venue/contribution assessment checked against current CCF classification and publisher sources; no unverified current quartile claimed",
-    "English-only manuscript and review instructions; 235-word abstract with defined HHI and six keywords",
+    "English-only manuscript and review instructions; 236-word abstract with defined HHI and six keywords",
     "Verified flattened manuscript review ZIP independently compiles to identical rendered text",
     "Targeted Headscale and maintenance-direction literature search recorded; same-project performance paper and direct review-aware bus-factor precedents integrated with access limits",
     "Conditional ESEM/ICSME research-track assessment checked against official CCF directory and conference calls; contribution validation remains unfinished",
     "Missing reviewer identity sensitivity verified on the fixed 1259 reviewed merged PRs; conservative outer bounds and conditional ordering reversals added to the English manuscript, with independent enumeration/optimization checks",
     "Two selected closing-commit cases have executed parent/repair component checks with identical oracles and dependency manifests; three regressions change from fail to pass and two controls pass on both versions, including a cached rerun",
-    "Git research archive published to the authorized independent fork branch; complete recovery bundle prepared; Git-checkout PDF receipt validation fixed and covered by four regression tests"
+    "Git research archive published to the authorized independent fork branch; complete recovery bundle prepared; Git-checkout PDF receipt validation fixed and covered by four regression tests",
+    "Complete joint author/reviewer/integrator account-participation audit for all 1318 merged PRs and 2631 review records, with raw replay and revision-linkage caveats",
+    "Six planned calendar-control fits with exact frozen-baseline reproduction, nonlinear time sensitivity and within-creation-quarter risk sets; all spline previews disclosed",
+    "Full 70-page institutional DevSkill thesis inspected; Headscale screenshot location and prior identity-splitting caveat verified",
+    "56 Python tests, 141 generated quantities and an independently compiled 19-page English review package verified"
   ],
   "in_progress": [],
   "required_remaining": [
@@ -36,14 +40,14 @@
     "Integrate declared human coding, agreement and adjudication evidence when available",
     "Human author review and venue-specific submission preparation"
   ],
-  "note": "Goal remains active and unachieved. Two source-available server repair cases now have native before/after component evidence, semantic failure checks and normal-case controls, reproduced in a cached run. The English 18-page working draft, 126 generated quantities and independent review-source compilation are verified; 45 Python tests pass. Component behavior checks strengthen local repair evidence but do not establish a general responsibility-routing mechanism, population repair prevalence or sufficient CCF B novelty. Human coding remains deferred and unperformed; human author review, corresponding authorship and final declarations are unfinished. No venue submission or permanent archival deposit has occurred.",
+  "note": "Goal remains active and unachieved. Joint role participation and calendar-control diagnostics strengthen case interpretation: 761 of 783 self-merges have attributed other-account submitted reviews; the within-cohort late HR is 1.176 (0.625–2.210), retaining all 56 late merges. Full-text DevSkill comparison is now resolved. The English 19-page working draft, 141 generated quantities and standalone source compilation are verified; 56 Python tests pass. These checks do not establish a novel general method, causal concentration effect, responsibility-routing mechanism or sufficient CCF B contribution. Human coding remains deferred and unperformed. Author review, corresponding authorship and final declarations are unfinished. No venue submission or permanent archival deposit has occurred.",
   "review_endpoints_completed": 2166,
   "current_working_manuscript_title": "Contribution Concentration and Maintenance Outcomes: A Longitudinal Case Study of Headscale",
-  "generated_quantities": 126,
+  "generated_quantities": 141,
   "timeline_endpoints_completed": 2166,
   "merged_pr_file_endpoints_completed": 1318,
   "previous_goal_turn_classification": "progress",
-  "last_updated_at_utc": "2026-10-15T11:59:09.478551+00:00",
+  "last_updated_at_utc": "2026-10-15T12:33:24.132785+00:00",
   "process_history": [
     {
       "task": "Review census",
@@ -99,9 +103,9 @@
     "conference_contribution_assessment": "Paper/submission/venue_assessment.txt",
     "review_identity_sensitivity": "Paper/results/review-identity-sensitivity/summary.json",
     "full_test_suite": {
-      "tests_passed": 41,
-      "log": "/tmp/headscale-tests-repair.log",
-      "log_sha256": "b3343e1b6f3f06bc2e44ee908d4ca20eb5c1285abd0e0bc961e2e1389212300a"
+      "tests_passed": 56,
+      "log": "Paper/results/verification/unit-tests-role-calendar-20261015.txt",
+      "log_sha256": "a286c4defcd59c80f8b7b726ac8d42917b5a58692c32d82c7482cc512201b773"
     },
     "cached_timeline_identity_crosscheck": {
       "records_checked": 212,
@@ -112,7 +116,10 @@
       "scope": "Exact review IDs in already collected timeline events; no current API re-fetch or identity imputation"
     },
     "component_repair_validation": "Paper/results/repair-validation/20261015T021429517007Z/summary.json",
-    "component_execution_plan": "Paper/repair_validation_plan.json"
+    "component_execution_plan": "Paper/repair_validation_plan.json",
+    "joint_role_audit": "Paper/results/role-overlap/summary.json",
+    "calendar_control_audit": "Paper/results/calendar-identifiability/summary.json",
+    "literature_full_text_followup": "Paper/submission/literature_search_log.json"
   },
   "confirmed_author": "Xiaoyu SHEN",
   "affiliation": "University of Nottingham Ningbo China",
@@ -160,5 +167,27 @@
     "published_evidence_commit": "ab9ddd53e531137d92428e0295e8298a63ba45fd",
     "published_branch_url": "https://github.com/Anthony-Maxwell-Franklin/headscale/tree/research/headscale-maintenance",
     "push_verified_at_utc": "2026-10-15T11:59:09.478551+00:00"
+  },
+  "joint_role_audit_status": {
+    "merged_prs": 1318,
+    "raw_review_records": 2631,
+    "self_merges": 783,
+    "self_merges_with_attributed_other_account_review": 761,
+    "prs_with_at_least_three_visible_accounts": 139,
+    "head_revision_scope": "Collected detail.head.sha; not independently reconstructed merge-time revision",
+    "human_labels_generated": false
+  },
+  "calendar_audit_status": {
+    "planned_fits": 6,
+    "identified_fits": 6,
+    "between_quarter_exposure_variance_fraction": 0.77238916697443,
+    "within_cohort_constant_hr": 1.063376007808319,
+    "within_cohort_late_hr": 1.175719184301778,
+    "within_cohort_late_95_interval": [
+      0.6253633013036631,
+      2.2104200829399407
+    ],
+    "late_merge_events": 56,
+    "causal_identification_claimed": false
   }
 }
