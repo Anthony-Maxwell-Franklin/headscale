@@ -3,7 +3,7 @@
   "status": "active",
   "manuscript": "Paper/build/manuscript.pdf",
   "verified_pages": 18,
-  "tests_passed": 41,
+  "tests_passed": 45,
   "completed": [
     "Workspace-local uv and locked Python research environment",
     "Pinned Git, identity and timestamp sensitivity",
@@ -13,7 +13,7 @@
     "Matched author/reviewer/integrator roles with fractional PR credit and artifact-scope controls",
     "First processing episodes and historical pending queues; metadata-only baseline archived",
     "Exploratory merge models with role, exposure-window, elapsed-time and omitted-backlog sensitivity",
-    "41 tests and raw-page, numerical-source, script and dependency provenance verification",
+    "45 tests and raw-page, numerical-source, script and dependency provenance verification",
     "Compiled an English working draft; independent human coding forms prepared",
     "Five-minute episode coalescing and all 23 leave-quarter-out influence fits completed",
     "All Bash reproduction and documented Python collection entry points use the locked uv environment; baseline metrics reproduced byte-for-byte",
@@ -26,7 +26,8 @@
     "Targeted Headscale and maintenance-direction literature search recorded; same-project performance paper and direct review-aware bus-factor precedents integrated with access limits",
     "Conditional ESEM/ICSME research-track assessment checked against official CCF directory and conference calls; contribution validation remains unfinished",
     "Missing reviewer identity sensitivity verified on the fixed 1259 reviewed merged PRs; conservative outer bounds and conditional ordering reversals added to the English manuscript, with independent enumeration/optimization checks",
-    "Two selected closing-commit cases have executed parent/repair component checks with identical oracles and dependency manifests; three regressions change from fail to pass and two controls pass on both versions, including a cached rerun"
+    "Two selected closing-commit cases have executed parent/repair component checks with identical oracles and dependency manifests; three regressions change from fail to pass and two controls pass on both versions, including a cached rerun",
+    "Git research archive and complete recovery bundle prepared; Git-checkout PDF receipt validation fixed and covered by four regression tests"
   ],
   "in_progress": [],
   "required_remaining": [
@@ -35,14 +36,14 @@
     "Integrate declared human coding, agreement and adjudication evidence when available",
     "Human author review and venue-specific submission preparation"
   ],
-  "note": "Goal remains active and unachieved. Two source-available server repair cases now have native before/after component evidence, semantic failure checks and normal-case controls, reproduced in a cached run. The English 18-page working draft, 126 generated quantities and independent review-source compilation are verified; 41 Python tests pass. Component behavior checks strengthen local repair evidence but do not establish a general responsibility-routing mechanism, population repair prevalence or sufficient CCF B novelty. Human coding remains deferred and unperformed; human author review, corresponding authorship and final declarations are unfinished. No venue submission or permanent archival deposit has occurred.",
+  "note": "Goal remains active and unachieved. Two source-available server repair cases now have native before/after component evidence, semantic failure checks and normal-case controls, reproduced in a cached run. The English 18-page working draft, 126 generated quantities and independent review-source compilation are verified; 45 Python tests pass. Component behavior checks strengthen local repair evidence but do not establish a general responsibility-routing mechanism, population repair prevalence or sufficient CCF B novelty. Human coding remains deferred and unperformed; human author review, corresponding authorship and final declarations are unfinished. No venue submission or permanent archival deposit has occurred.",
   "review_endpoints_completed": 2166,
   "current_working_manuscript_title": "Contribution Concentration and Maintenance Outcomes: A Longitudinal Case Study of Headscale",
   "generated_quantities": 126,
   "timeline_endpoints_completed": 2166,
   "merged_pr_file_endpoints_completed": 1318,
   "previous_goal_turn_classification": "progress",
-  "last_updated_at_utc": "2026-10-15T02:24:33.190321+00:00",
+  "last_updated_at_utc": "2026-10-15T11:54:54.713474+00:00",
   "process_history": [
     {
       "task": "Review census",
@@ -149,5 +150,12 @@
     "original_deployment_replayed": false,
     "human_labels_generated": false,
     "population_repair_prevalence_estimated": false
+  },
+  "version_control": {
+    "repository": "https://github.com/Anthony-Maxwell-Franklin/headscale",
+    "branch": "research/headscale-maintenance",
+    "first_local_commit": "9618a534c469a920e1b457ad1f325927d13e8e71",
+    "remote_push_status": "Initial authenticated Git push rejected with HTTP 403; existing token write authorization must be updated before retrying",
+    "fresh_clone_verification": "Recorded PDF/input hashes support checkout timestamp changes; tested using a clone restored from the complete Git bundle and the separately retained upstream Git history"
   }
 }

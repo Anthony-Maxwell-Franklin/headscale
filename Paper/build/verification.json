@@ -1,5 +1,5 @@
 {
-  "verified_at_utc": "2026-10-15T10:57:34.741699+00:00",
+  "verified_at_utc": "2026-10-15T11:54:24.679820+00:00",
   "pdf_sha256": "ae5c73182334b6ee6f956ffc3661da8f393471f26db99a83dda2704a60e8434f",
   "pages": 18,
   "words": 7669,
@@ -50,5 +50,6 @@
     "figures/pr_dispositions.pdf": "2ca4f4584d7fbf27935333a09f788973a566d6fa413f89a70cee4b20771ea5cc",
     "figures/rename_sensitivity.pdf": "10093b63e0739d109dfe24a4716d0d7e3bb29784894812a297cdfa4fe1acc42a"
   },
+  "pdf_freshness_evidence": "recorded_content_hashes",
   "status": "Working draft; independent coding, explanatory mechanism validation and contribution assessment remain pending"
 }

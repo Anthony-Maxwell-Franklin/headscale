@@ -190,7 +190,7 @@ before/after that split and uses role/experience baseline strata. This is an
 exploratory check, not a confirmatory or causal claim. All model variants enter
 the generated manuscript tables; numerical source/script/lock hashes and PDF
 freshness are checked by `verify_artifact.py`. The statistical verification suite
-contains 41 tests, including known synthetic hazards, risk-interval boundaries,
+contains 45 tests, including known synthetic hazards, risk-interval boundaries,
 historical pending queues, matched review-credit conservation and human-coding
 input/adjudication checks, plus exact commit linkage and neutral evidence rendering.
 
@@ -356,6 +356,11 @@ further validation. Semantic outcome coding and independent author review are
 still pending. `build/manuscript.pdf` is a compiled working draft, not a claim
 of acceptance or submission readiness. `build/verification.json` checks its
 source hashes and basic PDF integrity.
+
+A matching verification receipt checks the PDF hash and every compiled input
+hash after a Git checkout or file copy changes timestamps. A changed PDF or
+input cannot reuse that receipt. A newly compiled build without a matching
+receipt must pass the local timestamp check before a new receipt is written.
 
 Human annotations in `issue_validation_sample.csv` survive analysis reruns.
 Evidence collection pins sample membership separately from annotation columns.

@@ -17,6 +17,20 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def check_pdf_freshness(pdf, source_files, paper):
+    """Reuse a verified byte-identical build after checkout changes timestamps."""
+    inputs = {str(path.relative_to(paper)): digest(path) for path in source_files}
+    receipt_path = paper / 'build/verification.json'
+    if receipt_path.is_file():
+        receipt = json.loads(receipt_path.read_text())
+        if (receipt.get('pdf_sha256') == digest(pdf) and
+                receipt.get('compiled_input_sha256') == inputs):
+            return 'recorded_content_hashes', inputs
+    if any(path.stat().st_mtime_ns > pdf.stat().st_mtime_ns for path in source_files):
+        raise ValueError('PDF predates one or more manuscript inputs without a matching verification receipt')
+    return 'local_build_timestamps', inputs
+
+
 def verify_review_identity_bounds(root):
     directory=root/'Paper/results/review-identity-sensitivity'
     summary=json.loads((directory/'summary.json').read_text())
@@ -219,8 +233,7 @@ def main():
     pdf=paper/'build/manuscript.pdf'
     source_files=[paper/'manuscript.tex',paper/'references.bib',*sorted((paper/'generated').glob('*.tex')),
                   *sorted((paper/'figures').glob('*.pdf'))]
-    if any(path.stat().st_mtime_ns>pdf.stat().st_mtime_ns for path in source_files):
-        raise ValueError('PDF predates one or more manuscript inputs')
+    freshness_evidence, compiled_inputs = check_pdf_freshness(pdf, source_files, paper)
     log=(paper/'build/manuscript.log').read_text()
     if re.search(r'undefined|Overfull',log,re.IGNORECASE):
         raise ValueError('Unresolved reference or layout warning in final compilation log')
@@ -243,7 +256,8 @@ def main():
                 component_repair_checks_verified=repairs['semantic_failures_verified'],
                 component_repair_cases=repairs['cases'],
                 component_repair_regression_checks=repairs['regression_checks'],
-                compiled_input_sha256={str(path.relative_to(paper)):digest(path) for path in source_files},
+                compiled_input_sha256=compiled_inputs,
+                pdf_freshness_evidence=freshness_evidence,
                 status='Working draft; independent coding, explanatory mechanism validation and contribution assessment remain pending')
     (paper/'build/verification.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps({key:result[key] for key in ['pages','words','generated_quantities',
